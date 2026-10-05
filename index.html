@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DCLC Elementary Portal</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#F5F3EE;color:#1B2733}
+button,select,input,textarea{font-family:inherit;font-size:14px}
+button{cursor:pointer}
+.hidden{display:none!important}
+.wrap{max-width:1240px;margin:0 auto;padding:12px}
+.shell{background:#fff;border:1px solid #E9E3D6;border-radius:14px;overflow:hidden}
+.hdr{padding:20px 24px;display:flex;flex-direction:column;gap:14px;border-bottom:1px solid #E3E8EE}
+.brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{width:40px;height:40px;border-radius:10px;background:#2E4057;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.brand h1{margin:0;font-size:18px;color:#2E4057}
+.brand .sub{font-size:13px;color:#5A6B7B}
+.who{margin-left:auto;font-size:13px;color:#3E4C59;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pill{display:inline-flex;align-items:center;background:#fff;border:1px solid #CBD5DF;border-radius:10px;padding:8px 14px;min-height:44px;font-weight:600;color:#1B2733}
+.pill.on{background:#2E4057;color:#fff;border-color:#2E4057}
+.icon{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;background:#fff;border:1px solid #CBD5DF;border-radius:10px;color:#2E4057}
+.icon.on{background:#2E4057;color:#fff;border-color:#2E4057}
+.primary{background:#2E4057;color:#fff;border:0;border-radius:10px;padding:8px 18px;min-height:44px;font-weight:700}
+.secondary{background:#fff;border:1px solid #2E4057;color:#2E4057;border-radius:10px;padding:8px 18px;min-height:44px;font-weight:700}
+.danger{background:#fff;border:1px solid #A4262C;color:#A4262C;border-radius:10px;padding:8px 18px;min-height:44px;font-weight:700}
+.link{background:none;border:0;color:#1F3A5F;text-decoration:underline;padding:6px;min-height:36px;font-weight:700}
+.sync{background:#E3F4DA;border:1px solid #B8DDA3;color:#2F5D1A;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700}
+.sync.demo{background:#FBEBCB;border-color:#E3C98D;color:#4D3000}
+.body{display:flex;flex-wrap:wrap;min-height:700px}
+.side{flex:1 1 280px;max-width:340px;min-width:0;padding:20px;border-right:1px solid #E3E8EE;display:flex;flex-direction:column;gap:16px}
+.main{flex:3 1 520px;min-width:0;padding:24px;display:flex;flex-direction:column;gap:18px}
+.fh{font-size:11px;font-weight:700;letter-spacing:.06em;color:#5A6B7B;margin-bottom:6px}
+.field{width:100%;min-height:44px;border:1px solid #CBD5DF;border-radius:10px;padding:0 12px;background:#fff;color:#1B2733}
+textarea.field{padding:10px;min-height:72px}
+.fc{display:inline-flex;align-items:center;border:1px solid #CBD5DF;background:#fff;color:#1B2733;border-radius:999px;padding:6px 12px;min-height:36px;font-size:13px;font-weight:600;margin:0 6px 6px 0}
+.fc.on{background:#2E4057;color:#fff;border-color:#2E4057}
+.srow{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;color:#1B2733;background:none;border:0;width:100%;text-align:left}
+.srow.sel{background:#EAF1FA}
+.srow:hover{background:#F2F6FB}
+.av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:none}
+.sn{font-size:15px;font-weight:700}
+.ss{font-size:12px;color:#5A6B7B;margin-top:2px}
+.chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;line-height:1.35;margin:0 4px 4px 0;white-space:nowrap}
+.t1{background:#DDF1EE;color:#0E5C52}.t2{background:#DCE9F8;color:#123F73}.mon{background:#FBEBCB;color:#6B4300}
+.dys{background:#E9E3F6;color:#3F2A78}.sp{background:#FBE2E8;color:#7A1F3D}.none{background:#ECEFF2;color:#3E4C59}
+.grp{border:1px solid #9FB3C8;color:#1F3A5F;background:#fff;font-weight:600}
+.r-admin{background:#2E4057;color:#fff}.r-int{background:#DCE9F8;color:#123F73}.r-prin{background:#FBEBCB;color:#6B4300}.r-teach{background:#DDF1EE;color:#0E5C52}
+.tabs{border-bottom:1px solid #E3E8EE;display:flex;flex-wrap:wrap;gap:2px}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:12px 14px;min-height:44px;font-weight:700;color:#3E4C59}
+.tab.on{color:#2E4057;border-bottom-color:#2563A8}
+.row{display:flex;flex-wrap:wrap;gap:16px}
+.card{background:#fff;border:1px solid #E3E8EE;border-radius:12px;padding:18px;flex:1 1 280px;min-width:0}
+.card h2{margin:0 0 12px;font-size:16px;color:#2E4057;border-bottom:2px solid #E3E8EE;padding-bottom:8px}
+.card.muted{background:#FAFAF8;color:#5A6B7B}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #EEF2F6;font-size:14px}
+.kv span:first-child{color:#4A5B6B}.kv span:last-child{text-align:right;font-weight:700}
+.empty{color:#5A6B7B;font-size:14px;margin:4px 0}
+.note{padding:8px 0;border-bottom:1px solid #EEF2F6;font-size:14px}
+.small{font-size:12px;color:#4A5B6B;margin-top:2px}
+.tiles{display:flex;flex-wrap:wrap;gap:12px}
+.tile{flex:1 1 150px;background:#fff;border:1px solid #E3E8EE;border-radius:12px;padding:14px 16px}
+.tn{font-size:30px;font-weight:700;color:#2E4057;line-height:1.1}.tl{font-size:13px;color:#4A5B6B;margin-top:4px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+th{text-align:left;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#4A5B6B;background:#F1F4F8;padding:10px 12px;border-bottom:2px solid #E3E8EE}
+td{padding:11px 12px;border-bottom:1px solid #EEF2F6;vertical-align:top}
+.banner{border-radius:10px;padding:12px 16px;font-size:14px;background:#EAF1FA;border:1px solid #C5D7EC;color:#1F3A5F}
+.banner.warn{background:#FBEBCB;border-color:#E3C98D;color:#4D3000}
+.banner.ok{background:#E3F4DA;border-color:#B8DDA3;color:#2F5D1A}
+.banner.err{background:#FBE3E4;border-color:#E8B4B7;color:#7A1A1F}
+.fl{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:#4A5B6B}
+.fl .field{font-weight:400}
+.cols{display:flex;flex-wrap:wrap;gap:12px}.cols>*{flex:1 1 200px;min-width:0}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;min-height:36px;font-weight:400;color:#1B2733}
+.chk input{width:18px;height:18px}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#6B7886;padding:40px}
+.login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login .box{background:#fff;border:1px solid #E3E8EE;border-radius:16px;width:100%;max-width:380px;padding:32px;text-align:center}
+.login .avatar{width:64px;height:64px;border-radius:50%;background:#2E4057;color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.login h1{margin:0;font-size:22px;color:#2E4057}.login p{margin:4px 0 20px;color:#5A6B7B;font-size:14px}
+.login .field{text-align:center;margin-bottom:12px}.login .primary{width:100%}
+.overlay{position:fixed;inset:0;background:rgba(27,39,51,.5);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:50}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:640px;padding:24px;display:flex;flex-direction:column;gap:14px}
+.modal h2{margin:0;font-size:18px;color:#2E4057}
+.modal .btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
+.accrow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.accrow>*{flex:1 1 140px;min-width:0}.accrow>button{flex:0 0 auto}
+.sr{position:absolute;left:-9999px}
+@media(max-width:700px){.side{max-width:none;border-right:0;border-bottom:1px solid #E3E8EE}.main{padding:16px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modalRoot"></div>
+<script>
+'use strict';
+/* ===== CONFIG: paste your deployed Apps Script web app URL (ends in /exec) between the quotes ===== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbzHBgT9-hNpBDGCrAr8tnWNBzDLb542t2bigo8PlGRM1e757bdYc6SJAyTEqeOoIHjq/exec';
+/* ================================================================================================ */
+const DEMO = API_URL.indexOf('PASTE_') === 0;   // with no URL set, the page runs on fake sample data
+const IDLE_MS = 30 * 60 * 1000;
+
+const GRADES = ['K3','K4','K5','1st','2nd','3rd','4th','5th'];
+const TIER_LABEL = { tier1:'Tier 1', tier2:'Tier 2', monitor:'Monitor', none:'No tier' };
+const TIER_CLASS = { tier1:'t1', tier2:'t2', monitor:'mon', none:'none' };
+const TYPE_LABEL = { 'push-in':'Push-in', 'pull-out':'Pull-out', 'dyslexia':'Dyslexia' };
+const ROLE_LABEL = { admin:'Admin', interventionist:'Interventionist', principal:'Principal', teacher:'Teacher' };
+const ROLE_CLASS = { admin:'r-admin', interventionist:'r-int', principal:'r-prin', teacher:'r-teach' };
+const SCOPE_LABEL = { tiered:'Students with a tier', dyslexia:'Dyslexia students', all:'All students' };
+const TABS = ['Overview','Teacher Information','Accommodations','Progress Monitoring','Testing History','Documentation','Grade History'];
+const COMING = {
+  'Progress Monitoring':'Coming in Phase 3: DRA reading levels, NWEA, and intervention data.',
+  'Testing History':'Coming in Phase 4: appears once the elementary testing calendar is running.',
+  'Documentation':'Coming in Phase 3: notes and meeting logs.',
+  'Grade History':'Coming in Phase 3: pulled from RenWeb.'
+};
+const VIEW_COMING = {
+  'testing-calendar':['Testing Calendar','Coming in Phase 4: the elementary testing calendar.'],
+  'testing-summary':['Testing Summary','Coming in Phase 4: testing prep and accommodation summary.'],
+  'reports':['Reports','Coming in Phase 3: progress and trend reports.']
+};
+const PALETTE = [['#E3EEF8','#1F4E87'],['#DFF2EC','#0E5C52'],['#FCEBD7','#7A4A0A'],['#ECE7F7','#3F2A78']];
+
+const state = {
+  token: null, user: null, data: null, view: 'home', selectedId: null, tab: 'Overview',
+  filters: { q:'', tier:'', dyslexia:false, speech:false, group:'', grade:'' },
+  syncedAt: null, notice: null, loginMsg: '', logins: null
+};
+
+/* ---------- helpers ---------- */
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = id => document.getElementById(id);
+const role = () => state.user ? state.user.role : '';
+const isAdmin = () => role() === 'admin';
+const isTeacher = () => role() === 'teacher';
+const lastName = n => String(n).trim().split(/\s+/).pop().toLowerCase();
+const initials = n => { const p = String(n).trim().split(/\s+/); return ((p[0]||'')[0] || '') + ((p.length > 1 ? p[p.length-1] : '')[0] || ''); };
+const palette = n => PALETTE[[...String(n)].reduce((a, c) => a + c.charCodeAt(0), 0) % PALETTE.length];
+const fmtDate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ''); return m ? `${+m[2]}/${+m[3]}/${m[1]}` : ''; };
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const timeStr = d => d.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+const groupLabel = g => `${TYPE_LABEL[g.type] || g.type} · ${g.name}`;
+const sortStudents = list => list.slice().sort((a, b) => lastName(a.name).localeCompare(lastName(b.name)) || a.name.localeCompare(b.name));
+const groupById = id => (state.data.groups || []).find(g => g.id === id);
+const teacherById = id => (state.data.teachers || []).find(t => t.id === id);
+const student = () => state.data && state.data.students.find(s => s.id === state.selectedId);
+
+function tierSummary(s) {
+  const parts = [s.grade];
+  if (s.tier === 'none' && s.dyslexia && !s.speech) parts.push('Dyslexia only');
+  else {
+    parts.push(TIER_LABEL[s.tier]);
+    if (s.dyslexia) parts.push('Dyslexia');
+    if (s.speech) parts.push('Speech');
+  }
+  return parts.join(' · ');
+}
+function flagChips(s) {
+  let h = '';
+  if (s.tier !== 'none') h += `<span class="chip ${TIER_CLASS[s.tier]}">${TIER_LABEL[s.tier]}</span>`;
+  if (s.dyslexia) h += '<span class="chip dys">Dyslexia</span>';
+  if (s.speech) h += '<span class="chip sp">Speech</span>';
+  if (s.tier === 'none' && !s.dyslexia && !s.speech) h += '<span class="chip none">No tier</span>';
+  return h;
+}
+function seenBy(s) {
+  // Same rule the server uses to decide which interventionist sees a student.
+  const dysGroup = (s.groupIds || []).some(id => { const g = groupById(id); return g && g.type === 'dyslexia'; });
+  return (state.data.staff || []).filter(p => p.scope === 'all' || (p.scope === 'dyslexia' ? (s.dyslexia || dysGroup) : s.tier !== 'none'))
+    .map(p => lastName(p.name).replace(/^./, c => c.toUpperCase())).join(', ');
+}
+
+/* ---------- API ---------- */
+async function api(action, payload) {
+  const body = Object.assign({ action, token: state.token }, payload || {});
+  if (DEMO) return demoApi(action, body);
+  try {
+    const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(body) });
+    return await res.json();
+  } catch (e) {
+    return { error: 'Could not reach the server. Check your connection and try again.' };
+  }
+}
+function handleAuthError(r) {
+  if (r && r.error === 'auth') { signOutLocal('Your session expired. Please sign in again.'); return true; }
+  return false;
+}
+
+/* ---------- session ---------- */
+function saveSession() { try { sessionStorage.setItem('elem_session', JSON.stringify({ token: state.token, user: state.user })); } catch (e) {} }
+function signOutLocal(msg) {
+  state.token = null; state.user = null; state.data = null; state.selectedId = null; state.view = 'home';
+  state.loginMsg = msg || '';
+  try { sessionStorage.removeItem('elem_session'); } catch (e) {}
+  closeModal(); render();
+}
+async function signOut() { const t = state.token; if (t) await api('logout'); signOutLocal(''); }
+let idleTimer = null;
+function bumpIdle() { clearTimeout(idleTimer); if (state.token) idleTimer = setTimeout(() => signOutLocal('You were signed out after 30 minutes of inactivity.'), IDLE_MS); }
+['click','keydown'].forEach(ev => document.addEventListener(ev, bumpIdle, true));
+
+async function doLogin() {
+  const input = $('codeInput'); const code = input.value.trim();
+  if (!code) { state.loginMsg = 'Enter your access code.'; render(); return; }
+  $('loginBtn').disabled = true; $('loginBtn').textContent = 'Signing in...';
+  const r = await api('login', { code });
+  if (r.error) { state.loginMsg = r.message || (r.error === 'Invalid code' ? 'That code did not work.' : r.error); render(); return; }
+  state.token = r.token; state.user = r.user; state.loginMsg = ''; state.view = 'home'; state.selectedId = null;
+  saveSession();
+  await loadAll(true);
+}
+async function loadAll(showErr) {
+  const r = await api('getAll');
+  if (handleAuthError(r)) return;
+  if (r.error) { state.notice = { type:'err', text: r.error }; render(); return; }
+  state.data = r; state.user = r.user; state.syncedAt = new Date();
+  if (state.selectedId && !state.data.students.some(s => s.id === state.selectedId)) state.selectedId = null;
+  bumpIdle(); render();
+}
+
+/* ---------- rendering ---------- */
+function render() {
+  const app = $('app');
+  if (!state.token || !state.data) { app.innerHTML = loginHtml(); const i = $('codeInput'); if (i) i.focus(); return; }
+  app.innerHTML = `<div class="wrap"><div class="shell">${headerHtml()}${bodyHtml()}</div></div>`;
+}
+
+function loginHtml() {
+  const demoNote = DEMO ? `<div class="banner warn" style="margin-top:16px;text-align:left"><b>Demo mode.</b> No server is connected, so this runs on fake sample data. Try codes: <b>demo-admin</b>, <b>demo-wendy</b>, <b>demo-abby</b>, <b>demo-principal</b>, <b>demo-teacher</b>.</div>` : '';
+  return `<div class="login"><div class="box">
+    <div class="avatar"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8z"/></svg></div>
+    <h1>DCLC Elementary Portal</h1><p>Dallas Christian Learning Center</p>
+    <label class="sr" for="codeInput">Access code</label>
+    <input class="field" id="codeInput" type="password" placeholder="Enter access code" autocomplete="off">
+    ${state.loginMsg ? `<div class="banner err" role="alert" style="margin-bottom:12px">${esc(state.loginMsg)}</div>` : ''}
+    <button class="primary" id="loginBtn" data-act="login">Sign in</button>${demoNote}
+  </div></div>`;
+}
+
+function headerHtml() {
+  const r = role();
+  const pill = (v, label) => `<button class="pill ${state.view === v ? 'on' : ''}" data-act="view" data-v="${v}">${label}</button>`;
+  const syncLabel = DEMO ? 'Demo mode' : `Synced ${state.syncedAt ? timeStr(state.syncedAt) : ''}`;
+  return `<header class="hdr">
+    <div class="brand"><div class="logo">EL</div><div><h1>DCLC Elementary Portal</h1><div class="sub">Learning Support · K3 to 5th</div></div>
+      <div class="who"><span><b>${esc(state.user.name)}</b> · ${esc(ROLE_LABEL[r])}</span><button class="link" data-act="signout">Sign out</button></div></div>
+    <div class="nav">
+      <button class="sync ${DEMO ? 'demo' : ''}" data-act="refresh" title="Refresh data">${syncLabel}</button>
+      ${isAdmin() ? `<button class="icon ${state.view === 'access' ? 'on' : ''}" data-act="view" data-v="access" aria-label="Access and roles"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/></svg></button>` : ''}
+      ${pill('overview','Overview')}${pill('testing-calendar','Testing calendar')}${pill('testing-summary','Testing summary')}
+      ${r !== 'teacher' ? pill('reports','Reports') : ''}
+      ${isAdmin() ? pill('logins','Login report') : ''}
+      ${isAdmin() ? `<button class="primary" data-act="addStudent">+ Add student</button>` : ''}
+    </div></header>`;
+}
+
+function bodyHtml() {
+  const v = state.view;
+  const notice = state.notice ? `<div class="banner ${state.notice.type}" role="status">${esc(state.notice.text)}</div>` : '';
+  if (v === 'home') return `<div class="body">${sideHtml()}<section class="main">${notice}${student() ? profileHtml(student()) : emptyHtml()}</section></div>`;
+  let inner;
+  if (v === 'overview') inner = overviewHtml();
+  else if (v === 'access') inner = accessHtml();
+  else if (v === 'logins') inner = loginsHtml();
+  else { const c = VIEW_COMING[v]; inner = `<div class="card muted"><h2>${esc(c[0])}</h2><p class="empty">${esc(c[1])}</p></div>`; }
+  return `<div class="body"><section class="main" style="flex-basis:100%">${notice}${inner}</section></div>`;
+}
+
+function emptyHtml() {
+  const n = state.data.students.length;
+  const msg = n ? 'Select a student' + (isAdmin() ? ' or add a new one' : '') : (isAdmin() ? 'No students yet. Use "+ Add student" to start the roster.' : 'No students are assigned to you yet.');
+  return `<div class="empty-state"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#B7C0CA" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16.5 14.2c2.6 0 4.5 2 4.5 4.8"/></svg><div>${esc(msg)}</div></div>`;
+}
+
+/* sidebar */
+function filteredStudents() {
+  const f = state.filters; const q = f.q.trim().toLowerCase();
+  return sortStudents(state.data.students.filter(s =>
+    (!q || s.name.toLowerCase().includes(q)) && (!f.grade || s.grade === f.grade) && (!f.tier || s.tier === f.tier) &&
+    (!f.dyslexia || s.dyslexia) && (!f.speech || s.speech) && (!f.group || (s.groupIds || []).includes(f.group))));
+}
+function listHtml() {
+  const list = filteredStudents();
+  if (!list.length) return '<div class="empty" style="padding:8px 12px">No matching students.</div>';
+  return list.map(s => { const p = palette(s.name); return `<button class="srow ${s.id === state.selectedId ? 'sel' : ''}" data-act="select" data-id="${esc(s.id)}"><span class="av" style="background:${p[0]};color:${p[1]}">${esc(initials(s.name))}</span><span><div class="sn">${esc(s.name)}</div><div class="ss">${esc(tierSummary(s))}</div></span></button>`; }).join('');
+}
+function sideHtml() {
+  const f = state.filters;
+  const chip = (key, val, label) => `<button class="fc ${f[key] === val ? 'on' : ''}" data-act="filter" data-k="${key}" data-v="${val}">${label}</button>`;
+  const groups = (state.data.groups || []);
+  return `<aside class="side">
+    <div><label class="sr" for="q">Search by name</label><input class="field" id="q" type="text" placeholder="Search by name..." value="${esc(f.q)}" autocomplete="off"></div>
+    <div><div class="fh">GRADE</div><select class="field" id="gradeSel" aria-label="Grade"><option value="">All grades</option>${GRADES.map(g => `<option ${f.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select></div>
+    <div><div class="fh">SERVICE TIER</div>${chip('tier','','All')}${chip('tier','tier1','Tier 1')}${chip('tier','tier2','Tier 2')}${chip('tier','monitor','Monitor')}</div>
+    <div><div class="fh">FLAG</div><button class="fc ${f.dyslexia ? 'on' : ''}" data-act="toggleFlag" data-k="dyslexia">Dyslexia</button><button class="fc ${f.speech ? 'on' : ''}" data-act="toggleFlag" data-k="speech">Speech</button></div>
+    ${isTeacher() ? '' : `<div><div class="fh">SERVICE GROUP</div><select class="field" id="groupSel" aria-label="Service group"><option value="">All groups</option>${groups.map(g => `<option value="${esc(g.id)}" ${f.group === g.id ? 'selected' : ''}>${esc(groupLabel(g))}</option>`).join('')}</select></div>`}
+    <div class="fh" style="margin-bottom:0">STUDENTS (<span id="count">${filteredStudents().length}</span>)</div>
+    <div id="studentList" style="display:flex;flex-direction:column;gap:2px">${listHtml()}</div></aside>`;
+}
+function refreshList() { const l = $('studentList'); if (l) { l.innerHTML = listHtml(); $('count').textContent = filteredStudents().length; } }
+
+/* student profile */
+function profileHtml(s) {
+  const p = palette(s.name);
+  const tabs = TABS.filter(t => !(isTeacher() && t === 'Documentation'));
+  if (!tabs.includes(state.tab)) state.tab = 'Overview';
+  const groups = (s.groupIds || []).map(groupById).filter(Boolean);
+  const teachers = (s.teacherIds || []).map(teacherById).filter(Boolean);
+  const sub = [s.grade + ' grade', teachers.length ? (teachers.length === 1 ? 'Homeroom: ' + teachers[0].name : 'Teachers: ' + teachers.map(t => t.name).join(' / ')) : '', !isTeacher() && seenBy(s) ? 'Seen by ' + seenBy(s) : ''].filter(Boolean).join(' · ');
+  return `<div class="row" style="align-items:center;justify-content:space-between">
+    <div class="row" style="align-items:center;gap:14px"><div class="av" style="width:60px;height:60px;font-size:20px;background:${p[0]};color:${p[1]}">${esc(initials(s.name))}</div>
+      <div><h2 style="margin:0;font-size:24px">${esc(s.name)}</h2><div class="small" style="font-size:14px;margin:4px 0 8px">${esc(sub)}</div>
+      <div>${flagChips(s)}${groups.map(g => `<span class="chip grp">${esc(groupLabel(g))}</span>`).join('')}</div></div></div>
+    ${isAdmin() ? `<div class="row" style="gap:10px"><button class="primary" data-act="editStudent">Edit student</button></div>` : ''}</div>
+    <nav class="tabs" aria-label="Student sections">${tabs.map(t => `<button class="tab ${t === state.tab ? 'on' : ''}" data-act="tab" data-t="${t}">${t}</button>`).join('')}</nav>
+    ${tabHtml(s)}`;
+}
+function tabHtml(s) {
+  switch (state.tab) {
+    case 'Overview': return overviewTab(s);
+    case 'Teacher Information': return teacherTab(s);
+    case 'Accommodations': return accTab(s);
+    default: return `<div class="card muted"><h2>${esc(state.tab)}</h2><p class="empty">${esc(COMING[state.tab])}</p></div>`;
+  }
+}
+function overviewTab(s) {
+  const groups = (s.groupIds || []).map(groupById).filter(Boolean);
+  const kd = s.keyDates || {}; const parents = s.parents || [];
+  const acc = (s.accommodations || []).map(a => `<span class="chip grp">${esc(a.name)}</span>`).join('') || '<p class="empty">No accommodations recorded yet.</p>';
+  const accCard = `<section class="card"><h2>Accommodations</h2><div>${acc}</div><div class="small" style="margin-top:8px">Full list and the in-class usage log are on the Accommodations tab.</div></section>`;
+  if (isTeacher()) return `<div class="row">${accCard}</div>`;
+  const kv = (k, v) => `<div class="kv"><span>${k}</span><span>${v ? esc(v) : '<span style="font-weight:400;color:#5A6B7B">Not recorded</span>'}</span></div>`;
+  return `<div class="row">
+    <section class="card"><h2>Service groups</h2>${groups.length ? groups.map(g => `<div class="note"><b>${esc(groupLabel(g))}</b><div class="small">${esc(g.staffName || 'Staff not set')}${g.timeBlock ? ' · ' + esc(g.timeBlock) : ''}</div></div>`).join('') : '<p class="empty">Not in a service group.</p>'}<p class="small" style="margin-top:8px">Session minutes arrive with the Service Log in Phase 2.</p></section>
+    <section class="card"><h2>Key dates</h2>${kv('FIE date', fmtDate(kd.fie))}${kv('Last diagnostic', fmtDate(kd.lastDiagnostic))}${kv('Next re-evaluation', fmtDate(kd.nextReeval))}${kv('Last parent meeting', fmtDate(kd.lastParentMeeting))}</section></div>
+    <div class="row">
+    <section class="card"><h2>Parent contacts</h2>${parents.length ? parents.map(p => `<div class="note"><b>${esc(p.name || 'Unnamed')}</b>${p.relation ? ' (' + esc(p.relation) + ')' : ''}<div class="small">${esc([p.phone, p.email].filter(Boolean).join(' · ') || 'No contact info')}</div></div>`).join('') : '<p class="empty">No parent contacts recorded yet.</p>'}</section>
+    ${accCard}</div>
+    <div class="row"><section class="card muted"><h2>Progress snapshot</h2><p class="empty">Coming in Phase 3: DRA, NWEA, and intervention goals.</p></section>
+    <section class="card muted"><h2>Recent documentation</h2><p class="empty">Coming in Phase 3: notes and meeting logs.</p></section></div>`;
+}
+function teacherTab(s) {
+  const ts = (s.teacherIds || []).map(teacherById).filter(Boolean);
+  const label = i => (['4th','5th'].includes(s.grade) ? 'Teacher ' + (i + 1) : 'Homeroom teacher');
+  return `<div class="row"><section class="card"><h2>Teachers</h2>${ts.length ? ts.map((t, i) => `<div class="note"><b>${esc(t.name)}</b><div class="small">${label(i)}${t.email ? ' · ' + esc(t.email) : ''}</div></div>`).join('') : '<p class="empty">No teachers assigned yet.' + (isAdmin() ? ' Use Edit student to assign them.' : '') + '</p>'}
+    <p class="small" style="margin-top:8px">K3 to 3rd grade have one homeroom teacher. 4th and 5th grade switch between two teachers. Class schedules arrive in Phase 2.</p></section></div>`;
+}
+function accTab(s) {
+  const acc = s.accommodations || []; const log = (s.accommodationLog || []).slice().sort((a, b) => (b.date + b.loggedAt).localeCompare(a.date + a.loggedAt));
+  const accTable = acc.length ? `<div class="tw"><table><thead><tr><th>Accommodation</th><th>Applies to</th><th>Source</th></tr></thead><tbody>${acc.map(a => `<tr><td><b>${esc(a.name)}</b></td><td>${esc(a.appliesTo)}</td><td>${esc(a.source)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No accommodations recorded yet.</p>';
+  const logTable = log.length ? `<div class="tw"><table><thead><tr><th>Date</th><th>Teacher</th><th>Accommodation</th><th>Result</th><th>Note</th></tr></thead><tbody>${log.slice(0, 100).map(l => `<tr><td>${esc(fmtDate(l.date))}</td><td>${esc(l.teacherName)}</td><td>${esc(l.accommodationName)}</td><td>${esc(l.result)}</td><td>${esc(l.note)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No in-class use logged yet.</p>';
+  const form = isTeacher() ? `<section class="card" style="flex:1 1 260px;display:flex;flex-direction:column;gap:14px"><h2 style="margin-bottom:0">Log in-class use</h2>
+    ${acc.length ? `<label class="fl">Accommodation<select class="field" id="logAcc">${acc.map(a => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</select></label>
+    <label class="fl">Date<input class="field" id="logDate" type="date" value="${today()}"></label>
+    <label class="fl">Result<select class="field" id="logResult"><option>Used</option><option>Offered, declined</option><option>Not needed</option></select></label>
+    <label class="fl">Note (optional)<textarea class="field" id="logNote" maxlength="300" placeholder="What happened?"></textarea></label>
+    <button class="primary" data-act="logUse">Log use</button>` : '<p class="empty">No accommodations to log yet.</p>'}
+    <div class="banner">You can see and log accommodations for your own students. You cannot change the accommodations themselves.</div></section>` : '';
+  return `<div class="row" style="align-items:flex-start"><div style="flex:2 1 440px;min-width:0;display:flex;flex-direction:column;gap:16px">
+    <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">Accommodations on file</h2>${isAdmin() ? '<button class="secondary" data-act="editAcc">Edit accommodations</button>' : ''}</div>${accTable}</section>
+    <section class="card"><h2>In-class usage log</h2>${logTable}</section></div>${form}</div>`;
+}
+
+/* overview dashboard */
+function overviewHtml() {
+  const list = state.data.students; const count = fn => list.filter(fn).length;
+  const tiles = [['Students in portal', list.length], ['Tier 1', count(s => s.tier === 'tier1')], ['Tier 2', count(s => s.tier === 'tier2')], ['Monitor', count(s => s.tier === 'monitor')], ['Dyslexia flag', count(s => s.dyslexia)], ['Speech flag', count(s => s.speech)]];
+  const showGroups = !isTeacher();
+  const groups = state.data.groups || [];
+  const gTable = groups.length ? `<div class="tw"><table><thead><tr><th>Group</th><th>Type</th><th>Staff</th><th>Time block</th><th>Students</th>${isAdmin() ? '<th></th>' : ''}</tr></thead><tbody>${groups.map(g => `<tr><td><b>${esc(g.name)}</b></td><td><span class="chip ${g.type === 'dyslexia' ? 'dys' : 'grp'}">${esc(TYPE_LABEL[g.type])}</span></td><td>${esc(g.staffName)}</td><td>${esc(g.timeBlock)}</td><td>${count(s => (s.groupIds || []).includes(g.id))}</td>${isAdmin() ? `<td><button class="link" data-act="editGroup" data-id="${esc(g.id)}">Edit</button></td>` : ''}</tr>`).join('')}</tbody></table></div>` : '<p class="empty">No service groups yet.</p>';
+  return `<div class="tiles">${tiles.map(t => `<div class="tile"><div class="tn">${t[1]}</div><div class="tl">${t[0]}</div></div>`).join('')}</div>
+    ${showGroups ? `<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">Service groups</h2>${isAdmin() ? '<button class="secondary" data-act="addGroup">+ Add group</button>' : ''}</div>${gTable}</section>` : ''}`;
+}
+
+/* access screen (admin) */
+function accessHtml() {
+  const users = state.data.users || [];
+  const rows = users.map(u => `<tr><td><b>${esc(u.name)}</b>${u.active ? '' : ' <span class="small">(deactivated)</span>'}<div class="small">${esc(u.email)}</div></td><td><span class="chip ${ROLE_CLASS[u.role]}">${ROLE_LABEL[u.role]}</span></td><td>${esc(u.role === 'interventionist' ? SCOPE_LABEL[u.scope] || '' : u.role === 'teacher' ? 'Their own students' : 'All students, view only')}</td><td>${u.active ? `<button class="link" data-act="editUser" data-id="${esc(u.id)}">Edit</button><button class="link" data-act="removeUser" data-id="${esc(u.id)}">Deactivate</button>` : ''}</td></tr>`).join('');
+  const m = [['See students','All','Own caseload','All','Own students'],['Add or edit students, tiers, flags','Edit','No access','No access','No access'],['Groups and schedules','Edit','Edit own groups (Phase 2)','View','No access'],['Service and session log','Edit','Edit own (Phase 2)','View','No access'],['Progress monitoring','Edit','Edit','View','View'],['Documentation and meeting notes','Edit','Edit','View','No access'],['Accommodations','Edit','View','View','View'],['Log in-class accommodation use','No access','No access','No access','Log'],['Testing calendar and prep center','Approve and edit','View','View','View own tests'],['Reports','All','Own caseload','View','No access'],['Access and settings','Edit','No access','No access','No access']];
+  return `${state.codeNotice ? `<div class="banner ok" role="status"><b>${esc(state.codeNotice.name)}</b>'s sign-in code is <b style="font-size:16px">${esc(state.codeNotice.code)}</b>. This is the only time it is shown. <button class="link" data-act="dismissCode">Dismiss</button></div>` : ''}
+    <div class="banner">Only the admin code (you and Mrs. Barker) opens this screen and can assign access or change controls. The admin code is set in Apps Script, not here.</div>
+    <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">People with access</h2><button class="primary" data-act="addUser">+ Add person</button></div>
+    <div class="tw"><table style="min-width:640px"><thead><tr><th>Person</th><th>Role</th><th>Sees</th><th></th></tr></thead><tbody>
+    <tr><td><b>Admin (Betsy and Mrs. Barker)</b><div class="small">Shared admin code</div></td><td><span class="chip r-admin">Admin</span></td><td>All students and settings</td><td></td></tr>${rows}</tbody></table></div></section>
+    <section class="card"><h2>What each role can do</h2><div class="tw"><table style="min-width:720px"><thead><tr><th>Capability</th><th>Admin</th><th>Interventionist</th><th>Principal</th><th>Teacher</th></tr></thead><tbody>${m.map(r => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('')}</tbody></table></div><p class="small" style="margin-top:8px">The server enforces these rules. Hiding a button is never the only protection.</p></section>`;
+}
+
+/* login report (admin) */
+function loginsHtml() {
+  if (!state.logins) { loadLogins(); return '<div class="card"><p class="empty">Loading login report...</p></div>'; }
+  const L = state.logins; const ok = L.filter(x => x.ok).length;
+  const rows = L.map(x => `<tr><td>${esc(new Date(x.time).toLocaleString())}</td><td>${esc(x.name || '-')}</td><td>${x.role ? esc(ROLE_LABEL[x.role]) : '-'}</td><td>${x.ok ? 'Signed in' : '<b>Failed attempt</b>'}</td></tr>`).join('');
+  return `<div class="tiles"><div class="tile"><div class="tn">${ok}</div><div class="tl">Successful sign-ins (latest ${L.length})</div></div><div class="tile"><div class="tn">${L.length - ok}</div><div class="tl">Failed attempts</div></div></div>
+    <section class="card"><h2>Login report</h2>${L.length ? `<div class="tw"><table><thead><tr><th>When</th><th>Who</th><th>Role</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty">No sign-ins recorded yet.</p>'}</section>`;
+}
+async function loadLogins() {
+  const r = await api('getLoginLog'); if (handleAuthError(r)) return;
+  state.logins = r.logins || []; if (state.view === 'logins') render();
+}
+
+/* ---------- modals ---------- */
+function openModal(html) { $('modalRoot').innerHTML = `<div class="overlay" data-act="overlay"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`; const f = $('modalRoot').querySelector('input,select,textarea'); if (f) f.focus(); }
+function closeModal() { $('modalRoot').innerHTML = ''; }
+const modalErr = msg => { const e = $('modalErr'); if (e) { e.textContent = msg; e.classList.remove('hidden'); } };
+const val = id => { const e = $(id); return e ? e.value.trim() : ''; };
+const chk = id => { const e = $(id); return !!(e && e.checked); };
+
+function studentModal(s) {
+  const isNew = !s;
+  s = s || { name:'', grade:'K3', teacherIds:[], tier:'none', dyslexia:false, speech:false, groupIds:[], parents:[], keyDates:{}, accommodations:[] };
+  const par = i => (s.parents || [])[i] || {};
+  const kd = s.keyDates || {};
+  const teachers = state.data.teachers || []; const groups = state.data.groups || [];
+  openModal(`<h2>${isNew ? 'Add student' : 'Edit ' + esc(s.name)}</h2>
+    <div class="banner err hidden" id="modalErr" role="alert"></div>
+    <div class="cols"><label class="fl">Student name<input class="field" id="fName" value="${esc(s.name)}" maxlength="80"></label>
+    <label class="fl">Grade<select class="field" id="fGrade">${GRADES.map(g => `<option ${s.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select></label></div>
+    <div><div class="fh">TEACHERS (K3 to 3rd: homeroom teacher. 4th and 5th: both teachers)</div>${teachers.length ? teachers.map(t => `<label class="chk"><input type="checkbox" name="fTeacher" value="${esc(t.id)}" ${(s.teacherIds || []).includes(t.id) ? 'checked' : ''}>${esc(t.name)}</label>`).join('') : '<p class="empty">No teachers yet. Add teachers on the Access screen first.</p>'}</div>
+    <div class="cols"><label class="fl">Service tier<select class="field" id="fTier">${['none','tier1','tier2','monitor'].map(t => `<option value="${t}" ${s.tier === t ? 'selected' : ''}>${TIER_LABEL[t]}</option>`).join('')}</select></label>
+    <div><div class="fh">FLAGS</div><label class="chk"><input type="checkbox" id="fDys" ${s.dyslexia ? 'checked' : ''}>Dyslexia</label><label class="chk"><input type="checkbox" id="fSp" ${s.speech ? 'checked' : ''}>Speech</label></div></div>
+    <div><div class="fh">SERVICE GROUPS</div>${groups.length ? groups.map(g => `<label class="chk"><input type="checkbox" name="fGroup" value="${esc(g.id)}" ${(s.groupIds || []).includes(g.id) ? 'checked' : ''}>${esc(groupLabel(g))}</label>`).join('') : '<p class="empty">No groups yet. Add groups on the Overview screen.</p>'}</div>
+    <div class="fh" style="margin-bottom:-6px">PARENT CONTACTS</div>
+    ${[0, 1].map(i => `<div class="cols"><label class="fl">Name<input class="field" id="fPn${i}" value="${esc(par(i).name)}"></label><label class="fl">Relationship<input class="field" id="fPr${i}" value="${esc(par(i).relation)}"></label><label class="fl">Phone<input class="field" id="fPp${i}" value="${esc(par(i).phone)}"></label><label class="fl">Email<input class="field" id="fPe${i}" value="${esc(par(i).email)}"></label></div>`).join('')}
+    <div class="fh" style="margin-bottom:-6px">KEY DATES</div>
+    <div class="cols"><label class="fl">FIE date<input class="field" type="date" id="fKfie" value="${esc(kd.fie)}"></label><label class="fl">Last diagnostic<input class="field" type="date" id="fKld" value="${esc(kd.lastDiagnostic)}"></label><label class="fl">Next re-evaluation<input class="field" type="date" id="fKnr" value="${esc(kd.nextReeval)}"></label><label class="fl">Last parent meeting<input class="field" type="date" id="fKpm" value="${esc(kd.lastParentMeeting)}"></label></div>
+    <div class="btns">${isNew ? '' : '<button class="danger" data-act="archiveStudent" style="margin-right:auto">Remove from portal</button>'}<button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveStudent">Save</button></div>`);
+}
+function collectStudent(base) {
+  const checked = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value);
+  return Object.assign({}, base || {}, {
+    name: val('fName'), grade: val('fGrade'), teacherIds: checked('fTeacher'), tier: val('fTier'), dyslexia: chk('fDys'), speech: chk('fSp'), groupIds: checked('fGroup'),
+    parents: [0, 1].map(i => ({ name: val('fPn' + i), relation: val('fPr' + i), phone: val('fPp' + i), email: val('fPe' + i) })),
+    keyDates: { fie: val('fKfie'), lastDiagnostic: val('fKld'), nextReeval: val('fKnr'), lastParentMeeting: val('fKpm') }
+  });
+}
+function accModal(s) {
+  const row = (a = {}) => `<div class="accrow"><label class="fl">Accommodation<input class="field" name="aName" value="${esc(a.name)}" maxlength="100"></label><label class="fl">Applies to<input class="field" name="aApplies" value="${esc(a.appliesTo)}" maxlength="100"></label><label class="fl">Source<input class="field" name="aSource" value="${esc(a.source)}" maxlength="60" placeholder="FIE, team, 504..."></label><input type="hidden" name="aId" value="${esc(a.id)}"><button class="link" data-act="removeAccRow">Remove</button></div>`;
+  openModal(`<h2>Accommodations for ${esc(s.name)}</h2><div class="banner err hidden" id="modalErr" role="alert"></div><div id="accRows" style="display:flex;flex-direction:column;gap:10px">${(s.accommodations || []).map(row).join('')}</div>
+    <div><button class="secondary" data-act="addAccRow">+ Add accommodation</button></div>
+    <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveAcc">Save</button></div>`);
+  window._accRow = row;
+}
+function groupModal(g) {
+  const isNew = !g; g = g || { name:'', type:'push-in', staffName:'', timeBlock:'' };
+  openModal(`<h2>${isNew ? 'Add service group' : 'Edit service group'}</h2><div class="banner err hidden" id="modalErr" role="alert"></div>
+    <div class="cols"><label class="fl">Group name (for example, Reading)<input class="field" id="gName" value="${esc(g.name)}" maxlength="60"></label>
+    <label class="fl">Type<select class="field" id="gType">${Object.keys(TYPE_LABEL).map(t => `<option value="${t}" ${g.type === t ? 'selected' : ''}>${TYPE_LABEL[t]}</option>`).join('')}</select></label></div>
+    <div class="cols"><label class="fl">Staff<input class="field" id="gStaff" value="${esc(g.staffName)}" maxlength="60"></label><label class="fl">Time block (optional)<input class="field" id="gTime" value="${esc(g.timeBlock)}" maxlength="80" placeholder="Mon/Wed 9:30-10:00"></label></div>
+    <div class="btns">${isNew ? '' : '<button class="danger" data-act="archiveGroup" style="margin-right:auto">Remove group</button>'}<button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveGroup">Save</button></div>`);
+}
+function userModal(u) {
+  const isNew = !u; u = u || { name:'', email:'', role:'teacher', scope:'tiered' };
+  openModal(`<h2>${isNew ? 'Add person' : 'Edit ' + esc(u.name)}</h2><div class="banner err hidden" id="modalErr" role="alert"></div>
+    <div class="cols"><label class="fl">Full name<input class="field" id="uName" value="${esc(u.name)}" maxlength="80"></label><label class="fl">Email (optional)<input class="field" id="uEmail" value="${esc(u.email)}" maxlength="100"></label></div>
+    <div class="cols"><label class="fl">Role<select class="field" id="uRole"><option value="teacher" ${u.role === 'teacher' ? 'selected' : ''}>Teacher</option><option value="interventionist" ${u.role === 'interventionist' ? 'selected' : ''}>Interventionist</option><option value="principal" ${u.role === 'principal' ? 'selected' : ''}>Principal (view only)</option></select></label>
+    <label class="fl">Interventionist sees<select class="field" id="uScope"><option value="tiered" ${u.scope === 'tiered' ? 'selected' : ''}>Students with a tier</option><option value="dyslexia" ${u.scope === 'dyslexia' ? 'selected' : ''}>Dyslexia students only</option><option value="all" ${u.scope === 'all' ? 'selected' : ''}>All students</option></select></label></div>
+    <label class="fl">${isNew ? 'Sign-in code (leave blank to use lastname2627)' : 'New sign-in code (leave blank to keep the current one)'}<input class="field" id="uCode" maxlength="60" autocomplete="off"></label>
+    <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveUser">Save</button></div>`);
+}
+
+/* ---------- actions ---------- */
+async function afterSave(r, okMsg) {
+  if (handleAuthError(r)) return false;
+  if (r.error) { modalErr(r.error); return false; }
+  closeModal(); state.notice = okMsg ? { type:'ok', text: okMsg } : null; await loadAll(); return true;
+}
+const actions = {
+  login: doLogin,
+  signout: signOut,
+  refresh: async () => { state.notice = null; await loadAll(); },
+  view: el => { state.view = el.dataset.v; state.notice = null; if (state.view === 'logins') state.logins = null; render(); },
+  select: el => { state.selectedId = el.dataset.id; state.tab = 'Overview'; state.notice = null; state.view = 'home'; render(); },
+  tab: el => { state.tab = el.dataset.t; render(); },
+  filter: el => { state.filters[el.dataset.k] = el.dataset.v; render(); },
+  toggleFlag: el => { state.filters[el.dataset.k] = !state.filters[el.dataset.k]; render(); },
+  addStudent: () => studentModal(null),
+  editStudent: () => studentModal(student()),
+  saveStudent: async () => {
+    const editing = document.querySelector('#modalRoot [data-act="archiveStudent"]') ? student() : null;
+    const r = await api('saveStudent', { student: collectStudent(editing) });
+    if (r && r.ok) { state.selectedId = r.student.id; state.view = 'home'; }
+    await afterSave(r, 'Student saved.');
+  },
+  archiveStudent: async () => {
+    if (!confirm('Remove this student from the portal? Their record is archived, not erased.')) return;
+    const r = await api('archiveStudent', { id: state.selectedId });
+    if (r && r.ok) state.selectedId = null;
+    await afterSave(r, 'Student removed from the portal.');
+  },
+  editAcc: () => accModal(student()),
+  addAccRow: () => { $('accRows').insertAdjacentHTML('beforeend', window._accRow({})); },
+  removeAccRow: el => el.closest('.accrow').remove(),
+  saveAcc: async () => {
+    const rows = [...document.querySelectorAll('#accRows .accrow')].map(r => ({
+      id: r.querySelector('[name=aId]').value, name: r.querySelector('[name=aName]').value, appliesTo: r.querySelector('[name=aApplies]').value, source: r.querySelector('[name=aSource]').value }));
+    const r = await api('saveStudent', { student: Object.assign({}, student(), { accommodations: rows }) });
+    await afterSave(r, 'Accommodations saved.');
+  },
+  logUse: async () => {
+    const r = await api('logAccommodationUse', { studentId: state.selectedId, accommodationId: val('logAcc'), date: val('logDate'), result: val('logResult'), note: val('logNote') });
+    if (handleAuthError(r)) return;
+    if (r.error) { state.notice = { type:'err', text: r.error }; render(); return; }
+    state.notice = { type:'ok', text:'Logged. Thank you.' }; await loadAll();
+  },
+  addGroup: () => groupModal(null),
+  editGroup: el => { state.editingGroup = el.dataset.id; groupModal(groupById(el.dataset.id)); },
+  saveGroup: async () => {
+    const editing = document.querySelector('[data-act="archiveGroup"]') ? state.editingGroup : '';
+    const r = await api('saveGroup', { group: { id: editing || undefined, name: val('gName'), type: val('gType'), staffName: val('gStaff'), timeBlock: val('gTime') } });
+    await afterSave(r, 'Group saved.');
+  },
+  archiveGroup: async () => {
+    if (!confirm('Remove this group? Students will be taken out of it.')) return;
+    await afterSave(await api('archiveGroup', { id: state.editingGroup }), 'Group removed.');
+  },
+  addUser: () => { state.editingUser = null; userModal(null); },
+  editUser: el => { state.editingUser = el.dataset.id; userModal((state.data.users || []).find(u => u.id === el.dataset.id)); },
+  saveUser: async () => {
+    const r = await api('saveUser', { user: { id: state.editingUser || undefined, name: val('uName'), email: val('uEmail'), role: val('uRole'), scope: val('uScope'), code: val('uCode') } });
+    if (r && r.ok && r.code) state.codeNotice = { name: r.user.name, code: r.code };
+    await afterSave(r, '');
+  },
+  removeUser: async el => {
+    if (!confirm('Deactivate this person? They will be signed out and can no longer sign in.')) return;
+    await afterSave(await api('removeUser', { id: el.dataset.id }), 'Person deactivated.');
+  },
+  dismissCode: () => { state.codeNotice = null; render(); },
+  closeModal: closeModal
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  if (el.dataset.act === 'overlay') { if (e.target === el) closeModal(); return; }
+  const fn = actions[el.dataset.act]; if (fn) fn(el);
+});
+document.addEventListener('input', e => { if (e.target.id === 'q') { state.filters.q = e.target.value; refreshList(); } });
+document.addEventListener('change', e => {
+  if (e.target.id === 'gradeSel') { state.filters.grade = e.target.value; render(); }
+  if (e.target.id === 'groupSel') { state.filters.group = e.target.value; render(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'codeInput') doLogin();
+  if (e.key === 'Escape') closeModal();
+});
+
+/* ---------- demo mode (fake data, no server) ---------- */
+let demo = null;
+function demoInit() {
+  const T = [1,2,3,4,5,6,7,8,9].map(i => ({ id:'t' + i, name:'Teacher ' + i, email:'teacher' + i + '@example.org', role:'teacher', scope:'', active:true }));
+  const users = T.concat([
+    { id:'u_w', name:'Wendy Blasingame', email:'', role:'interventionist', scope:'tiered', active:true },
+    { id:'u_a', name:'Abby Danielson', email:'', role:'interventionist', scope:'dyslexia', active:true },
+    { id:'u_p', name:'Courtney Pine', email:'', role:'principal', scope:'', active:true }]);
+  const groups = [
+    { id:'g1', name:'Reading', type:'push-in', staffName:'Wendy Blasingame', timeBlock:'' }, { id:'g2', name:'Math', type:'push-in', staffName:'Wendy Blasingame', timeBlock:'' },
+    { id:'g3', name:'Reading', type:'pull-out', staffName:'Wendy Blasingame', timeBlock:'' }, { id:'g4', name:'Math', type:'pull-out', staffName:'Wendy Blasingame', timeBlock:'' },
+    { id:'g5', name:'Group 1', type:'dyslexia', staffName:'Abby Danielson', timeBlock:'' }, { id:'g6', name:'Group 2', type:'dyslexia', staffName:'Abby Danielson', timeBlock:'' }];
+  const acc = n => ['Extended time|Tests and quizzes|FIE','Read aloud|Directions and items|FIE','Small group|Tests and quizzes|Team','Frequent breaks|All classes|Team'].slice(0, n).map((x, i) => { const p = x.split('|'); return { id:'a' + i, name:p[0], appliesTo:p[1], source:p[2] }; });
+  const mk = (id, name, grade, teacherIds, tier, dys, sp, groupIds, nacc) => ({ id, name:'Sample Student ' + name, grade, teacherIds, tier, dyslexia:dys, speech:sp, groupIds, parents:[{ name:'Parent Sample', relation:'Parent', phone:'555-0100', email:'parent@example.org' }], keyDates:{ fie:'2025-10-14' }, accommodations:acc(nacc), accommodationLog:[], archived:false });
+  const students = [mk('s1','A','K3',['t1'],'tier1',false,false,['g1'],2), mk('s2','B','1st',['t2'],'tier2',true,false,['g3','g6'],4), mk('s3','C','2nd',['t3'],'tier1',false,true,['g2'],2), mk('s4','D','3rd',['t4'],'monitor',false,false,[],1),
+    mk('s5','E','4th',['t5','t6'],'tier2',false,false,['g4'],3), mk('s6','F','5th',['t7','t8'],'none',true,false,['g5'],3), mk('s7','G','K3',['t9'],'monitor',false,false,[],1), mk('s8','H','3rd',['t4'],'tier1',true,false,['g1','g6'],3)];
+  const codes = { 'demo-admin':{ id:'admin', name:'Admin', role:'admin', scope:'all' }, 'demo-wendy':{ id:'u_w', name:'Wendy Blasingame', role:'interventionist', scope:'tiered' }, 'demo-abby':{ id:'u_a', name:'Abby Danielson', role:'interventionist', scope:'dyslexia' }, 'demo-principal':{ id:'u_p', name:'Courtney Pine', role:'principal', scope:'all' }, 'demo-teacher':{ id:'t4', name:'Teacher 4', role:'teacher', scope:'' } };
+  demo = { users, groups, students, codes, logins:[], sessions:{} };
+}
+function demoApi(action, b) {
+  if (!demo) demoInit();
+  const ok = x => Promise.resolve(JSON.parse(JSON.stringify(Object.assign({ ok:true }, x || {}))));
+  const err = e => Promise.resolve({ error: e });
+  if (action === 'login') {
+    const u = demo.codes[b.code];
+    demo.logins.unshift({ time:new Date().toISOString(), ok:!!u, name:u ? u.name : '', role:u ? u.role : '' });
+    if (!u) return err('Invalid code');
+    const t = 'demo' + Math.random().toString(36).slice(2).padEnd(40, 'x'); demo.sessions[t] = u; return ok({ token:t, user:u });
+  }
+  const me = demo.sessions[b.token]; if (!me) return err('auth');
+  const dys = new Set(demo.groups.filter(g => g.type === 'dyslexia').map(g => g.id));
+  const visible = demo.students.filter(s => !s.archived && (me.role === 'admin' || me.role === 'principal' || (me.role === 'interventionist' && (me.scope === 'dyslexia' ? (s.dyslexia || s.groupIds.some(i => dys.has(i))) : s.tier !== 'none')) || (me.role === 'teacher' && s.teacherIds.includes(me.id))));
+  if (action === 'logout') return ok();
+  if (action === 'getAll') {
+    const shaped = visible.map(s => me.role === 'teacher' ? { id:s.id, name:s.name, grade:s.grade, teacherIds:s.teacherIds, tier:s.tier, dyslexia:s.dyslexia, speech:s.speech, accommodations:s.accommodations, accommodationLog:s.accommodationLog } : s);
+    const tids = new Set(); visible.forEach(s => s.teacherIds.forEach(t => tids.add(t)));
+    const out = { user:me, students:shaped, groups: me.role === 'teacher' ? [] : demo.groups.filter(g => !g.archived), teachers: demo.users.filter(u => u.role === 'teacher' && u.active && (me.role !== 'teacher' || tids.has(u.id))).map(u => ({ id:u.id, name:u.name, email:u.email })) };
+    if (me.role === 'admin') out.users = demo.users;
+    if (me.role !== 'teacher') out.staff = demo.users.filter(u => u.role === 'interventionist' && u.active).map(u => ({ name:u.name, scope:u.scope }));
+    return ok(out);
+  }
+  if (action === 'logAccommodationUse') {
+    if (me.role !== 'teacher') return err('Not allowed');
+    const s = visible.find(x => x.id === b.studentId); const a = s && s.accommodations.find(x => x.id === b.accommodationId);
+    if (!a) return err('Choose an accommodation');
+    s.accommodationLog.push({ id:'l' + Date.now(), date:b.date || today(), teacherId:me.id, teacherName:me.name, accommodationId:a.id, accommodationName:a.name, result:b.result, note:b.note || '', loggedAt:new Date().toISOString() });
+    return ok();
+  }
+  if (me.role !== 'admin') return err('Not allowed');
+  if (action === 'saveStudent') {
+    const i = demo.students.findIndex(s => s.id === b.student.id); const s = Object.assign({ id:'s' + Date.now(), accommodationLog:[], accommodations:[], archived:false }, i >= 0 ? demo.students[i] : {}, b.student);
+    if (!s.name) return err('Student name is required'); if (i >= 0) demo.students[i] = s; else demo.students.push(s); return ok({ student:s });
+  }
+  if (action === 'archiveStudent') { const s = demo.students.find(x => x.id === b.id); if (s) s.archived = true; return ok(); }
+  if (action === 'saveGroup') { const i = demo.groups.findIndex(g => g.id === b.group.id); if (i >= 0) Object.assign(demo.groups[i], b.group); else demo.groups.push(Object.assign({ id:'g' + Date.now() }, b.group)); return ok(); }
+  if (action === 'archiveGroup') { demo.groups = demo.groups.filter(g => g.id !== b.id); demo.students.forEach(s => { s.groupIds = s.groupIds.filter(x => x !== b.id); }); return ok(); }
+  if (action === 'saveUser') {
+    const u = b.user; if (!u.name) return err('Name is required');
+    const code = u.code || (lastName(u.name) + '2627'); const i = demo.users.findIndex(x => x.id === u.id);
+    const rec = Object.assign({ id:'u' + Date.now(), active:true }, i >= 0 ? demo.users[i] : {}, { name:u.name, email:u.email, role:u.role, scope:u.role === 'interventionist' ? u.scope : '' });
+    if (i >= 0) demo.users[i] = rec; else demo.users.push(rec);
+    return ok({ user:rec, code: (!u.id || u.code) ? code : null });
+  }
+  if (action === 'removeUser') { const u = demo.users.find(x => x.id === b.id); if (u) u.active = false; return ok(); }
+  if (action === 'getLoginLog') return ok({ logins: demo.logins });
+  return err('Unknown action');
+}
+
+/* ---------- start ---------- */
+(async function init() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('elem_session') || 'null');
+    if (saved && saved.token && !DEMO) { state.token = saved.token; state.user = saved.user; await loadAll(); return; }
+  } catch (e) {}
+  render();
+})();
+</script>
+</body>
+</html>
