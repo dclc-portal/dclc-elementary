@@ -88,6 +88,18 @@ td{padding:11px 12px;border-bottom:1px solid #EEF2F6;vertical-align:top}
 .modal .btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
 .accrow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}.accrow>*{flex:1 1 140px;min-width:0}.accrow>button{flex:0 0 auto}
 .sr{position:absolute;left:-9999px}
+.row-pi{background:#EAF1FA}.row-po{background:#FDF3E6}.row-dy{background:#F0EBFA}.row-fx td{color:#4A5B6B;background:#F6F7F9}
+.seg{display:inline-flex;flex-wrap:nowrap;border:1px solid #CBD5DF;border-radius:10px;overflow:hidden;background:#fff}
+.segopt{position:relative;display:inline-flex;border-right:1px solid #CBD5DF}.segopt:last-child{border-right:0}
+.segopt input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.segopt span{padding:8px 12px;min-height:44px;display:inline-flex;align-items:center;font-size:13px;font-weight:700;color:#3E4C59;white-space:nowrap}
+.segopt input:checked+span{background:#2E4057;color:#fff}.segopt input:focus-visible+span{outline:3px solid #2563A8;outline-offset:-3px}
+.dayb{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:700;color:#3E4C59;min-height:36px;padding-right:6px}.dayb input{width:18px;height:18px}
+.blkrow{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding:10px;border:1px solid #E3E8EE;border-radius:10px;background:#FAFAF8}
+.blkrow .fl{flex:1 1 90px;min-width:0}.blkrow .nm{flex:3 1 200px}
+.bar{height:10px;border-radius:999px;background:#E3E8EE;overflow:hidden}.bar i{display:block;height:100%;background:#2563A8}
+.modal.wide{max-width:900px}
+.svc{background:#E3F4DA;color:#2F5D1A}.cf{background:#FFF4DB;color:#6B4A00}.nosc{background:#ECEFF2;color:#3E4C59}
 @media(max-width:700px){.side{max-width:none;border-right:0;border-bottom:1px solid #E3E8EE}.main{padding:16px}}
 </style>
 </head>
@@ -108,6 +120,9 @@ const TIER_CLASS = { tier1:'t1', tier2:'t2', monitor:'mon', none:'none' };
 const TYPE_LABEL = { 'push-in':'Push-in', 'pull-out':'Pull-out', 'dyslexia':'Dyslexia' };
 const ROLE_LABEL = { admin:'Admin', interventionist:'Interventionist', principal:'Principal', teacher:'Teacher' };
 const ROLE_CLASS = { admin:'r-admin', interventionist:'r-int', principal:'r-prin', teacher:'r-teach' };
+const DAY_KEYS = ['M','T','W','R','F'];
+const DAY_LABEL = { M:'Mon', T:'Tue', W:'Wed', R:'Thu', F:'Fri' };
+const ATTEND = ['Present','Absent','Excused','Left early'];
 const SCOPE_LABEL = { tiered:'Students with a tier', dyslexia:'Dyslexia students', all:'All students' };
 const TABS = ['Overview','Teacher Information','Accommodations','Progress Monitoring','Testing History','Documentation','Grade History'];
 const COMING = {
@@ -126,7 +141,8 @@ const PALETTE = [['#E3EEF8','#1F4E87'],['#DFF2EC','#0E5C52'],['#FCEBD7','#7A4A0A
 const state = {
   token: null, user: null, data: null, view: 'home', selectedId: null, tab: 'Overview',
   filters: { q:'', tier:'', dyslexia:false, speech:false, group:'', grade:'' },
-  syncedAt: null, notice: null, loginMsg: '', logins: null
+  syncedAt: null, notice: null, loginMsg: '', logins: null,
+  day: ({1:'M',2:'T',3:'W',4:'R',5:'F'})[new Date().getDay()] || 'M'
 };
 
 /* ---------- helpers ---------- */
@@ -146,6 +162,32 @@ const sortStudents = list => list.slice().sort((a, b) => lastName(a.name).locale
 const groupById = id => (state.data.groups || []).find(g => g.id === id);
 const teacherById = id => (state.data.teachers || []).find(t => t.id === id);
 const student = () => state.data && state.data.students.find(s => s.id === state.selectedId);
+const schedById = id => (state.data.schedules || []).find(x => x.id === id);
+const hm = t => { const m = /^(\d\d):(\d\d)$/.exec(t || ''); return m ? ((+m[1] % 12) || 12) + ':' + m[2] : ''; };
+const rangeStr = (a, b) => (a && b) ? hm(a) + '–' + hm(b) : '';
+const daysStr = d => (d || []).length === 5 ? 'Daily' : (d || []).map(x => DAY_LABEL[x]).join(', ');
+const minsBetween = (a, b) => (+b.slice(0,2) * 60 + +b.slice(3)) - (+a.slice(0,2) * 60 + +a.slice(3));
+const overlaps = (a1, a2, b1, b2) => a1 < b2 && b1 < a2;
+const groupWhen = g => (g.days && g.days.length && g.start && g.end) ? daysStr(g.days) + ' · ' + rangeStr(g.start, g.end) : (g.timeBlock || '');
+const weekMins = g => (g.days && g.start && g.end && g.end > g.start) ? g.days.length * minsBetween(g.start, g.end) : 0;
+const canEditSession = x => isAdmin() || (role() === 'interventionist' && x.loggedById === state.user.id);
+const canLog = () => (state.data.groups || []).some(g => g.mine);
+const typeChip = g => `<span class="chip ${g.type === 'dyslexia' ? 'dys' : 'grp'}">${esc(TYPE_LABEL[g.type])}</span>`;
+function groupMembers(g) {
+  if (g.members) return sortStudents(g.members);
+  return sortStudents(state.data.students.filter(s => (s.groupIds || []).includes(g.id)).map(s => ({ id: s.id, name: s.name, grade: s.grade })));
+}
+/* Where a group's time lands on a student's day: fixed blocks (specials, PE, lunch, recess, chapel) and the student's other groups. */
+function groupConflicts(s, g) {
+  if (!g.start || !g.end || !(g.days || []).length) return [];
+  const sc = schedById(s.scheduleId); const hits = {};
+  const add = (label, d) => { (hits[label] = hits[label] || []).push(DAY_LABEL[d]); };
+  (g.days || []).forEach(d => {
+    if (sc) sc.blocks.forEach(b => { if (b.kind === 'fixed' && b.days.includes(d) && overlaps(g.start, g.end, b.start, b.end)) add(b.name, d); });
+    (s.groupIds || []).filter(id => id !== g.id).map(groupById).filter(o => o && o.start && o.end && (o.days || []).includes(d)).forEach(o => { if (overlaps(g.start, g.end, o.start, o.end)) add(groupLabel(o), d); });
+  });
+  return Object.keys(hits).map(k => k + ' (' + hits[k].join(', ') + ')');
+}
 
 function tierSummary(s) {
   const parts = [s.grade];
@@ -245,11 +287,11 @@ function headerHtml() {
   const syncLabel = DEMO ? 'Demo mode' : `Synced ${state.syncedAt ? timeStr(state.syncedAt) : ''}`;
   return `<header class="hdr">
     <div class="brand"><div class="logo">EL</div><div><h1>DCLC Elementary Portal</h1><div class="sub">Learning Support · K3 to 5th</div></div>
-      <div class="who"><span><b>${esc(state.user.name)}</b> · ${esc(ROLE_LABEL[r])}</span><button class="link" data-act="signout">Sign out</button></div></div>
+      <div class="who"><span><b>${esc(state.user.name)}</b>${state.user.name === ROLE_LABEL[r] ? '' : ' · ' + esc(ROLE_LABEL[r])}</span><button class="link" data-act="signout">Sign out</button></div></div>
     <div class="nav">
       <button class="sync ${DEMO ? 'demo' : ''}" data-act="refresh" title="Refresh data">${syncLabel}</button>
       ${isAdmin() ? `<button class="icon ${state.view === 'access' ? 'on' : ''}" data-act="view" data-v="access" aria-label="Access and roles"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/></svg></button>` : ''}
-      ${pill('overview','Overview')}${pill('testing-calendar','Testing calendar')}${pill('testing-summary','Testing summary')}
+      ${pill('home','Students')}${pill('overview','Overview')}${pill('testing-calendar','Testing calendar')}${pill('testing-summary','Testing summary')}
       ${r !== 'teacher' ? pill('reports','Reports') : ''}
       ${isAdmin() ? pill('logins','Login report') : ''}
       ${isAdmin() ? `<button class="primary" data-act="addStudent">+ Add student</button>` : ''}
@@ -326,14 +368,13 @@ function tabHtml(s) {
   }
 }
 function overviewTab(s) {
-  const groups = (s.groupIds || []).map(groupById).filter(Boolean);
   const kd = s.keyDates || {}; const parents = s.parents || [];
   const acc = (s.accommodations || []).map(a => `<span class="chip grp">${esc(a.name)}</span>`).join('') || '<p class="empty">No accommodations recorded yet.</p>';
   const accCard = `<section class="card"><h2>Accommodations</h2><div>${acc}</div><div class="small" style="margin-top:8px">Full list and the in-class usage log are on the Accommodations tab.</div></section>`;
   if (isTeacher()) return `<div class="row">${accCard}</div>`;
   const kv = (k, v) => `<div class="kv"><span>${k}</span><span>${v ? esc(v) : '<span style="font-weight:400;color:#5A6B7B">Not recorded</span>'}</span></div>`;
   return `<div class="row">
-    <section class="card"><h2>Service groups</h2>${groups.length ? groups.map(g => `<div class="note"><b>${esc(groupLabel(g))}</b><div class="small">${esc(g.staffName || 'Staff not set')}${g.timeBlock ? ' · ' + esc(g.timeBlock) : ''}</div></div>`).join('') : '<p class="empty">Not in a service group.</p>'}<p class="small" style="margin-top:8px">Session minutes arrive with the Service Log in Phase 2.</p></section>
+    ${servicesCard(s)}
     <section class="card"><h2>Key dates</h2>${kv('FIE date', fmtDate(kd.fie))}${kv('Last diagnostic', fmtDate(kd.lastDiagnostic))}${kv('Next re-evaluation', fmtDate(kd.nextReeval))}${kv('Last parent meeting', fmtDate(kd.lastParentMeeting))}</section></div>
     <div class="row">
     <section class="card"><h2>Parent contacts</h2>${parents.length ? parents.map(p => `<div class="note"><b>${esc(p.name || 'Unnamed')}</b>${p.relation ? ' (' + esc(p.relation) + ')' : ''}<div class="small">${esc([p.phone, p.email].filter(Boolean).join(' · ') || 'No contact info')}</div></div>`).join('') : '<p class="empty">No parent contacts recorded yet.</p>'}</section>
@@ -344,9 +385,58 @@ function overviewTab(s) {
 function teacherTab(s) {
   const ts = (s.teacherIds || []).map(teacherById).filter(Boolean);
   const label = i => (['4th','5th'].includes(s.grade) ? 'Teacher ' + (i + 1) : 'Homeroom teacher');
-  return `<div class="row"><section class="card"><h2>Teachers</h2>${ts.length ? ts.map((t, i) => `<div class="note"><b>${esc(t.name)}</b><div class="small">${label(i)}${t.email ? ' · ' + esc(t.email) : ''}</div></div>`).join('') : '<p class="empty">No teachers assigned yet.' + (isAdmin() ? ' Use Edit student to assign them.' : '') + '</p>'}
-    <p class="small" style="margin-top:8px">K3 to 3rd grade have one homeroom teacher. 4th and 5th grade switch between two teachers. Class schedules arrive in Phase 2.</p></section></div>`;
+  return `<div class="row" style="align-items:flex-start">${scheduleCard(s)}<div style="flex:1 1 300px;display:flex;flex-direction:column;gap:16px"><section class="card" style="flex:none"><h2>Teachers</h2>${ts.length ? ts.map((t, i) => `<div class="note"><b>${esc(t.name)}</b><div class="small">${label(i)}${t.email ? ' · ' + esc(t.email) : ''}</div></div>`).join('') : '<p class="empty">No teachers assigned yet.' + (isAdmin() ? ' Use Edit student to assign them.' : '') + '</p>'}
+    <p class="small" style="margin-top:8px">K3 to 3rd grade have one homeroom teacher. 4th and 5th grade switch between two teachers.</p></section></div></div>`;
 }
+function studentConflicts(s) {
+  const out = [];
+  (s.groupIds || []).map(groupById).filter(Boolean).forEach(g => groupConflicts(s, g).forEach(c => out.push(groupLabel(g) + ' overlaps ' + c)));
+  return out;
+}
+function scheduleCard(s) {
+  const sc = schedById(s.scheduleId);
+  const head = t => `<h2>${t}</h2>`;
+  if (!sc) return `<section class="card" style="flex:2 1 520px">${head('Daily schedule')}<p class="empty">No class schedule assigned yet.${isAdmin() ? ' Choose one with Edit student.' : ''}</p></section>`;
+  const day = state.day;
+  const svc = isTeacher() ? [] : (s.groupIds || []).map(groupById).filter(g => g && g.start && g.end && (g.days || []).includes(day));
+  const items = sc.blocks.filter(b => b.days.includes(day)).map(b => ({ start: b.start, end: b.end, name: b.name, kind: b.kind }))
+    .concat(svc.map(g => ({ start: g.start, end: g.end, name: groupLabel(g), g })));
+  items.sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end));
+  const rows = items.map(it => {
+    if (it.g) { const cls = it.g.type === 'dyslexia' ? 'row-dy' : it.g.type === 'pull-out' ? 'row-po' : 'row-pi'; return `<tr class="${cls}"><td style="white-space:nowrap">${esc(rangeStr(it.start, it.end))}</td><td><b>${esc(it.name)}</b></td><td>${typeChip(it.g)} ${esc(it.g.staffName)}</td></tr>`; }
+    return `<tr class="${it.kind === 'fixed' ? 'row-fx' : ''}"><td style="white-space:nowrap">${esc(rangeStr(it.start, it.end))}</td><td><b>${esc(it.name)}</b></td><td></td></tr>`;
+  }).join('');
+  const conflicts = studentConflicts(s);
+  return `<section class="card" style="flex:2 1 520px">${head('Daily schedule')}
+    <div style="margin-bottom:10px">${DAY_KEYS.map(d => `<button class="fc ${d === day ? 'on' : ''}" data-act="day" data-d="${d}">${DAY_LABEL[d]}</button>`).join('')}</div>
+    <div class="small" style="margin-bottom:8px">${esc(sc.name)}${isTeacher() ? '' : '. Shaded rows are this student\'s services.'}</div>
+    ${rows ? `<div class="tw"><table style="min-width:420px"><thead><tr><th>Time</th><th>Block</th><th>${isTeacher() ? '' : 'Services'}</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty">Nothing is scheduled for this day.</p>'}
+    ${conflicts.length ? `<div class="banner warn" style="margin-top:12px"><b>Schedule check:</b> ${conflicts.map(esc).join('; ')}. This is only a heads-up.</div>` : ''}
+    ${sc.note ? `<p class="small" style="margin-top:8px">${esc(sc.note)}</p>` : ''}</section>`;
+}
+/* services this month (admin, interventionists, principal) */
+function serviceRows(s) {
+  return (state.data.sessions || []).map(x => ({ x, a: (x.attendance || []).find(a => a.studentId === s.id) })).filter(r => r.a)
+    .sort((p, q) => (q.x.date + q.x.loggedAt).localeCompare(p.x.date + p.x.loggedAt));
+}
+function servicesCard(s) {
+  const groups = (s.groupIds || []).map(groupById).filter(Boolean);
+  const ym = today().slice(0, 7); const rows = serviceRows(s);
+  const month = rows.filter(r => r.x.date.startsWith(ym));
+  const held = month.reduce((n, r) => n + r.x.minutes, 0);
+  const got = month.filter(r => r.a.status === 'Present' || r.a.status === 'Left early').reduce((n, r) => n + r.x.minutes, 0);
+  const pct = held ? Math.round(got * 100 / held) : 0;
+  const makeup = rows.filter(r => r.x.makeupNeeded && (r.a.status === 'Absent' || r.a.status === 'Excused')).length;
+  const hist = rows.slice(0, 15).map(r => `<tr><td>${esc(fmtDate(r.x.date))}</td><td>${esc(groupLabel({ type: r.x.groupType, name: r.x.groupName }))}</td><td>${r.x.minutes}</td><td>${esc(r.a.status)}</td><td>${esc(r.a.note)}</td></tr>`).join('');
+  return `<section class="card" style="flex:2 1 460px"><h2>Services this month</h2>
+    <div class="tiles" style="margin-bottom:12px"><div class="tile"><div class="tn">${held}</div><div class="tl">Minutes held</div></div><div class="tile"><div class="tn">${got}</div><div class="tl">Minutes attended</div></div><div class="tile"><div class="tn">${held ? pct + '%' : '–'}</div><div class="tl">Attendance</div></div><div class="tile"><div class="tn">${makeup}</div><div class="tl">Make-ups needed</div></div></div>
+    ${held ? `<div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div>` : ''}
+    <div style="margin:12px 0 4px">${groups.length ? groups.map(g => `<span class="chip ${g.type === 'dyslexia' ? 'dys' : 'grp'}">${esc(groupLabel(g))}${groupWhen(g) ? ' · ' + esc(groupWhen(g)) : ''}</span>`).join('') : '<span class="empty">Not in a service group.</span>'}</div>
+    <div class="small">${groups.map(g => esc(g.staffName || '')).filter((v, i, a) => v && a.indexOf(v) === i).join(', ')}${held ? ' · counts logged sessions this month' : ''}</div>
+    <h2 style="margin-top:16px">Session history</h2>
+    ${hist ? `<div class="tw"><table><thead><tr><th>Date</th><th>Group</th><th>Min</th><th>Attendance</th><th>Note</th></tr></thead><tbody>${hist}</tbody></table></div>` : '<p class="empty">No sessions logged yet.</p>'}</section>`;
+}
+
 function accTab(s) {
   const acc = s.accommodations || []; const log = (s.accommodationLog || []).slice().sort((a, b) => (b.date + b.loggedAt).localeCompare(a.date + a.loggedAt));
   const accTable = acc.length ? `<div class="tw"><table><thead><tr><th>Accommodation</th><th>Applies to</th><th>Source</th></tr></thead><tbody>${acc.map(a => `<tr><td><b>${esc(a.name)}</b></td><td>${esc(a.appliesTo)}</td><td>${esc(a.source)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No accommodations recorded yet.</p>';
@@ -364,21 +454,32 @@ function accTab(s) {
 }
 
 /* overview dashboard */
+const cardHead = (title, btn) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">${title}</h2><div>${btn || ''}</div></div>`;
 function overviewHtml() {
   const list = state.data.students; const count = fn => list.filter(fn).length;
   const tiles = [['Students in portal', list.length], ['Tier 1', count(s => s.tier === 'tier1')], ['Tier 2', count(s => s.tier === 'tier2')], ['Monitor', count(s => s.tier === 'monitor')], ['Dyslexia flag', count(s => s.dyslexia)], ['Speech flag', count(s => s.speech)]];
   const showGroups = !isTeacher();
   const groups = state.data.groups || [];
-  const gTable = groups.length ? `<div class="tw"><table><thead><tr><th>Group</th><th>Type</th><th>Staff</th><th>Time block</th><th>Students</th>${isAdmin() ? '<th></th>' : ''}</tr></thead><tbody>${groups.map(g => `<tr><td><b>${esc(g.name)}</b></td><td><span class="chip ${g.type === 'dyslexia' ? 'dys' : 'grp'}">${esc(TYPE_LABEL[g.type])}</span></td><td>${esc(g.staffName)}</td><td>${esc(g.timeBlock)}</td><td>${count(s => (s.groupIds || []).includes(g.id))}</td>${isAdmin() ? `<td><button class="link" data-act="editGroup" data-id="${esc(g.id)}">Edit</button></td>` : ''}</tr>`).join('')}</tbody></table></div>` : '<p class="empty">No service groups yet.</p>';
+  const canAddGroup = isAdmin() || role() === 'interventionist';
+  const gRows = groups.map(g => { const n = g.members ? g.members.length : count(s => (s.groupIds || []).includes(g.id)); const wm = weekMins(g);
+    return `<tr><td><b>${esc(g.name)}</b></td><td>${typeChip(g)}</td><td>${esc(g.staffName)}</td><td>${esc(groupWhen(g)) || '<span class="small">No time set</span>'}</td><td>${n}</td><td>${wm || ''}</td><td style="white-space:nowrap"><button class="link" data-act="openGroup" data-id="${esc(g.id)}">Open</button>${g.mine ? `<button class="link" data-act="logSession" data-id="${esc(g.id)}">Log session</button>` : ''}</td></tr>`; }).join('');
+  const gTable = groups.length ? `<div class="tw"><table style="min-width:640px"><thead><tr><th>Group</th><th>Type</th><th>Staff</th><th>Days and time</th><th>Students</th><th>Min / week</th><th></th></tr></thead><tbody>${gRows}</tbody></table></div>` : '<p class="empty">No service groups yet.</p>';
+  const sess = (state.data.sessions || []).slice().sort((a, b) => (b.date + b.loggedAt).localeCompare(a.date + a.loggedAt)).slice(0, 15);
+  const sRows = sess.map(x => { const present = (x.attendance || []).filter(a => a.status === 'Present' || a.status === 'Left early').length;
+    return `<tr><td>${esc(fmtDate(x.date))}</td><td><b>${esc(groupLabel({ type: x.groupType, name: x.groupName }))}</b><div class="small">${esc(x.loggedByName)}</div></td><td>${x.minutes} min</td><td>${present} of ${(x.attendance || []).length}${x.makeupNeeded ? ' <span class="chip cf">Make-up</span>' : ''}</td><td style="white-space:nowrap">${canEditSession(x) ? `<button class="link" data-act="editSession" data-id="${esc(x.id)}">Edit</button>` : ''}${isAdmin() ? `<button class="link" data-act="voidSession" data-id="${esc(x.id)}">Remove</button>` : ''}</td></tr>`; }).join('');
+  const schedules = state.data.schedules || [];
+  const scRows = schedules.map(x => `<tr><td><b>${esc(x.name)}</b></td><td>${esc((x.grades || []).join(', '))}</td><td>${esc((x.teacherIds || []).map(id => (teacherById(id) || {}).name).filter(Boolean).join(', ')) || '<span class="small">Not linked</span>'}</td><td>${(x.blocks || []).length}</td><td style="white-space:nowrap"><button class="link" data-act="editSchedule" data-id="${esc(x.id)}">Edit</button><button class="link" data-act="copySchedule" data-id="${esc(x.id)}">Copy</button></td></tr>`).join('');
   return `<div class="tiles">${tiles.map(t => `<div class="tile"><div class="tn">${t[1]}</div><div class="tl">${t[0]}</div></div>`).join('')}</div>
-    ${showGroups ? `<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">Service groups</h2>${isAdmin() ? '<button class="secondary" data-act="addGroup">+ Add group</button>' : ''}</div>${gTable}</section>` : ''}`;
+    ${showGroups ? `<section class="card">${cardHead('Service groups', canAddGroup ? '<button class="secondary" data-act="addGroup">+ Add group</button>' : '')}${gTable}</section>
+    <section class="card">${cardHead('Recent sessions', canLog() ? '<button class="primary" data-act="logSession">Log a session</button>' : '')}${sess.length ? `<div class="tw"><table style="min-width:560px"><thead><tr><th>Date</th><th>Group</th><th>Length</th><th>Attended</th><th></th></tr></thead><tbody>${sRows}</tbody></table></div>` : '<p class="empty">No sessions logged yet.</p>'}</section>` : ''}
+    ${isAdmin() ? `<section class="card">${cardHead('Class schedules', '<button class="secondary" data-act="addSchedule">+ Add schedule</button>')}${schedules.length ? `<div class="tw"><table style="min-width:560px"><thead><tr><th>Schedule</th><th>Grades</th><th>Teachers</th><th>Blocks</th><th></th></tr></thead><tbody>${scRows}</tbody></table></div>` : '<p class="empty">No schedules yet. Run seedSchedules in Apps Script to load them, or add one here.</p>'}</section>` : ''}`;
 }
 
 /* access screen (admin) */
 function accessHtml() {
   const users = state.data.users || [];
   const rows = users.map(u => `<tr><td><b>${esc(u.name)}</b>${u.active ? '' : ' <span class="small">(deactivated)</span>'}<div class="small">${esc(u.email)}</div></td><td><span class="chip ${ROLE_CLASS[u.role]}">${ROLE_LABEL[u.role]}</span></td><td>${esc(u.role === 'interventionist' ? SCOPE_LABEL[u.scope] || '' : u.role === 'teacher' ? 'Their own students' : 'All students, view only')}</td><td>${u.active ? `<button class="link" data-act="editUser" data-id="${esc(u.id)}">Edit</button><button class="link" data-act="removeUser" data-id="${esc(u.id)}">Deactivate</button>` : ''}</td></tr>`).join('');
-  const m = [['See students','All','Own caseload','All','Own students'],['Add or edit students, tiers, flags','Edit','No access','No access','No access'],['Groups and schedules','Edit','Edit own groups (Phase 2)','View','No access'],['Service and session log','Edit','Edit own (Phase 2)','View','No access'],['Progress monitoring','Edit','Edit','View','View'],['Documentation and meeting notes','Edit','Edit','View','No access'],['Accommodations','Edit','View','View','View'],['Log in-class accommodation use','No access','No access','No access','Log'],['Testing calendar and prep center','Approve and edit','View','View','View own tests'],['Reports','All','Own caseload','View','No access'],['Access and settings','Edit','No access','No access','No access']];
+  const m = [['See students','All','Own caseload','All','Own students'],['Add or edit students, tiers, flags','Edit','No access','No access','No access'],['Groups and class schedules','Edit all','Edit own groups','View','View own students\' schedule'],['Service and session log','Edit all','Log and edit own','View','No access'],['Progress monitoring','Edit','Edit','View','View'],['Documentation and meeting notes','Edit','Edit','View','No access'],['Accommodations','Edit','View','View','View'],['Log in-class accommodation use','No access','No access','No access','Log'],['Testing calendar and prep center','Approve and edit','View','View','View own tests'],['Reports','All','Own caseload','View','No access'],['Access and settings','Edit','No access','No access','No access']];
   return `${state.codeNotice ? `<div class="banner ok" role="status"><b>${esc(state.codeNotice.name)}</b>'s sign-in code is <b style="font-size:16px">${esc(state.codeNotice.code)}</b>. This is the only time it is shown. <button class="link" data-act="dismissCode">Dismiss</button></div>` : ''}
     <div class="banner">Only the admin code (you and Mrs. Barker) opens this screen and can assign access or change controls. The admin code is set in Apps Script, not here.</div>
     <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">People with access</h2><button class="primary" data-act="addUser">+ Add person</button></div>
@@ -420,6 +521,7 @@ function studentModal(s) {
     <div><div class="fh">TEACHERS (K3 to 3rd: homeroom teacher. 4th and 5th: both teachers)</div>${teachers.length ? teachers.map(t => `<label class="chk"><input type="checkbox" name="fTeacher" value="${esc(t.id)}" ${(s.teacherIds || []).includes(t.id) ? 'checked' : ''}>${esc(t.name)}</label>`).join('') : '<p class="empty">No teachers yet. Add teachers on the Access screen first.</p>'}</div>
     <div class="cols"><label class="fl">Service tier<select class="field" id="fTier">${['none','tier1','tier2','monitor'].map(t => `<option value="${t}" ${s.tier === t ? 'selected' : ''}>${TIER_LABEL[t]}</option>`).join('')}</select></label>
     <div><div class="fh">FLAGS</div><label class="chk"><input type="checkbox" id="fDys" ${s.dyslexia ? 'checked' : ''}>Dyslexia</label><label class="chk"><input type="checkbox" id="fSp" ${s.speech ? 'checked' : ''}>Speech</label></div></div>
+    <label class="fl">Class schedule<select class="field" id="fSchedule"><option value="">(none)</option>${(state.data.schedules || []).map(x => `<option value="${esc(x.id)}" ${s.scheduleId === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
     <div><div class="fh">SERVICE GROUPS</div>${groups.length ? groups.map(g => `<label class="chk"><input type="checkbox" name="fGroup" value="${esc(g.id)}" ${(s.groupIds || []).includes(g.id) ? 'checked' : ''}>${esc(groupLabel(g))}</label>`).join('') : '<p class="empty">No groups yet. Add groups on the Overview screen.</p>'}</div>
     <div class="fh" style="margin-bottom:-6px">PARENT CONTACTS</div>
     ${[0, 1].map(i => `<div class="cols"><label class="fl">Name<input class="field" id="fPn${i}" value="${esc(par(i).name)}"></label><label class="fl">Relationship<input class="field" id="fPr${i}" value="${esc(par(i).relation)}"></label><label class="fl">Phone<input class="field" id="fPp${i}" value="${esc(par(i).phone)}"></label><label class="fl">Email<input class="field" id="fPe${i}" value="${esc(par(i).email)}"></label></div>`).join('')}
@@ -430,7 +532,7 @@ function studentModal(s) {
 function collectStudent(base) {
   const checked = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value);
   return Object.assign({}, base || {}, {
-    name: val('fName'), grade: val('fGrade'), teacherIds: checked('fTeacher'), tier: val('fTier'), dyslexia: chk('fDys'), speech: chk('fSp'), groupIds: checked('fGroup'),
+    name: val('fName'), grade: val('fGrade'), teacherIds: checked('fTeacher'), scheduleId: val('fSchedule'), tier: val('fTier'), dyslexia: chk('fDys'), speech: chk('fSp'), groupIds: checked('fGroup'),
     parents: [0, 1].map(i => ({ name: val('fPn' + i), relation: val('fPr' + i), phone: val('fPp' + i), email: val('fPe' + i) })),
     keyDates: { fie: val('fKfie'), lastDiagnostic: val('fKld'), nextReeval: val('fKnr'), lastParentMeeting: val('fKpm') }
   });
@@ -443,13 +545,127 @@ function accModal(s) {
   window._accRow = row;
 }
 function groupModal(g) {
-  const isNew = !g; g = g || { name:'', type:'push-in', staffName:'', timeBlock:'' };
+  const isNew = !g; g = g || { name:'', type:'push-in', staffName: role() === 'interventionist' ? state.user.name : '', timeBlock:'', days:[], start:'', end:'' };
+  const staff = (state.data.staff || []).map(p => p.name); if (g.staffName && !staff.includes(g.staffName)) staff.push(g.staffName);
+  const staffField = isAdmin()
+    ? `<label class="fl">Staff<select class="field" id="gStaff"><option value="">(not set)</option>${staff.map(n => `<option ${g.staffName === n ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>`
+    : `<div class="fl">Staff<div style="min-height:44px;display:flex;align-items:center;font-weight:700;color:#1B2733">${esc(g.staffName)}</div></div>`;
   openModal(`<h2>${isNew ? 'Add service group' : 'Edit service group'}</h2><div class="banner err hidden" id="modalErr" role="alert"></div>
     <div class="cols"><label class="fl">Group name (for example, Reading)<input class="field" id="gName" value="${esc(g.name)}" maxlength="60"></label>
     <label class="fl">Type<select class="field" id="gType">${Object.keys(TYPE_LABEL).map(t => `<option value="${t}" ${g.type === t ? 'selected' : ''}>${TYPE_LABEL[t]}</option>`).join('')}</select></label></div>
-    <div class="cols"><label class="fl">Staff<input class="field" id="gStaff" value="${esc(g.staffName)}" maxlength="60"></label><label class="fl">Time block (optional)<input class="field" id="gTime" value="${esc(g.timeBlock)}" maxlength="80" placeholder="Mon/Wed 9:30-10:00"></label></div>
-    <div class="btns">${isNew ? '' : '<button class="danger" data-act="archiveGroup" style="margin-right:auto">Remove group</button>'}<button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveGroup">Save</button></div>`);
+    <div class="cols">${staffField}<label class="fl">Note (optional)<input class="field" id="gTime" value="${esc(g.timeBlock)}" maxlength="80" placeholder="Anything to remember"></label></div>
+    <div><div class="fh">DAYS</div>${DAY_KEYS.map(d => `<label class="chk" style="display:inline-flex;margin-right:12px"><input type="checkbox" name="gDay" value="${d}" ${(g.days || []).includes(d) ? 'checked' : ''}>${DAY_LABEL[d]}</label>`).join('')}</div>
+    <div class="cols"><label class="fl">Start<input class="field" type="time" id="gStart" value="${esc(g.start)}"></label><label class="fl">End<input class="field" type="time" id="gEnd" value="${esc(g.end)}"></label></div>
+    <div class="btns">${isNew || !isAdmin() ? '' : '<button class="danger" data-act="archiveGroup" style="margin-right:auto">Remove group</button>'}<button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveGroup">Save</button></div>`);
 }
+function groupDetailModal(g) {
+  const rows = groupMembers(g).map(m => { const st = state.data.students.find(x => x.id === m.id); let chip;
+    if (!st) chip = '<span class="chip nosc">Not in your list</span>'; else { const c = groupConflicts(st, g); chip = c.length ? `<span class="chip cf">Overlaps ${esc(c.join('; '))}</span>` : (st.scheduleId || !g.start ? '<span class="chip svc">No conflicts</span>' : '<span class="chip nosc">No schedule set</span>'); }
+    const t = st ? (st.teacherIds || []).map(id => (teacherById(id) || {}).name).filter(Boolean).join(' / ') : '';
+    return `<tr><td><b>${esc(m.name)}</b></td><td>${esc(m.grade)}</td><td>${esc(t)}</td><td>${chip}</td></tr>`; }).join('');
+  const sessions = (state.data.sessions || []).filter(x => x.groupId === g.id).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  openModal(`<h2>${esc(groupLabel(g))}</h2>
+    <div>${typeChip(g)}<span class="chip none">${esc(g.staffName || 'Staff not set')}</span>${groupWhen(g) ? `<span class="chip none">${esc(groupWhen(g))}</span>` : ''}${weekMins(g) ? `<span class="chip none">${weekMins(g)} min / week</span>` : ''}</div>
+    <div class="tw"><table style="min-width:440px"><thead><tr><th>Student</th><th>Gr</th><th>Teacher</th><th>Schedule check</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="empty">No students in this group yet.</td></tr>'}</tbody></table></div>
+    <div class="banner">The schedule check warns when this group's time lands on specials, PE, lunch, recess, chapel, or another service. It is only a heads-up.</div>
+    ${sessions.length ? `<div class="small">Recent: ${sessions.map(x => esc(fmtDate(x.date)) + ' (' + (x.attendance || []).filter(a => a.status === 'Present' || a.status === 'Left early').length + '/' + (x.attendance || []).length + ')').join(' · ')}</div>` : ''}
+    <div class="btns">${g.mine ? '<button class="secondary" data-act="editGroupFromDetail" data-id="' + esc(g.id) + '">Edit group</button><button class="secondary" data-act="membersModal" data-id="' + esc(g.id) + '">Change students</button><button class="primary" data-act="logSession" data-id="' + esc(g.id) + '">Log a session</button>' : ''}<button class="secondary" data-act="closeModal">Close</button></div>`);
+}
+function membersModal(g) {
+  const members = new Set(groupMembers(g).map(m => m.id));
+  const list = sortStudents(state.data.students);
+  openModal(`<h2>Students in ${esc(groupLabel(g))}</h2><div class="banner err hidden" id="modalErr" role="alert"></div>
+    <label class="sr" for="mSearch">Search students</label><input class="field" id="mSearch" type="text" placeholder="Search by name..." autocomplete="off">
+    <div id="mList" style="max-height:50vh;overflow:auto;border:1px solid #E3E8EE;border-radius:10px;padding:6px 10px">${list.map(st => `<label class="chk" data-name="${esc(st.name.toLowerCase())}"><input type="checkbox" name="mStu" value="${esc(st.id)}" ${members.has(st.id) ? 'checked' : ''}>${esc(st.name)} <span class="small" style="margin:0 0 0 6px">${esc(tierSummary(st))}</span></label>`).join('') || '<p class="empty">No students to choose from yet.</p>'}</div>
+    <div class="small">You can change students you can see. Anyone else in the group stays as they are.</div>
+    <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveMembers" data-id="${esc(g.id)}">Save</button></div>`);
+}
+
+/* session log */
+function attRows(g, existing) {
+  const have = {}; (existing || []).forEach(a => { have[a.studentId] = a; });
+  const people = groupMembers(g).map(m => ({ id: m.id, name: m.name }));
+  (existing || []).forEach(a => { if (!people.some(p => p.id === a.studentId)) people.push({ id: a.studentId, name: a.studentName }); });
+  if (!people.length) return '<tr><td colspan="3" class="empty">No students in this group yet. Add students first.</td></tr>';
+  return people.map(p => { const cur = (have[p.id] || {}).status || 'Present';
+    return `<tr data-sid="${esc(p.id)}"><td><b>${esc(p.name)}</b></td><td><div class="seg" role="radiogroup" aria-label="Attendance for ${esc(p.name)}">${ATTEND.map(a => `<label class="segopt"><input type="radio" name="att_${esc(p.id)}" value="${esc(a)}" ${cur === a ? 'checked' : ''}><span>${esc(a)}</span></label>`).join('')}</div></td><td><input class="field" name="attNote" value="${esc((have[p.id] || {}).note)}" maxlength="200" placeholder="Optional note" aria-label="Note for ${esc(p.name)}"></td></tr>`; }).join('');
+}
+function sessionModal(x, groupId) {
+  const mine = (state.data.groups || []).filter(g => g.mine);
+  const g = (x ? groupById(x.groupId) : null) || groupById(groupId) || mine[0];
+  if (!g) { state.notice = { type: 'warn', text: 'You have no groups to log sessions for yet. Add a group first.' }; render(); return; }
+  x = x || { date: today(), start: g.start || '', end: g.end || '', minutes: (g.start && g.end) ? minsBetween(g.start, g.end) : '', attendance: null, notes: '', makeupNeeded: false };
+  state.editingSession = x.id || null;
+  openModal(`<h2>${x.id ? 'Edit session' : 'Log a session'}</h2><div class="banner err hidden" id="modalErr" role="alert"></div>
+    <div class="cols"><label class="fl">Group<select class="field" id="sGroup" ${x.id ? 'disabled' : ''}>${(x.id ? [g] : mine).map(o => `<option value="${esc(o.id)}" ${o.id === g.id ? 'selected' : ''}>${esc(groupLabel(o))} (${esc(o.staffName)})</option>`).join('')}</select></label>
+    <label class="fl">Date<input class="field" type="date" id="sDate" value="${esc(x.date)}"></label>
+    <label class="fl">Start<input class="field" type="time" id="sStart" value="${esc(x.start)}"></label>
+    <label class="fl">End<input class="field" type="time" id="sEnd" value="${esc(x.end)}"></label>
+    <label class="fl">Minutes<input class="field" type="number" min="1" max="480" id="sMin" value="${esc(x.minutes)}"></label></div>
+    <div class="fh" style="margin-bottom:-6px">ATTENDANCE</div>
+    <div class="tw"><table style="min-width:560px"><thead><tr><th>Student</th><th>Attendance</th><th>Note</th></tr></thead><tbody id="attBody">${attRows(g, x.attendance)}</tbody></table></div>
+    <label class="fl">Session notes (what you worked on)<textarea class="field" id="sNotes" maxlength="1000" placeholder="Skill, lesson, observations">${esc(x.notes)}</textarea></label>
+    <label class="chk"><input type="checkbox" id="sMakeup" ${x.makeupNeeded ? 'checked' : ''}>Needs a make-up session for absent students</label>
+    <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveSession">Save session</button></div>`);
+  $('modalRoot').querySelector('.modal').classList.add('wide');
+}
+
+/* schedule editor (admin) */
+function blockRow(b) {
+  b = b || { days: ['M','T','W','R','F'], start: '', end: '', name: '', kind: 'class' };
+  return `<div class="blkrow"><div class="fl" style="flex:0 0 auto"><span>Days</span><div>${DAY_KEYS.map(d => `<label class="dayb"><input type="checkbox" name="bd" value="${d}" ${(b.days || []).includes(d) ? 'checked' : ''}>${d === 'R' ? 'Th' : d}</label>`).join('')}</div></div>
+    <label class="fl">Start<input class="field" type="time" name="bs" value="${esc(b.start)}"></label><label class="fl">End<input class="field" type="time" name="be" value="${esc(b.end)}"></label>
+    <label class="fl nm">Block<input class="field" name="bn" value="${esc(b.name)}" maxlength="80"></label>
+    <label class="fl">Type<select class="field" name="bk"><option value="class" ${b.kind !== 'fixed' ? 'selected' : ''}>Class</option><option value="fixed" ${b.kind === 'fixed' ? 'selected' : ''}>Fixed (specials, PE, lunch, recess, chapel)</option></select></label>
+    <button class="link" data-act="removeBlock">Remove</button></div>`;
+}
+function scheduleModal(sc, asCopy) {
+  const isNew = !sc || asCopy;
+  sc = sc || { name: '', grades: [], teacherIds: [], note: '', blocks: [] };
+  state.editingSchedule = isNew ? null : sc.id;
+  const blocks = (sc.blocks || []).slice().sort((a, b) => a.start.localeCompare(b.start));
+  openModal(`<h2>${isNew ? (asCopy ? 'Copy of schedule' : 'Add class schedule') : 'Edit class schedule'}</h2><div class="banner err hidden" id="modalErr" role="alert"></div>
+    <label class="fl">Schedule name (for example, 1st · Teacher name)<input class="field" id="scName" value="${esc(asCopy ? 'Copy of ' + sc.name : sc.name)}" maxlength="80"></label>
+    <div><div class="fh">GRADES</div>${GRADES.map(g => `<label class="chk" style="display:inline-flex;margin-right:12px"><input type="checkbox" name="scGrade" value="${g}" ${(sc.grades || []).includes(g) ? 'checked' : ''}>${g}</label>`).join('')}</div>
+    <div><div class="fh">TEACHERS THIS SCHEDULE BELONGS TO</div>${(state.data.teachers || []).map(t => `<label class="chk" style="display:inline-flex;margin-right:12px"><input type="checkbox" name="scTeacher" value="${esc(t.id)}" ${(sc.teacherIds || []).includes(t.id) ? 'checked' : ''}>${esc(t.name)}</label>`).join('')}</div>
+    <label class="fl">Note (optional)<input class="field" id="scNote" value="${esc(sc.note)}" maxlength="300"></label>
+    <div class="fh" style="margin-bottom:-6px">TIME BLOCKS (Fixed blocks are used for the schedule check on service groups)</div>
+    <div id="blockRows" style="display:flex;flex-direction:column;gap:8px">${blocks.map(blockRow).join('')}</div>
+    <div><button class="secondary" data-act="addBlock">+ Add block</button></div>
+    <details><summary class="link" style="display:inline-block;cursor:pointer">Paste several blocks at once</summary>
+      <p class="small">One block per line: days | start-end | name | f (add f only for specials, PE, lunch, recess, chapel). Days use M T W R F (R is Thursday). Leave days empty for every day. Times with no AM/PM: 1 to 6 is afternoon.<br>Example: MWF | 8:30-9:15 | Math<br>Example: TR | 10:15-10:55 | PE | f</p>
+      <textarea class="field" id="pasteBlocks" style="min-height:110px"></textarea><div style="margin-top:8px"><button class="secondary" data-act="addPasted">Add these blocks</button></div></details>
+    <div class="btns">${isNew ? '' : '<button class="danger" data-act="archiveSchedule" style="margin-right:auto">Remove schedule</button>'}<button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveSchedule">Save</button></div>`);
+  $('modalRoot').querySelector('.modal').classList.add('wide');
+}
+function clockText(t) {
+  const m = /^(\d{1,2}):(\d{2})\s*([ap]m?)?$/i.exec(String(t).trim()); if (!m) return '';
+  let h = +m[1]; const ap = (m[3] || '').toLowerCase();
+  if (ap.startsWith('p') && h < 12) h += 12; else if (ap.startsWith('a') && h === 12) h = 0; else if (!ap && h >= 1 && h <= 6) h += 12;
+  return h > 23 ? '' : String(h).padStart(2, '0') + ':' + m[2];
+}
+function parsePasted(text) {
+  const out = [], bad = [];
+  String(text).split('\n').map(l => l.trim()).filter(Boolean).forEach(line => {
+    const p = line.split('|').map(x => x.trim());
+    let days, time, name, kind;
+    if (p.length >= 3) { days = p[0]; time = p[1]; name = p[2]; kind = p[3]; } else if (p.length === 2) { days = ''; time = p[0]; name = p[1]; } else { bad.push(line); return; }
+    const d = (days || 'MTWRF').toUpperCase().replace(/TH/g, 'R').replace(/[^MTWRF]/g, '');
+    const t = time.split(/\s*[-–]\s*/); const a = clockText(t[0] || ''), b = clockText(t[1] || '');
+    if (!d || !a || !b || b <= a || !name) { bad.push(line); return; }
+    out.push({ days: [...new Set(d.split(''))], start: a, end: b, name, kind: String(kind || '').toLowerCase().startsWith('f') ? 'fixed' : 'class' });
+  });
+  return { out, bad };
+}
+function collectSchedule() {
+  const checked = nm => [...document.querySelectorAll(`input[name="${nm}"]:checked`)].map(e => e.value);
+  const blocks = [...document.querySelectorAll('#blockRows .blkrow')].map(r => ({
+    days: [...r.querySelectorAll('input[name=bd]:checked')].map(e => e.value), start: r.querySelector('[name=bs]').value, end: r.querySelector('[name=be]').value,
+    name: r.querySelector('[name=bn]').value.trim(), kind: r.querySelector('[name=bk]').value }));
+  blocks.sort((a, b) => a.start.localeCompare(b.start));
+  return { id: state.editingSchedule || undefined, name: val('scName'), grades: checked('scGrade'), teacherIds: checked('scTeacher'), note: val('scNote'), blocks };
+}
+
 function userModal(u) {
   const isNew = !u; u = u || { name:'', email:'', role:'teacher', scope:'tiered' };
   openModal(`<h2>${isNew ? 'Add person' : 'Edit ' + esc(u.name)}</h2><div class="banner err hidden" id="modalErr" role="alert"></div>
@@ -504,16 +720,51 @@ const actions = {
     if (r.error) { state.notice = { type:'err', text: r.error }; render(); return; }
     state.notice = { type:'ok', text:'Logged. Thank you.' }; await loadAll();
   },
-  addGroup: () => groupModal(null),
+  addGroup: () => { state.editingGroup = null; groupModal(null); },
   editGroup: el => { state.editingGroup = el.dataset.id; groupModal(groupById(el.dataset.id)); },
+  openGroup: el => groupDetailModal(groupById(el.dataset.id)),
+  editGroupFromDetail: el => { state.editingGroup = el.dataset.id; groupModal(groupById(el.dataset.id)); },
   saveGroup: async () => {
-    const editing = document.querySelector('[data-act="archiveGroup"]') ? state.editingGroup : '';
-    const r = await api('saveGroup', { group: { id: editing || undefined, name: val('gName'), type: val('gType'), staffName: val('gStaff'), timeBlock: val('gTime') } });
+    const days = [...document.querySelectorAll('input[name="gDay"]:checked')].map(e => e.value);
+    const r = await api('saveGroup', { group: { id: state.editingGroup || undefined, name: val('gName'), type: val('gType'), staffName: val('gStaff'), timeBlock: val('gTime'), days, start: val('gStart'), end: val('gEnd') } });
     await afterSave(r, 'Group saved.');
   },
   archiveGroup: async () => {
     if (!confirm('Remove this group? Students will be taken out of it.')) return;
     await afterSave(await api('archiveGroup', { id: state.editingGroup }), 'Group removed.');
+  },
+  membersModal: el => membersModal(groupById(el.dataset.id)),
+  saveMembers: async el => {
+    const ids = [...document.querySelectorAll('input[name="mStu"]:checked')].map(e => e.value);
+    await afterSave(await api('setGroupMembers', { groupId: el.dataset.id, studentIds: ids }), 'Students updated.');
+  },
+  day: el => { state.day = el.dataset.d; render(); },
+  logSession: el => sessionModal(null, el.dataset.id),
+  editSession: el => sessionModal((state.data.sessions || []).find(x => x.id === el.dataset.id)),
+  saveSession: async () => {
+    const attendance = [...document.querySelectorAll('#attBody tr[data-sid]')].map(tr => ({ studentId: tr.dataset.sid, status: (tr.querySelector('input[type=radio]:checked') || {}).value, note: tr.querySelector('[name=attNote]').value }));
+    const r = await api('saveSession', { session: { id: state.editingSession || undefined, groupId: val('sGroup'), date: val('sDate'), start: val('sStart'), end: val('sEnd'), minutes: val('sMin'), attendance, notes: val('sNotes'), makeupNeeded: chk('sMakeup') } });
+    await afterSave(r, 'Session saved.');
+  },
+  voidSession: async el => {
+    if (!confirm('Remove this session from the log? It will no longer count toward service minutes.')) return;
+    await afterSave(await api('voidSession', { id: el.dataset.id }), 'Session removed.');
+  },
+  addSchedule: () => scheduleModal(null),
+  editSchedule: el => scheduleModal(schedById(el.dataset.id)),
+  copySchedule: el => scheduleModal(schedById(el.dataset.id), true),
+  addBlock: () => { $('blockRows').insertAdjacentHTML('beforeend', blockRow()); },
+  removeBlock: el => el.closest('.blkrow').remove(),
+  addPasted: () => {
+    const r = parsePasted($('pasteBlocks').value);
+    r.out.forEach(b => $('blockRows').insertAdjacentHTML('beforeend', blockRow(b)));
+    $('pasteBlocks').value = r.bad.join('\n');
+    if (r.bad.length) modalErr(r.bad.length + ' line(s) could not be read and were left in the box. Check the format.'); else { const e = $('modalErr'); if (e) e.classList.add('hidden'); }
+  },
+  saveSchedule: async () => { await afterSave(await api('saveSchedule', { schedule: collectSchedule() }), 'Schedule saved.'); },
+  archiveSchedule: async () => {
+    if (!confirm('Remove this schedule? Students using it will have no schedule until you choose another.')) return;
+    await afterSave(await api('archiveSchedule', { id: state.editingSchedule }), 'Schedule removed.');
   },
   addUser: () => { state.editingUser = null; userModal(null); },
   editUser: el => { state.editingUser = el.dataset.id; userModal((state.data.users || []).find(u => u.id === el.dataset.id)); },
@@ -534,10 +785,22 @@ document.addEventListener('click', e => {
   if (el.dataset.act === 'overlay') { if (e.target === el) closeModal(); return; }
   const fn = actions[el.dataset.act]; if (fn) fn(el);
 });
-document.addEventListener('input', e => { if (e.target.id === 'q') { state.filters.q = e.target.value; refreshList(); } });
+document.addEventListener('input', e => {
+  const id = e.target.id;
+  if (id === 'q') { state.filters.q = e.target.value; refreshList(); }
+  if (id === 'sStart' || id === 'sEnd') { const a = val('sStart'), b = val('sEnd'); if (a && b && b > a) $('sMin').value = minsBetween(a, b); }
+  if (id === 'mSearch') { const q = e.target.value.trim().toLowerCase(); document.querySelectorAll('#mList [data-name]').forEach(l => l.classList.toggle('hidden', !!q && !l.dataset.name.includes(q))); }
+});
 document.addEventListener('change', e => {
-  if (e.target.id === 'gradeSel') { state.filters.grade = e.target.value; render(); }
-  if (e.target.id === 'groupSel') { state.filters.group = e.target.value; render(); }
+  const id = e.target.id;
+  if (id === 'gradeSel') { state.filters.grade = e.target.value; render(); }
+  if (id === 'groupSel') { state.filters.group = e.target.value; render(); }
+  if (id === 'sGroup') { const g = groupById(e.target.value); if (g) { $('attBody').innerHTML = attRows(g, null); $('sStart').value = g.start || ''; $('sEnd').value = g.end || ''; $('sMin').value = (g.start && g.end) ? minsBetween(g.start, g.end) : ''; } }
+  if ((e.target.name === 'fTeacher' || id === 'fGrade') && $('fSchedule') && !$('fSchedule').value) {   // suggest a class schedule from the chosen teachers
+    const tids = [...document.querySelectorAll('input[name="fTeacher"]:checked')].map(x => x.value), gr = val('fGrade');
+    const m = (state.data.schedules || []).filter(x => (x.teacherIds || []).some(t => tids.includes(t)) && (!(x.grades || []).length || x.grades.includes(gr)));
+    if (m.length === 1) $('fSchedule').value = m[0].id;
+  }
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.id === 'codeInput') doLogin();
@@ -547,21 +810,29 @@ document.addEventListener('keydown', e => {
 /* ---------- demo mode (fake data, no server) ---------- */
 let demo = null;
 function demoInit() {
+  const ago = n => { const d = new Date(); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
   const T = [1,2,3,4,5,6,7,8,9].map(i => ({ id:'t' + i, name:'Teacher ' + i, email:'teacher' + i + '@example.org', role:'teacher', scope:'', active:true }));
   const users = T.concat([
     { id:'u_w', name:'Wendy Blasingame', email:'', role:'interventionist', scope:'tiered', active:true },
     { id:'u_a', name:'Abby Danielson', email:'', role:'interventionist', scope:'dyslexia', active:true },
     { id:'u_p', name:'Courtney Pine', email:'', role:'principal', scope:'', active:true }]);
-  const groups = [
-    { id:'g1', name:'Reading', type:'push-in', staffName:'Wendy Blasingame', timeBlock:'' }, { id:'g2', name:'Math', type:'push-in', staffName:'Wendy Blasingame', timeBlock:'' },
-    { id:'g3', name:'Reading', type:'pull-out', staffName:'Wendy Blasingame', timeBlock:'' }, { id:'g4', name:'Math', type:'pull-out', staffName:'Wendy Blasingame', timeBlock:'' },
-    { id:'g5', name:'Group 1', type:'dyslexia', staffName:'Abby Danielson', timeBlock:'' }, { id:'g6', name:'Group 2', type:'dyslexia', staffName:'Abby Danielson', timeBlock:'' }];
+  const grp = (id, name, type, staffName, days, start, end) => ({ id, name, type, staffName, timeBlock:'', days, start, end });
+  const groups = [grp('g1','Reading','push-in','Wendy Blasingame',['M','W','F'],'08:30','09:00'), grp('g2','Math','push-in','Wendy Blasingame',['T','R'],'10:15','10:45'),
+    grp('g3','Reading','pull-out','Wendy Blasingame',['T','R'],'09:00','09:30'), grp('g4','Math','pull-out','Wendy Blasingame',['M','W'],'13:00','13:30'),
+    grp('g5','Group 1','dyslexia','Abby Danielson',['M','W','F'],'11:00','11:30'), grp('g6','Group 2','dyslexia','Abby Danielson',['T','R'],'11:00','11:30')];
+  const mkSched = (id, name, grades, teachers, text) => ({ id, name, grades, teacherIds:teachers, note:'Sample schedule for the demo.', blocks: parsePasted(text).out.map((b, i) => Object.assign({ id: id + '_b' + i, where:'' }, b)), archived:false });
+  const common = 'MTWRF | 7:50-8:00 | Morning Work\nMTWRF | 8:00-8:30 | Chapel | f\nMTWRF | 8:30-9:30 | Reading\nMTWRF | 9:30-10:00 | Writing\nMW | 10:15-10:45 | PE | f\nTR | 10:15-10:45 | Music | f\nMTWRF | 10:45-11:30 | Math\nMTWRF | 11:30-12:00 | Lunch | f\nMTWRF | 12:00-12:20 | Recess | f\nMTWRF | 12:20-1:20 | Science / Social Studies\nMTWRF | 1:20-2:30 | Centers';
+  const schedules = [mkSched('sc1','Sample 1st grade',['1st'],['t2'],common), mkSched('sc2','Sample 3rd grade',['3rd'],['t4'],common.replace('Centers','Language')), mkSched('sc3','Sample 4th and 5th grade',['4th','5th'],['t5','t6','t7','t8'],common.replace('Centers','Rotation 2'))];
   const acc = n => ['Extended time|Tests and quizzes|FIE','Read aloud|Directions and items|FIE','Small group|Tests and quizzes|Team','Frequent breaks|All classes|Team'].slice(0, n).map((x, i) => { const p = x.split('|'); return { id:'a' + i, name:p[0], appliesTo:p[1], source:p[2] }; });
-  const mk = (id, name, grade, teacherIds, tier, dys, sp, groupIds, nacc) => ({ id, name:'Sample Student ' + name, grade, teacherIds, tier, dyslexia:dys, speech:sp, groupIds, parents:[{ name:'Parent Sample', relation:'Parent', phone:'555-0100', email:'parent@example.org' }], keyDates:{ fie:'2025-10-14' }, accommodations:acc(nacc), accommodationLog:[], archived:false });
-  const students = [mk('s1','A','K3',['t1'],'tier1',false,false,['g1'],2), mk('s2','B','1st',['t2'],'tier2',true,false,['g3','g6'],4), mk('s3','C','2nd',['t3'],'tier1',false,true,['g2'],2), mk('s4','D','3rd',['t4'],'monitor',false,false,[],1),
-    mk('s5','E','4th',['t5','t6'],'tier2',false,false,['g4'],3), mk('s6','F','5th',['t7','t8'],'none',true,false,['g5'],3), mk('s7','G','K3',['t9'],'monitor',false,false,[],1), mk('s8','H','3rd',['t4'],'tier1',true,false,['g1','g6'],3)];
+  const mk = (id, name, grade, teacherIds, tier, dys, sp, groupIds, nacc, scheduleId) => ({ id, name:'Sample Student ' + name, grade, teacherIds, scheduleId: scheduleId || '', tier, dyslexia:dys, speech:sp, groupIds, parents:[{ name:'Parent Sample', relation:'Parent', phone:'555-0100', email:'parent@example.org' }], keyDates:{ fie:'2025-10-14' }, accommodations:acc(nacc), accommodationLog:[], archived:false });
+  const students = [mk('s1','A','K3',['t1'],'tier1',false,false,['g1'],2), mk('s2','B','1st',['t2'],'tier2',true,false,['g3','g6'],4,'sc1'), mk('s3','C','2nd',['t3'],'tier1',false,true,['g2'],2), mk('s4','D','3rd',['t4'],'monitor',false,false,[],1,'sc2'),
+    mk('s5','E','4th',['t5','t6'],'tier2',false,false,['g4'],3,'sc3'), mk('s6','F','5th',['t7','t8'],'none',true,false,['g5'],3,'sc3'), mk('s7','G','K3',['t9'],'monitor',false,false,[],1), mk('s8','H','3rd',['t4'],'tier1',true,false,['g1','g6'],3,'sc2')];
+  const att = (id, name, status, note) => ({ studentId:id, studentName:'Sample Student ' + name, status, note:note || '' });
+  const ses = (id, g, date, att_, notes, makeup) => ({ id, groupId:g.id, groupName:g.name, groupType:g.type, staffName:g.staffName, date, start:g.start, end:g.end, minutes:minsBetween(g.start, g.end), attendance:att_, notes:notes || '', makeupNeeded:!!makeup, loggedById:g.staffName.startsWith('Wendy') ? 'u_w' : 'u_a', loggedByName:g.staffName, loggedAt:new Date().toISOString() });
+  const sessions = [ses('x1', groups[5], ago(1), [att('s2','B','Present'), att('s8','H','Absent','Out sick')], 'Review of short vowels', true), ses('x2', groups[0], ago(2), [att('s1','A','Present'), att('s8','H','Present')], 'Sight words'),
+    ses('x3', groups[2], ago(3), [att('s2','B','Present')], 'Comprehension questions'), ses('x4', groups[4], ago(4), [att('s6','F','Present')], 'Blends')];
   const codes = { 'demo-admin':{ id:'admin', name:'Admin', role:'admin', scope:'all' }, 'demo-wendy':{ id:'u_w', name:'Wendy Blasingame', role:'interventionist', scope:'tiered' }, 'demo-abby':{ id:'u_a', name:'Abby Danielson', role:'interventionist', scope:'dyslexia' }, 'demo-principal':{ id:'u_p', name:'Courtney Pine', role:'principal', scope:'all' }, 'demo-teacher':{ id:'t4', name:'Teacher 4', role:'teacher', scope:'' } };
-  demo = { users, groups, students, codes, logins:[], sessions:{} };
+  demo = { users, groups, students, schedules, sessions, codes, logins:[], tokens:{} };
 }
 function demoApi(action, b) {
   if (!demo) demoInit();
@@ -571,16 +842,20 @@ function demoApi(action, b) {
     const u = demo.codes[b.code];
     demo.logins.unshift({ time:new Date().toISOString(), ok:!!u, name:u ? u.name : '', role:u ? u.role : '' });
     if (!u) return err('Invalid code');
-    const t = 'demo' + Math.random().toString(36).slice(2).padEnd(40, 'x'); demo.sessions[t] = u; return ok({ token:t, user:u });
+    const t = 'demo' + Math.random().toString(36).slice(2).padEnd(40, 'x'); demo.tokens[t] = u; return ok({ token:t, user:u });
   }
-  const me = demo.sessions[b.token]; if (!me) return err('auth');
+  const me = demo.tokens[b.token]; if (!me) return err('auth');
   const dys = new Set(demo.groups.filter(g => g.type === 'dyslexia').map(g => g.id));
   const visible = demo.students.filter(s => !s.archived && (me.role === 'admin' || me.role === 'principal' || (me.role === 'interventionist' && (me.scope === 'dyslexia' ? (s.dyslexia || s.groupIds.some(i => dys.has(i))) : s.tier !== 'none')) || (me.role === 'teacher' && s.teacherIds.includes(me.id))));
+  const mine = g => me.role === 'admin' || (me.role === 'interventionist' && g.staffName === me.name);
+  const activeGroups = () => demo.groups.filter(g => !g.archived);
   if (action === 'logout') return ok();
   if (action === 'getAll') {
-    const shaped = visible.map(s => me.role === 'teacher' ? { id:s.id, name:s.name, grade:s.grade, teacherIds:s.teacherIds, tier:s.tier, dyslexia:s.dyslexia, speech:s.speech, accommodations:s.accommodations, accommodationLog:s.accommodationLog } : s);
+    const shaped = visible.map(s => me.role === 'teacher' ? { id:s.id, name:s.name, grade:s.grade, teacherIds:s.teacherIds, scheduleId:s.scheduleId, tier:s.tier, dyslexia:s.dyslexia, speech:s.speech, accommodations:s.accommodations, accommodationLog:s.accommodationLog } : s);
     const tids = new Set(); visible.forEach(s => s.teacherIds.forEach(t => tids.add(t)));
-    const out = { user:me, students:shaped, groups: me.role === 'teacher' ? [] : demo.groups.filter(g => !g.archived), teachers: demo.users.filter(u => u.role === 'teacher' && u.active && (me.role !== 'teacher' || tids.has(u.id))).map(u => ({ id:u.id, name:u.name, email:u.email })) };
+    const need = new Set(visible.map(s => s.scheduleId).filter(Boolean));
+    const groups = me.role === 'teacher' ? [] : activeGroups().map(g => Object.assign({}, g, { mine: mine(g) }, mine(g) ? { members: demo.students.filter(s => !s.archived && s.groupIds.includes(g.id)).map(s => ({ id:s.id, name:s.name, grade:s.grade })) } : {}));
+    const out = { user:me, students:shaped, groups, schedules: demo.schedules.filter(x => !x.archived && (me.role !== 'teacher' || need.has(x.id))), sessions: me.role === 'teacher' ? [] : demo.sessions.filter(x => !x.voided), teachers: demo.users.filter(u => u.role === 'teacher' && u.active && (me.role !== 'teacher' || tids.has(u.id))).map(u => ({ id:u.id, name:u.name, email:u.email })) };
     if (me.role === 'admin') out.users = demo.users;
     if (me.role !== 'teacher') out.staff = demo.users.filter(u => u.role === 'interventionist' && u.active).map(u => ({ name:u.name, scope:u.scope }));
     return ok(out);
@@ -592,14 +867,48 @@ function demoApi(action, b) {
     s.accommodationLog.push({ id:'l' + Date.now(), date:b.date || today(), teacherId:me.id, teacherName:me.name, accommodationId:a.id, accommodationName:a.name, result:b.result, note:b.note || '', loggedAt:new Date().toISOString() });
     return ok();
   }
+  const staffRole = me.role === 'admin' || me.role === 'interventionist';
+  if (action === 'saveGroup') {
+    if (!staffRole) return err('Not allowed');
+    const g0 = b.group.id ? demo.groups.find(g => g.id === b.group.id) : null;
+    if (g0 && !mine(g0)) return err('Not allowed');
+    if (!b.group.name) return err('Group name is required');
+    const rec = Object.assign(g0 || { id:'g' + Date.now() }, { name:b.group.name, type:b.group.type, timeBlock:b.group.timeBlock || '', days:b.group.days || [], start:b.group.start || '', end:b.group.end || '', staffName: me.role === 'interventionist' ? me.name : (b.group.staffName || '') });
+    if (!g0) demo.groups.push(rec); return ok({ group:rec });
+  }
+  if (action === 'setGroupMembers') {
+    const g = demo.groups.find(x => x.id === b.groupId); if (!staffRole || !g || !mine(g)) return err('Not allowed');
+    const canSee = new Set(visible.map(s => s.id));
+    demo.students.forEach(s => { if (!canSee.has(s.id)) return; const has = s.groupIds.includes(g.id), want = (b.studentIds || []).includes(s.id); if (want && !has) s.groupIds.push(g.id); if (!want && has) s.groupIds = s.groupIds.filter(x => x !== g.id); });
+    return ok();
+  }
+  if (action === 'saveSession') {
+    if (!staffRole) return err('Not allowed');
+    const old = b.session.id ? demo.sessions.find(x => x.id === b.session.id) : null;
+    const g = demo.groups.find(x => x.id === (old ? old.groupId : b.session.groupId)); if (!g || !mine(g)) return err('Not allowed');
+    let minutes = Math.round(+b.session.minutes); if (b.session.start && b.session.end && b.session.end > b.session.start) minutes = minsBetween(b.session.start, b.session.end);
+    if (!(minutes > 0)) return err('Enter the minutes (or a start and end time)');
+    const att_ = (b.session.attendance || []).filter(a => ATTEND.includes(a.status)).map(a => ({ studentId:a.studentId, studentName:(demo.students.find(x => x.id === a.studentId) || {}).name || (old && (old.attendance.find(o => o.studentId === a.studentId) || {}).studentName) || 'Student', status:a.status, note:a.note || '' }));
+    if (!att_.length) return err('Mark attendance for at least one student');
+    const rec = Object.assign(old || { id:'x' + Date.now(), loggedById:me.id, loggedByName:me.name, loggedAt:new Date().toISOString() }, { groupId:g.id, groupName:g.name, groupType:g.type, staffName:g.staffName, date:b.session.date || today(), start:b.session.start || '', end:b.session.end || '', minutes, attendance:att_, notes:b.session.notes || '', makeupNeeded:!!b.session.makeupNeeded });
+    if (!old) demo.sessions.push(rec); return ok({ session:rec });
+  }
   if (me.role !== 'admin') return err('Not allowed');
   if (action === 'saveStudent') {
     const i = demo.students.findIndex(s => s.id === b.student.id); const s = Object.assign({ id:'s' + Date.now(), accommodationLog:[], accommodations:[], archived:false }, i >= 0 ? demo.students[i] : {}, b.student);
     if (!s.name) return err('Student name is required'); if (i >= 0) demo.students[i] = s; else demo.students.push(s); return ok({ student:s });
   }
   if (action === 'archiveStudent') { const s = demo.students.find(x => x.id === b.id); if (s) s.archived = true; return ok(); }
-  if (action === 'saveGroup') { const i = demo.groups.findIndex(g => g.id === b.group.id); if (i >= 0) Object.assign(demo.groups[i], b.group); else demo.groups.push(Object.assign({ id:'g' + Date.now() }, b.group)); return ok(); }
   if (action === 'archiveGroup') { demo.groups = demo.groups.filter(g => g.id !== b.id); demo.students.forEach(s => { s.groupIds = s.groupIds.filter(x => x !== b.id); }); return ok(); }
+  if (action === 'voidSession') { const x = demo.sessions.find(r => r.id === b.id); if (x) x.voided = true; return ok(); }
+  if (action === 'saveSchedule') {
+    const sc = b.schedule; if (!sc.name) return err('Schedule name is required');
+    for (const bl of sc.blocks) { if (!bl.name || !bl.days.length || !bl.start || !bl.end || bl.end <= bl.start) return err('Check the time blocks: each needs a name, a day, and an end after the start'); }
+    const old = sc.id ? demo.schedules.find(x => x.id === sc.id) : null;
+    const rec = Object.assign(old || { id:'sc' + Date.now(), archived:false }, { name:sc.name, grades:sc.grades, teacherIds:sc.teacherIds, note:sc.note, blocks:sc.blocks.map((x, i) => Object.assign({ id:'b' + Date.now() + i, where:'' }, x)) });
+    if (!old) demo.schedules.push(rec); return ok({ schedule:rec });
+  }
+  if (action === 'archiveSchedule') { const x = demo.schedules.find(r => r.id === b.id); if (x) x.archived = true; demo.students.forEach(s => { if (s.scheduleId === b.id) s.scheduleId = ''; }); return ok(); }
   if (action === 'saveUser') {
     const u = b.user; if (!u.name) return err('Name is required');
     const code = u.code || (lastName(u.name) + '2627'); const i = demo.users.findIndex(x => x.id === u.id);
