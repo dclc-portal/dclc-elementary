@@ -54,6 +54,7 @@ textarea.field{padding:10px;min-height:72px}
 .row{display:flex;flex-wrap:wrap;gap:16px}
 .card{background:#fff;border:1px solid #E3E8EE;border-radius:12px;padding:18px;flex:1 1 280px;min-width:0}
 .card h2{margin:0 0 12px;font-size:16px;color:#2E4057;border-bottom:2px solid #E3E8EE;padding-bottom:8px}
+.main>.card{flex:none}
 .card.muted{background:#FAFAF8;color:#5A6B7B}
 .kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #EEF2F6;font-size:14px}
 .kv span:first-child{color:#4A5B6B}.kv span:last-child{text-align:right;font-weight:700}
@@ -100,6 +101,8 @@ td{padding:11px 12px;border-bottom:1px solid #EEF2F6;vertical-align:top}
 .bar{height:10px;border-radius:999px;background:#E3E8EE;overflow:hidden}.bar i{display:block;height:100%;background:#2563A8}
 .modal.wide{max-width:900px}
 .svc{background:#E3F4DA;color:#2F5D1A}.cf{background:#FFF4DB;color:#6B4A00}.nosc{background:#ECEFF2;color:#3E4C59}
+.chip.err{background:#FBE3E4;color:#7A1A1F}
+@media print{.hdr,.side,.tabs,.fc,button,.banner{display:none!important}.wrap{padding:0}.shell{border:0}}
 @media(max-width:700px){.side{max-width:none;border-right:0;border-bottom:1px solid #E3E8EE}.main{padding:16px}}
 </style>
 </head>
@@ -126,22 +129,26 @@ const ATTEND = ['Present','Absent','Excused','Left early'];
 const SCOPE_LABEL = { tiered:'Students with a tier', dyslexia:'Dyslexia students', all:'All students' };
 const TABS = ['Overview','Teacher Information','Accommodations','Progress Monitoring','Testing History','Documentation','Grade History'];
 const COMING = {
-  'Progress Monitoring':'Coming in Phase 3: DRA reading levels, NWEA, and intervention data.',
-  'Testing History':'Coming in Phase 4: appears once the elementary testing calendar is running.',
-  'Documentation':'Coming in Phase 3: notes and meeting logs.',
-  'Grade History':'Coming in Phase 3: pulled from RenWeb.'
+  'Testing History':'Coming in Phase 4: appears once the elementary testing calendar is running.'
 };
 const VIEW_COMING = {
   'testing-calendar':['Testing Calendar','Coming in Phase 4: the elementary testing calendar.'],
-  'testing-summary':['Testing Summary','Coming in Phase 4: testing prep and accommodation summary.'],
-  'reports':['Reports','Coming in Phase 3: progress and trend reports.']
+  'testing-summary':['Testing Summary','Coming in Phase 4: testing prep and accommodation summary.']
 };
+const PROGRESS_MEASURES = ['NWEA Reading','NWEA Math','DRA','BUILD','Take Flight','Other'];
+const NOTE_TYPES = ['Reminder','Observation','Parent phone call','Email','Fall conference','Spring conference','Intervention team meeting','Other'];
+const GRADE_LABELS = ['Meets','Approaching','Needs Improvement'];
+const LABEL_RANK = { 'Meets':3, 'Approaching':2, 'Needs Improvement':1 };
+const MEASURE_COLOR = { 'NWEA Reading':'#2563A8', 'NWEA Math':'#B5651D', 'DRA':'#2E7D5B', 'BUILD':'#7A3F8F', 'Take Flight':'#A4262C', 'Other':'#5A6B7B' };
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WATCH_DROP = 3;   // grade watch list: average fell this many points or more since the previous report
 const PALETTE = [['#E3EEF8','#1F4E87'],['#DFF2EC','#0E5C52'],['#FCEBD7','#7A4A0A'],['#ECE7F7','#3F2A78']];
 
 const state = {
   token: null, user: null, data: null, view: 'home', selectedId: null, tab: 'Overview',
   filters: { q:'', tier:'', dyslexia:false, speech:false, group:'', grade:'' },
   syncedAt: null, notice: null, loginMsg: '', logins: null,
+  gu: null, guMonth: '', rep: 'service', rp: {}, noteType: '', pmGroup: '',
   day: ({1:'M',2:'T',3:'W',4:'R',5:'F'})[new Date().getDay()] || 'M'
 };
 
@@ -293,6 +300,7 @@ function headerHtml() {
       ${isAdmin() ? `<button class="icon ${state.view === 'access' ? 'on' : ''}" data-act="view" data-v="access" aria-label="Access and roles"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/></svg></button>` : ''}
       ${pill('home','Students')}${pill('overview','Overview')}${pill('testing-calendar','Testing calendar')}${pill('testing-summary','Testing summary')}
       ${r !== 'teacher' ? pill('reports','Reports') : ''}
+      ${isAdmin() ? pill('grades','Grade upload') : ''}
       ${isAdmin() ? pill('logins','Login report') : ''}
       ${isAdmin() ? `<button class="primary" data-act="addStudent">+ Add student</button>` : ''}
     </div></header>`;
@@ -303,7 +311,10 @@ function bodyHtml() {
   const notice = state.notice ? `<div class="banner ${state.notice.type}" role="status">${esc(state.notice.text)}</div>` : '';
   if (v === 'home') return `<div class="body">${sideHtml()}<section class="main">${notice}${student() ? profileHtml(student()) : emptyHtml()}</section></div>`;
   let inner;
-  if (v === 'overview') inner = overviewHtml();
+  if ((v === 'reports' && isTeacher()) || (v === 'grades' && !isAdmin())) inner = emptyHtml();
+  else if (v === 'reports') inner = reportsHtml();
+  else if (v === 'grades') inner = gradesHtml();
+  else if (v === 'overview') inner = overviewHtml();
   else if (v === 'access') inner = accessHtml();
   else if (v === 'logins') inner = loginsHtml();
   else { const c = VIEW_COMING[v]; inner = `<div class="card muted"><h2>${esc(c[0])}</h2><p class="empty">${esc(c[1])}</p></div>`; }
@@ -346,7 +357,7 @@ function refreshList() { const l = $('studentList'); if (l) { l.innerHTML = list
 /* student profile */
 function profileHtml(s) {
   const p = palette(s.name);
-  const tabs = TABS.filter(t => !(isTeacher() && t === 'Documentation'));
+  const tabs = TABS;
   if (!tabs.includes(state.tab)) state.tab = 'Overview';
   const groups = (s.groupIds || []).map(groupById).filter(Boolean);
   const teachers = (s.teacherIds || []).map(teacherById).filter(Boolean);
@@ -364,6 +375,9 @@ function tabHtml(s) {
     case 'Overview': return overviewTab(s);
     case 'Teacher Information': return teacherTab(s);
     case 'Accommodations': return accTab(s);
+    case 'Progress Monitoring': return progressTab(s);
+    case 'Documentation': return docTab(s);
+    case 'Grade History': return gradeTab(s);
     default: return `<div class="card muted"><h2>${esc(state.tab)}</h2><p class="empty">${esc(COMING[state.tab])}</p></div>`;
   }
 }
@@ -371,7 +385,7 @@ function overviewTab(s) {
   const kd = s.keyDates || {}; const parents = s.parents || [];
   const acc = (s.accommodations || []).map(a => `<span class="chip grp">${esc(a.name)}</span>`).join('') || '<p class="empty">No accommodations recorded yet.</p>';
   const accCard = `<section class="card"><h2>Accommodations</h2><div>${acc}</div><div class="small" style="margin-top:8px">Full list and the in-class usage log are on the Accommodations tab.</div></section>`;
-  if (isTeacher()) return `<div class="row">${accCard}</div>`;
+  if (isTeacher()) return `<div class="row">${accCard}</div>${snapshotCards(s)}`;
   const kv = (k, v) => `<div class="kv"><span>${k}</span><span>${v ? esc(v) : '<span style="font-weight:400;color:#5A6B7B">Not recorded</span>'}</span></div>`;
   return `<div class="row">
     ${servicesCard(s)}
@@ -379,8 +393,7 @@ function overviewTab(s) {
     <div class="row">
     <section class="card"><h2>Parent contacts</h2>${parents.length ? parents.map(p => `<div class="note"><b>${esc(p.name || 'Unnamed')}</b>${p.relation ? ' (' + esc(p.relation) + ')' : ''}<div class="small">${esc([p.phone, p.email].filter(Boolean).join(' · ') || 'No contact info')}</div></div>`).join('') : '<p class="empty">No parent contacts recorded yet.</p>'}</section>
     ${accCard}</div>
-    <div class="row"><section class="card muted"><h2>Progress snapshot</h2><p class="empty">Coming in Phase 3: DRA, NWEA, and intervention goals.</p></section>
-    <section class="card muted"><h2>Recent documentation</h2><p class="empty">Coming in Phase 3: notes and meeting logs.</p></section></div>`;
+    ${snapshotCards(s)}`;
 }
 function teacherTab(s) {
   const ts = (s.teacherIds || []).map(teacherById).filter(Boolean);
@@ -479,7 +492,7 @@ function overviewHtml() {
 function accessHtml() {
   const users = state.data.users || [];
   const rows = users.map(u => `<tr><td><b>${esc(u.name)}</b>${u.active ? '' : ' <span class="small">(deactivated)</span>'}<div class="small">${esc(u.email)}</div></td><td><span class="chip ${ROLE_CLASS[u.role]}">${ROLE_LABEL[u.role]}</span></td><td>${esc(u.role === 'interventionist' ? SCOPE_LABEL[u.scope] || '' : u.role === 'teacher' ? 'Their own students' : 'All students, view only')}</td><td>${u.active ? `<button class="link" data-act="editUser" data-id="${esc(u.id)}">Edit</button><button class="link" data-act="removeUser" data-id="${esc(u.id)}">Deactivate</button>` : ''}</td></tr>`).join('');
-  const m = [['See students','All','Own caseload','All','Own students'],['Add or edit students, tiers, flags','Edit','No access','No access','No access'],['Groups and class schedules','Edit all','Edit own groups','View','View own students\' schedule'],['Service and session log','Edit all','Log and edit own','View','No access'],['Progress monitoring','Edit','Edit','View','View'],['Documentation and meeting notes','Edit','Edit','View','No access'],['Accommodations','Edit','View','View','View'],['Log in-class accommodation use','No access','No access','No access','Log'],['Testing calendar and prep center','Approve and edit','View','View','View own tests'],['Reports','All','Own caseload','View','No access'],['Access and settings','Edit','No access','No access','No access']];
+  const m = [['See students','All','Own caseload','All','Own students'],['Add or edit students, tiers, flags','Edit','No access','No access','No access'],['Groups and class schedules','Edit all','Edit own groups','View','View own students\' schedule'],['Service and session log','Edit all','Log and edit own','View','No access'],['Progress monitoring','Edit','Edit own entries','View','View own students'],['Documentation and meeting notes','Edit','Edit own entries','View','View own students'],['Monthly grade reports','Upload','View','View','View own students'],['Accommodations','Edit','View','View','View'],['Log in-class accommodation use','No access','No access','No access','Log'],['Testing calendar and prep center','Approve and edit','View','View','View own tests'],['Reports','All','Own caseload','View','No access'],['Access and settings','Edit','No access','No access','No access']];
   return `${state.codeNotice ? `<div class="banner ok" role="status"><b>${esc(state.codeNotice.name)}</b>'s sign-in code is <b style="font-size:16px">${esc(state.codeNotice.code)}</b>. This is the only time it is shown. <button class="link" data-act="dismissCode">Dismiss</button></div>` : ''}
     <div class="banner">Only the admin code (you and Mrs. Barker) opens this screen and can assign access or change controls. The admin code is set in Apps Script, not here.</div>
     <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">People with access</h2><button class="primary" data-act="addUser">+ Add person</button></div>
@@ -501,10 +514,303 @@ async function loadLogins() {
   state.logins = r.logins || []; if (state.view === 'logins') render();
 }
 
+/* ---------- Phase 3 helpers: progress, documentation, grades ---------- */
+const recs = () => (state.data && state.data.records) || { progress:[], notes:[], grades:[] };
+const canWrite = () => isAdmin() || role() === 'interventionist';
+const canEditRec = x => isAdmin() || (role() === 'interventionist' && x.byId === state.user.id);
+const byDateDesc = (a, b) => (b.date + (b.createdAt || '')).localeCompare(a.date + (a.createdAt || ''));
+const stuProgress = s => recs().progress.filter(x => x.studentId === s.id).sort(byDateDesc);
+const stuNotes = s => recs().notes.filter(x => x.studentId === s.id).sort(byDateDesc);
+const stuGrades = s => recs().grades.filter(x => x.studentId === s.id).sort((a, b) => b.month.localeCompare(a.month));
+const monthLabel = m => /^\d{4}-\d{2}$/.test(m || '') ? MONTH_ABBR[+m.slice(5) - 1] + ' ' + m.slice(0, 4) : '';
+const dayMs = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ''); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : 0; };
+const shortDate = d => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ''); return m ? `${+m[2]}/${+m[3]}/${m[1].slice(2)}` : ''; };
+const measureChip = m => `<span class="chip" style="background:#fff;border:1px solid ${MEASURE_COLOR[m] || '#5A6B7B'};color:${MEASURE_COLOR[m] || '#5A6B7B'}">${esc(m)}</span>`;
+const isLabelGrade = g => ['K3','K4','K5'].includes(g);
+const optList = (list, cur) => list.map(o => `<option ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
+
+/** One line chart for one scale (NWEA reading and math share a scale; DRA, BUILD and Take Flight each have their own). */
+function trendSvg(entries, measures) {
+  const pts = entries.filter(x => x.value != null && measures.includes(x.measure)).sort((a, b) => a.date.localeCompare(b.date));
+  if (!pts.length) return '';
+  const W = 640, H = 230, L = 46, R = 18, T = 16, B = 38;
+  let lo = Math.min(...pts.map(p => p.value)), hi = Math.max(...pts.map(p => p.value));
+  if (hi - lo < 4) { lo -= 2; hi += 2; } else { const pad = (hi - lo) * 0.12; lo -= pad; hi += pad; }
+  const t0 = Math.min(...pts.map(p => dayMs(p.date))), t1 = Math.max(...pts.map(p => dayMs(p.date)));
+  const X = d => L + (t1 === t0 ? (W - L - R) / 2 : (dayMs(d) - t0) / (t1 - t0) * (W - L - R));
+  const Y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const grid = [0, 1, 2, 3].map(i => { const v = lo + (hi - lo) * i / 3; return `<line x1="${L}" y1="${Y(v).toFixed(1)}" x2="${W - R}" y2="${Y(v).toFixed(1)}" stroke="#E3E8EE"/><text x="${L - 8}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="#5A6B7B">${Math.round(v)}</text>`; }).join('');
+  const series = measures.map(m => ({ m, p: pts.filter(x => x.measure === m) })).filter(s => s.p.length);
+  const lines = series.map(s => `<polyline fill="none" stroke="${MEASURE_COLOR[s.m]}" stroke-width="3" stroke-linejoin="round" points="${s.p.map(p => X(p.date).toFixed(1) + ',' + Y(p.value).toFixed(1)).join(' ')}"/>` +
+    s.p.map(p => `<circle cx="${X(p.date).toFixed(1)}" cy="${Y(p.value).toFixed(1)}" r="5" fill="${MEASURE_COLOR[s.m]}"><title>${esc(p.measure + ' ' + p.score + ' on ' + fmtDate(p.date))}</title></circle>`).join('')).join('');
+  const dates = [...new Set(pts.map(p => p.date))]; const step = Math.max(1, Math.ceil(dates.length / 6));
+  const xl = dates.filter((d, i) => i % step === 0 || i === dates.length - 1).map(d => `<text x="${X(d).toFixed(1)}" y="${H - 14}" text-anchor="middle" font-size="11" fill="#5A6B7B">${esc(shortDate(d))}</text>`).join('');
+  const desc = series.map(s => s.m + ': ' + s.p.map(p => p.score + ' on ' + fmtDate(p.date)).join(', ')).join('; ');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px" role="img" aria-label="${esc('Trend. ' + desc)}">${grid}${lines}${xl}</svg>` +
+    `<div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px;margin-top:6px">${series.map(s => `<span><b style="color:${MEASURE_COLOR[s.m]}">&#9632;</b> ${esc(s.m)}</span>`).join('')}</div>`;
+}
+
+function latestByMeasure(list) {
+  const out = {};
+  list.slice().sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || '').localeCompare(a.createdAt || '')).forEach(x => { if (!out[x.measure]) out[x.measure] = x; else if (!out[x.measure].prev) out[x.measure].prev = x; });
+  return out;
+}
+/** Compare the newest grade report with the one before it. */
+function gradeTrend(g) {
+  if (g.length < 2) return null;
+  const cur = g[0], prev = g[1];
+  if (cur.kind === 'number') {
+    const delta = (cur.average != null && prev.average != null) ? Math.round((cur.average - prev.average) * 10) / 10 : null;
+    let worst = null;
+    Object.keys(cur.values).forEach(k => { if (prev.values[k] != null) { const d = Math.round((cur.values[k] - prev.values[k]) * 10) / 10; if (!worst || d < worst.d) worst = { subject: k, d }; } });
+    return { kind: 'number', delta, worst, watch: delta != null && delta <= -WATCH_DROP, prev };
+  }
+  const down = Object.keys(cur.values).filter(k => prev.values[k] && LABEL_RANK[cur.values[k]] < LABEL_RANK[prev.values[k]]);
+  const ni = Object.keys(cur.values).filter(k => cur.values[k] === 'Needs Improvement');
+  return { kind: 'label', down, ni, watch: down.length > 0 || ni.length > 0, prev };
+}
+const labelChip = v => `<span class="chip ${v === 'Meets' ? 'svc' : v === 'Approaching' ? 'cf' : 'err'}">${esc(v)}</span>`;
+
+/* ---------- Phase 3 tabs ---------- */
+function pmFields(p, e) {
+  e = e || {};
+  return `<label class="fl">Measure<select class="field" id="${p}Measure">${optList(PROGRESS_MEASURES, e.measure || (state.pmGroup === 'DRA' ? 'DRA' : 'NWEA Reading'))}</select></label>
+    <label class="fl">Date<input class="field" type="date" id="${p}Date" value="${esc(e.date || today())}"></label>
+    <label class="fl">Score or level<input class="field" id="${p}Score" maxlength="40" value="${esc(e.score)}" placeholder="195, Level 28, Unit 3 · 84%"></label>
+    <label class="fl">Note (optional)<textarea class="field" id="${p}Note" maxlength="500">${esc(e.note)}</textarea></label>`;
+}
+function progressTab(s) {
+  const list = stuProgress(s);
+  const scales = [['NWEA', ['NWEA Reading', 'NWEA Math']], ['DRA', ['DRA']], ['BUILD', ['BUILD']], ['Take Flight', ['Take Flight']], ['Other', ['Other']]].filter(g => list.some(x => x.value != null && g[1].includes(x.measure)));
+  const sel = scales.find(g => g[0] === state.pmGroup) || scales[0];
+  const chips = scales.length > 1 ? `<div style="margin-bottom:10px"><span class="fh" style="margin-right:8px">SHOW</span>${scales.map(g => `<button class="fc ${g === sel ? 'on' : ''}" data-act="pmGroup" data-g="${esc(g[0])}">${esc(g[0])}</button>`).join('')}</div>` : '';
+  const chart = sel ? chips + trendSvg(list, sel[1]) : '<p class="empty">No numeric scores yet. Scores like 195, Level 28 or 84% are plotted here. Anything else shows in the table.</p>';
+  const rows = list.map(x => `<tr><td>${esc(fmtDate(x.date))}</td><td>${measureChip(x.measure)}</td><td><b>${esc(x.score)}</b></td><td>${esc(x.note)}</td><td class="small">${esc(x.byName)}</td><td style="white-space:nowrap">${canWrite() && canEditRec(x) ? `<button class="link" data-act="editProgress" data-id="${esc(x.id)}">Edit</button><button class="link" data-act="voidProgress" data-id="${esc(x.id)}">Remove</button>` : ''}</td></tr>`).join('');
+  const form = canWrite() ? `<section class="card" style="flex:1 1 280px;display:flex;flex-direction:column;gap:12px"><h2 style="margin-bottom:0">Add an entry</h2>
+      <div class="banner err hidden" id="inlineErr" role="alert"></div>${pmFields('pa')}<button class="primary" data-act="saveProgress" data-p="pa">Save entry</button>
+      <div class="small">Any measure works, so BUILD and Take Flight can be entered however they are scored.</div></section>`
+    : `<section class="card" style="flex:1 1 280px"><div class="banner">You can see progress monitoring for your own students. Learning support adds the entries.</div></section>`;
+  return `<div class="row" style="align-items:flex-start"><div style="flex:2 1 460px;min-width:0;display:flex;flex-direction:column;gap:16px">
+    <section class="card"><h2>Trend</h2>${chart}</section>
+    <section class="card"><h2>Entries</h2>${list.length ? `<div class="tw"><table style="min-width:600px"><thead><tr><th>Date</th><th>Measure</th><th>Score / level</th><th>Note</th><th>By</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty">No progress entries yet.</p>'}</section></div>${form}</div>`;
+}
+
+function ntFields(p, e) {
+  e = e || {};
+  return `<label class="fl">Type<select class="field" id="${p}Type">${optList(NOTE_TYPES, e.type)}</select></label>
+    <label class="fl">Date<input class="field" type="date" id="${p}Date" value="${esc(e.date || today())}"></label>
+    <label class="fl">Who was involved (optional)<input class="field" id="${p}Who" maxlength="120" value="${esc(e.who)}"></label>
+    <label class="fl">Notes<textarea class="field" id="${p}Text" maxlength="4000" style="min-height:110px">${esc(e.text)}</textarea></label>`;
+}
+function docTab(s) {
+  const all = stuNotes(s); const f = state.noteType || '';
+  const list = f ? all.filter(x => x.type === f) : all;
+  const chips = ['', ...NOTE_TYPES].map(t => `<button class="fc ${f === t ? 'on' : ''}" data-act="noteType" data-t="${esc(t)}">${t ? esc(t) : 'All'}</button>`).join('');
+  const items = list.map(x => `<div style="border-left:3px solid #CBD5DF;padding:2px 0 14px 14px;margin-left:6px"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><b>${esc(fmtDate(x.date))}</b><span class="chip none" style="margin:0">${esc(x.type)}</span><span class="small" style="margin:0">${esc([x.who, x.byName].filter(Boolean).join(' · '))}</span>${canWrite() && canEditRec(x) ? `<button class="link" data-act="editNote" data-id="${esc(x.id)}">Edit</button><button class="link" data-act="voidNote" data-id="${esc(x.id)}">Remove</button>` : ''}</div><div style="margin-top:6px;line-height:1.45;white-space:pre-wrap">${esc(x.text)}</div></div>`).join('');
+  const form = canWrite() ? `<section class="card" style="flex:1 1 280px;display:flex;flex-direction:column;gap:12px"><h2 style="margin-bottom:0">Add an entry</h2>
+      <div class="banner err hidden" id="inlineErr" role="alert"></div>${ntFields('na')}<button class="primary" data-act="saveNote" data-p="na">Save entry</button>
+      <div class="small">Teachers, the principal and the learning support team all see every entry for this student.</div></section>`
+    : `<section class="card" style="flex:1 1 280px"><div class="banner">You can see documentation for your own students. Learning support adds the entries.</div></section>`;
+  return `<div class="row" style="align-items:flex-start"><section class="card" style="flex:2 1 460px;min-width:0"><h2>Documentation</h2><div style="margin-bottom:12px">${chips}</div>${items || '<p class="empty">No entries' + (f ? ' of this type' : '') + ' yet.</p>'}</section>${form}</div>`;
+}
+
+function gradeTab(s) {
+  const g = stuGrades(s);
+  if (!g.length) {
+    const msg = s.grade === '1st' ? 'First grade grades start in January. They will show here after the first monthly report that includes them.' : isLabelGrade(s.grade) ? 'No labels uploaded yet. K3 to K5 use Meets, Approaching and Needs Improvement.' : 'No grade reports uploaded yet.';
+    return `<section class="card muted"><h2>Grade history</h2><p class="empty">${esc(msg)}</p></section>`;
+  }
+  const subjects = []; g.forEach(r => Object.keys(r.values).forEach(k => { if (!subjects.includes(k)) subjects.push(k); }));
+  const label = g[0].kind === 'label';
+  const head = `<tr><th>Report</th>${label ? '' : '<th>Average</th>'}${subjects.map(k => `<th>${esc(k)}</th>`).join('')}</tr>`;
+  const body = g.map(r => `<tr><td><b>${esc(monthLabel(r.month))}</b></td>${label ? '' : `<td style="font-size:18px;font-weight:700;color:#2E4057">${r.average != null ? r.average : ''}</td>`}${subjects.map(k => `<td>${r.values[k] == null ? '' : (r.kind === 'label' ? labelChip(r.values[k]) : esc(r.values[k]))}</td>`).join('')}</tr>`).join('');
+  const t = gradeTrend(g);
+  let flag = '';
+  if (t && t.watch) {
+    flag = t.kind === 'number' ? `Average down ${Math.abs(t.delta)} points since ${monthLabel(t.prev.month)}.${t.worst && t.worst.d < 0 ? ` ${t.worst.subject} down ${Math.abs(t.worst.d)}.` : ''}`
+      : (t.down.length ? `Moved down since ${monthLabel(t.prev.month)}: ${t.down.join(', ')}. ` : '') + (t.ni.length ? `Needs Improvement: ${t.ni.join(', ')}.` : '');
+  }
+  return `<div class="row" style="align-items:flex-start"><section class="card" style="flex:2 1 460px;min-width:0"><h2>Grade history</h2>
+    ${flag ? `<div class="banner warn" role="status" style="margin-bottom:12px"><b>${esc(flag)}</b></div>` : ''}
+    <div class="tw"><table style="min-width:480px"><thead>${head}</thead><tbody>${body}</tbody></table></div></section>
+    <section class="card" style="flex:1 1 260px"><div class="banner">Monthly reports uploaded by learning support. ${label ? 'K3 to K5 are marked Meets, Approaching or Needs Improvement.' : 'Numbers are the grade for the month.'}</div></section></div>`;
+}
+
+function snapshotCards(s) {
+  const lat = latestByMeasure(stuProgress(s)); const keys = PROGRESS_MEASURES.filter(m => lat[m]);
+  const prog = keys.length ? keys.map(m => { const x = lat[m]; let ch = ''; if (x.prev && x.value != null && x.prev.value != null) { const d = Math.round((x.value - x.prev.value) * 10) / 10; ch = ` <span class="small" style="margin:0">${d > 0 ? '+' : ''}${d} since ${esc(shortDate(x.prev.date))}</span>`; }
+    return `<div class="kv"><span>${esc(m)}</span><span>${esc(x.score)}${ch}<div class="small" style="font-weight:400;margin:0">${esc(fmtDate(x.date))}</div></span></div>`; }).join('') : '<p class="empty">No progress entries yet.</p>';
+  const notes = stuNotes(s).slice(0, 3).map(x => `<div class="note"><b>${esc(fmtDate(x.date))}</b> · ${esc(x.type)}<div class="small" style="margin-top:4px">${esc(x.text.length > 140 ? x.text.slice(0, 140) + '...' : x.text)}</div></div>`).join('') || '<p class="empty">No documentation yet.</p>';
+  return `<div class="row"><section class="card"><h2>Progress snapshot</h2>${prog}<div style="margin-top:8px"><button class="link" data-act="tab" data-t="Progress Monitoring">See all progress</button></div></section>
+    <section class="card"><h2>Recent documentation</h2>${notes}<div style="margin-top:8px"><button class="link" data-act="tab" data-t="Documentation">See all documentation</button></div></section></div>`;
+}
+
+function progressModal(e) {
+  state.editingRec = e.id;
+  openModal(`<h2>Edit progress entry</h2><div class="banner err hidden" id="modalErr" role="alert"></div>${pmFields('pe', e)}
+    <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveProgress" data-p="pe" data-id="${esc(e.id)}">Save</button></div>`);
+}
+function noteModal(e) {
+  state.editingRec = e.id;
+  openModal(`<h2>Edit documentation entry</h2><div class="banner err hidden" id="modalErr" role="alert"></div>${ntFields('ne', e)}
+    <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveNote" data-p="ne" data-id="${esc(e.id)}">Save</button></div>`);
+}
+
+/* ---------- Grade upload (admin) ---------- */
+function parseDelimited(text) {
+  text = String(text || '').replace(/^﻿/, '');
+  const first = text.split(/\r?\n/)[0] || '';
+  const delim = first.indexOf('\t') >= 0 ? '\t' : ',';
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === delim) { row.push(cur); cur = ''; }
+    else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+    else if (c !== '\r') cur += c;
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  return rows.map(r => r.map(x => x.trim())).filter(r => r.some(x => x !== ''));
+}
+/** "Last, First Middle" and "First Middle Last" both become "first last". */
+function nameKey(raw) {
+  const t = String(raw || '').replace(/\s+/g, ' ').trim(); if (!t) return '';
+  let first, last;
+  if (t.indexOf(',') >= 0) { const p = t.split(','); last = p[0].trim().split(' ').pop(); first = (p[1] || '').trim().split(' ')[0]; }
+  else { const p = t.split(' '); first = p[0]; last = p[p.length - 1]; }
+  return ((first || '') + ' ' + (last || '')).toLowerCase().replace(/[^a-z ]/g, '').trim();
+}
+function defaultMonth() { const d = new Date(); if (d.getDate() <= 14) d.setMonth(d.getMonth() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
+function monthOptions(cur) {
+  const out = []; const d = new Date(); d.setDate(1);
+  for (let i = 0; i < 14; i++) { const v = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; out.push(`<option value="${v}" ${v === cur ? 'selected' : ''}>${esc(monthLabel(v))}</option>`); d.setMonth(d.getMonth() - 1); }
+  return out.join('');
+}
+function startUpload(text) {
+  const rows = parseDelimited(text);
+  if (rows.length < 2) { state.notice = { type: 'err', text: 'I could not find a header row and student rows. Check the file and try again.' }; state.gu = null; render(); return; }
+  const headers = rows[0];
+  const find = re => headers.findIndex(h => re.test(h));
+  let nameCol = headers.findIndex(h => /name|student/i.test(h) && !/teacher|parent|guardian|homeroom/i.test(h));
+  const firstCol = find(/^first/i), lastCol = find(/^last/i);
+  if (firstCol >= 0 && lastCol >= 0) nameCol = -1;
+  if (nameCol === -2 || (nameCol < 0 && !(firstCol >= 0 && lastCol >= 0))) nameCol = 0;
+  const skip = /^(id|student ?id)$|teacher|homeroom|grade ?level|^grade$|^gr$|campus|section|parent|guardian|^name$|student name/i;
+  const subj = headers.map((h, i) => i).filter(i => i !== nameCol && i !== firstCol && i !== lastCol && headers[i] && !skip.test(headers[i]));
+  state.gu = { month: state.guMonth || defaultMonth(), headers, rows: rows.slice(1), nameCol, firstCol, lastCol, subj, picks: {} };
+  render();
+}
+/** Same rules the server applies, so the preview shows what will be saved. */
+function gradeCell(stu, raw) {
+  const t = String(raw == null ? '' : raw).trim(); if (!t) return { skip: true };
+  if (isLabelGrade(stu.grade)) {
+    const k = t.toLowerCase().replace(/[^a-z ]/g, '');
+    const lab = ['m', 'meets', 'meet'].includes(k) ? 'Meets' : ['a', 'approaching', 'approach'].includes(k) ? 'Approaching' : ['ni', 'n', 'needs improvement', 'needs improv', 'needs'].includes(k) ? 'Needs Improvement' : '';
+    return lab ? { v: lab } : { bad: t };
+  }
+  const n = parseFloat(t.replace('%', ''));
+  return isFinite(n) && n >= 0 && n <= 100 ? { v: Math.round(n * 10) / 10 } : { bad: t };
+}
+function uploadModel() {
+  const gu = state.gu; const roster = state.data.students;
+  const idx = {}; roster.forEach(s => { const k = nameKey(s.name); (idx[k] = idx[k] || []).push(s); });
+  return gu.rows.map((r, i) => {
+    const raw = gu.nameCol >= 0 ? r[gu.nameCol] : ((r[gu.firstCol] || '') + ' ' + (r[gu.lastCol] || ''));
+    const hit = idx[nameKey(raw)] || [];
+    const stu = gu.picks[i] ? roster.find(s => s.id === gu.picks[i]) : (hit.length === 1 ? hit[0] : null);
+    const vals = {}, bad = [];
+    if (stu) gu.subj.forEach(c => { const x = gradeCell(stu, r[c]); if (x.v != null) vals[gu.headers[c]] = x.v; else if (x.bad) bad.push(gu.headers[c] + ': ' + x.bad); });
+    return { i, raw: String(raw || '').trim(), stu, ambiguous: hit.length > 1 && !gu.picks[i], vals, bad, ok: !!(stu && Object.keys(vals).length) };
+  }).filter(m => m.raw);
+}
+function gradesHtml() {
+  const gu = state.gu;
+  const months = {}; recs().grades.forEach(g => { months[g.month] = (months[g.month] || 0) + 1; });
+  const mKeys = Object.keys(months).sort().reverse();
+  const onFile = `<section class="card"><h2>Months on file</h2>${mKeys.length ? `<div class="tw"><table style="min-width:360px"><thead><tr><th>Report</th><th>Students</th><th></th></tr></thead><tbody>${mKeys.map(m => `<tr><td><b>${esc(monthLabel(m))}</b></td><td>${months[m]}</td><td><button class="link" data-act="deleteMonth" data-m="${esc(m)}">Remove this month</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No grade reports uploaded yet.</p>'}</section>`;
+  const chooser = `<section class="card"><h2>1. Choose the file</h2>
+    <div class="cols"><label class="fl">Report month<select class="field" id="guMonth">${monthOptions(state.guMonth || defaultMonth())}</select></label>
+    <label class="fl">Grade report file (.csv)<input class="field" type="file" id="guFile" accept=".csv,.txt,.tsv,text/csv" style="padding:9px 12px"></label></div>
+    <div class="small" style="margin:8px 0">Export the RenWeb grade report to Excel, then Save As CSV. Or paste the rows below, including the header row.</div>
+    <textarea class="field" id="guPaste" style="min-height:90px" placeholder="Student, Reading, Math, Science, Bible&#10;Sample Student, 88, 91, 85, 94"></textarea>
+    <div style="margin-top:8px"><button class="secondary" data-act="readPaste">Read pasted rows</button></div></section>`;
+  if (!gu) return `<div class="banner">Nothing saves until you check the matches and confirm. Re-uploading a month replaces that month for the students in the file.</div>${chooser}${onFile}`;
+  const model = uploadModel(); const good = model.filter(m => m.ok); const exists = recs().grades.filter(g => g.month === gu.month && good.some(m => m.stu.id === g.studentId)).length;
+  const nameSel = `<label class="fl">Student name column<select class="field" id="guName">${gu.firstCol >= 0 && gu.lastCol >= 0 ? `<option value="-1" ${gu.nameCol < 0 ? 'selected' : ''}>First + Last columns</option>` : ''}${gu.headers.map((h, i) => `<option value="${i}" ${gu.nameCol === i ? 'selected' : ''}>${esc(h || 'Column ' + (i + 1))}</option>`).join('')}</select></label>`;
+  const subjBoxes = gu.headers.map((h, i) => (i === gu.nameCol || i === gu.firstCol && gu.nameCol < 0 || i === gu.lastCol && gu.nameCol < 0 || !h) ? '' : `<label class="chk" style="min-height:32px"><input type="checkbox" name="guSubj" value="${i}" ${gu.subj.includes(i) ? 'checked' : ''}>${esc(h)}</label>`).join('');
+  const roster = sortStudents(state.data.students);
+  const rows = model.map(m => {
+    const status = m.ok ? '<span class="chip svc">Ready</span>' : m.stu ? '<span class="chip cf">No usable grades</span>' : `<select class="field" data-pick="${m.i}" style="min-height:36px;max-width:220px" aria-label="Match ${esc(m.raw)}"><option value="">${m.ambiguous ? 'Several match. Pick one' : 'No match. Pick a student'}</option>${roster.map(s => `<option value="${esc(s.id)}">${esc(s.name)} (${esc(s.grade)})</option>`).join('')}</select>`;
+    const vals = m.stu ? Object.keys(m.vals).map(k => `${esc(k)} ${isLabelGrade(m.stu.grade) ? esc(m.vals[k]) : m.vals[k]}`).join(' · ') : '';
+    return `<tr><td><b>${esc(m.raw)}</b></td><td>${m.stu ? esc(m.stu.name) + '<div class="small">' + esc(m.stu.grade) + '</div>' : ''}</td><td>${vals}${m.bad.length ? `<div class="small" style="color:#7A1A1F">Ignored: ${esc(m.bad.join(', '))}</div>` : ''}</td><td>${status}</td></tr>`;
+  }).join('');
+  return `${chooser}
+    <section class="card"><h2>2. Check the columns</h2><div class="cols">${nameSel}</div><div class="fh" style="margin-top:12px">SUBJECT COLUMNS TO SAVE</div><div style="display:flex;flex-wrap:wrap;gap:4px 18px">${subjBoxes}</div></section>
+    <section class="card"><h2>3. Check the matches · ${model.length} rows read</h2>
+      ${exists ? `<div class="banner warn" style="margin-bottom:12px">${exists} of these students already have ${esc(monthLabel(gu.month))} grades. Saving replaces them.</div>` : ''}
+      <div class="tw"><table style="min-width:680px"><thead><tr><th>Name in file</th><th>Portal student</th><th>Grades</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="btns" style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="primary" data-act="saveGrades" ${good.length ? '' : 'disabled'}>Save ${good.length} ${good.length === 1 ? 'student' : 'students'} for ${esc(monthLabel(gu.month))}</button><button class="secondary" data-act="cancelUpload">Cancel</button></div>
+      <div class="small" style="margin-top:8px">K3 to K5 read as Meets, Approaching or Needs Improvement. 1st to 5th read as numbers from 0 to 100. Rows that do not match are skipped unless you pick the student.</div></section>${onFile}`;
+}
+
+/* ---------- Reports ---------- */
+function reportData(key) {
+  const R = recs(); const list = sortStudents(state.data.students); const rp = state.rp || {};
+  if (key === 'service') {
+    const per = {}; list.forEach(s => { per[s.id] = { n: 0, pres: 0, abs: 0, mins: 0 }; });
+    (state.data.sessions || []).forEach(x => (x.attendance || []).forEach(a => { const p = per[a.studentId]; if (!p) return; p.n++; if (a.status === 'Present' || a.status === 'Left early') { p.pres++; p.mins += x.minutes; } else p.abs++; }));
+    return { title: 'Service minutes (this school year)', head: ['Student', 'Grade', 'Sessions', 'Attended', 'Missed', 'Minutes delivered', 'Attendance'],
+      rows: list.filter(s => per[s.id].n).map(s => { const p = per[s.id]; return [s.name, s.grade, p.n, p.pres, p.abs, p.mins, Math.round(p.pres / p.n * 100) + '%']; }) };
+  }
+  if (key === 'progress') {
+    const cols = PROGRESS_MEASURES.filter(m => m !== 'Other');
+    return { title: 'Latest progress by student', head: ['Student', 'Grade', ...cols],
+      rows: list.map(s => { const lat = latestByMeasure(R.progress.filter(x => x.studentId === s.id));
+        return [s.name, s.grade, ...cols.map(m => { const x = lat[m]; if (!x) return ''; let ch = ''; if (x.prev && x.value != null && x.prev.value != null) { const d = Math.round((x.value - x.prev.value) * 10) / 10; ch = ' (' + (d > 0 ? '+' : '') + d + ')'; } return x.score + ch + ' · ' + shortDate(x.date); })]; }).filter(r => r.slice(2).some(Boolean)) };
+  }
+  if (key === 'gradewatch') {
+    const rows = [];
+    list.forEach(s => { const g = R.grades.filter(x => x.studentId === s.id).sort((a, b) => b.month.localeCompare(a.month)); const t = gradeTrend(g);
+      if (!t || !t.watch) return;
+      rows.push([s.name, s.grade, monthLabel(g[0].month), t.kind === 'number' ? 'Average ' + g[0].average + ' (' + t.delta + ' since ' + monthLabel(t.prev.month) + ')' + (t.worst && t.worst.d < 0 ? '; ' + t.worst.subject + ' ' + t.worst.d : '') : [t.down.length ? 'Moved down: ' + t.down.join(', ') : '', t.ni.length ? 'Needs Improvement: ' + t.ni.join(', ') : ''].filter(Boolean).join('; ')]); });
+    return { title: 'Grade watch list (average down ' + WATCH_DROP + '+ points, or a K3 to K5 label moved down or at Needs Improvement)', head: ['Student', 'Grade', 'Latest report', 'What changed'], rows };
+  }
+  if (key === 'meetings') {
+    const from = rp.from || schoolStart(), to = rp.to || today(), type = rp.type || '';
+    return { title: 'Meeting log', head: ['Date', 'Student', 'Grade', 'Type', 'Who', 'Entered by', 'Notes'],
+      rows: R.notes.filter(x => x.date >= from && x.date <= to && (!type || x.type === type)).sort((a, b) => b.date.localeCompare(a.date)).map(x => { const s = state.data.students.find(y => y.id === x.studentId) || {}; return [fmtDate(x.date), x.studentName || s.name || '', s.grade || '', x.type, x.who || '', x.byName || '', x.text]; }), filters: true, from, to, type };
+  }
+  // missing data
+  const cut = new Date(); cut.setDate(cut.getDate() - 90); const cutS = `${cut.getFullYear()}-${String(cut.getMonth() + 1).padStart(2, '0')}-${String(cut.getDate()).padStart(2, '0')}`;
+  const months = [...new Set(R.grades.map(g => g.month))].sort(); const latest = months[months.length - 1];
+  const rows = [];
+  list.forEach(s => { const miss = [];
+    if (!R.progress.some(x => x.studentId === s.id && x.date >= cutS)) miss.push('No progress entry in 90 days');
+    if (latest && !(s.grade === '1st' && +latest.slice(5) >= 7) && !R.grades.some(g => g.studentId === s.id && g.month === latest)) miss.push('No ' + monthLabel(latest) + ' grades');
+    if (miss.length) rows.push([s.name, s.grade, miss.join('; ')]); });
+  return { title: 'Missing data', head: ['Student', 'Grade', 'Missing'], rows };
+}
+const schoolStart = () => { const d = new Date(); const y = d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1; return y + '-07-01'; };
+const REPORTS = [['service', 'Service minutes'], ['progress', 'Progress summary'], ['gradewatch', 'Grade watch list'], ['meetings', 'Meeting log'], ['missing', 'Missing data']];
+function reportsHtml() {
+  const key = state.rep || 'service'; const d = reportData(key);
+  const chips = REPORTS.map(r => `<button class="fc ${r[0] === key ? 'on' : ''}" data-act="report" data-k="${r[0]}">${r[1]}</button>`).join('');
+  const filt = d.filters ? `<div class="cols" style="margin-bottom:12px"><label class="fl">From<input class="field" type="date" id="rpFrom" value="${esc(d.from)}"></label><label class="fl">To<input class="field" type="date" id="rpTo" value="${esc(d.to)}"></label><label class="fl">Type<select class="field" id="rpType"><option value="">All types</option>${NOTE_TYPES.map(t => `<option ${t === d.type ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label></div>` : '';
+  const table = d.rows.length ? `<div class="tw"><table style="min-width:560px"><thead><tr>${d.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${d.rows.map(r => `<tr>${r.map(c => `<td style="white-space:pre-wrap">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '<p class="empty">Nothing to show for this report.</p>';
+  return `<section class="card"><h2>Reports</h2><div style="margin-bottom:12px">${chips}</div><div class="fh">${esc(d.title.toUpperCase())}</div>${filt}${table}
+    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="secondary" data-act="downloadReport" ${d.rows.length ? '' : 'disabled'}>Download CSV</button><button class="secondary" data-act="printPage">Print</button></div>
+    <div class="small" style="margin-top:8px">${isAdmin() ? 'Admin sees every student.' : role() === 'principal' ? 'View only.' : 'Shows the students you can see.'}</div></section>`;
+}
+function csvOf(d) {
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  return [d.head, ...d.rows].map(r => r.map(q).join(',')).join('\r\n');
+}
+
 /* ---------- modals ---------- */
 function openModal(html) { $('modalRoot').innerHTML = `<div class="overlay" data-act="overlay"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`; const f = $('modalRoot').querySelector('input,select,textarea'); if (f) f.focus(); }
 function closeModal() { $('modalRoot').innerHTML = ''; }
-const modalErr = msg => { const e = $('modalErr'); if (e) { e.textContent = msg; e.classList.remove('hidden'); } };
+const modalErr = msg => { const e = $('modalErr') || $('inlineErr'); if (e) { e.textContent = msg; e.classList.remove('hidden'); } };
 const val = id => { const e = $(id); return e ? e.value.trim() : ''; };
 const chk = id => { const e = $(id); return !!(e && e.checked); };
 
@@ -778,7 +1084,54 @@ const actions = {
     await afterSave(await api('removeUser', { id: el.dataset.id }), 'Person deactivated.');
   },
   dismissCode: () => { state.codeNotice = null; render(); },
-  closeModal: closeModal
+  closeModal: closeModal,
+  pmGroup: el => { state.pmGroup = el.dataset.g; render(); },
+  noteType: el => { state.noteType = el.dataset.t; render(); },
+  saveProgress: async el => {
+    const p = el.dataset.p, id = el.dataset.id;
+    const meas = val(p + 'Measure');
+    const r = await api('saveProgress', { entry: { id: id || undefined, studentId: state.selectedId, measure: meas, date: val(p + 'Date'), score: val(p + 'Score'), note: val(p + 'Note') } });
+    if (r && r.ok) state.pmGroup = /^NWEA/.test(meas) ? 'NWEA' : meas;
+    await afterSave(r, 'Entry saved.');
+  },
+  editProgress: el => { const e = recs().progress.find(x => x.id === el.dataset.id); if (e) progressModal(e); },
+  voidProgress: async el => {
+    if (!confirm('Remove this progress entry?')) return;
+    await afterSave(await api('voidProgress', { id: el.dataset.id }), 'Entry removed.');
+  },
+  saveNote: async el => {
+    const p = el.dataset.p, id = el.dataset.id;
+    await afterSave(await api('saveNote', { note: { id: id || undefined, studentId: state.selectedId, type: val(p + 'Type'), date: val(p + 'Date'), who: val(p + 'Who'), text: val(p + 'Text') } }), 'Entry saved.');
+  },
+  editNote: el => { const e = recs().notes.find(x => x.id === el.dataset.id); if (e) noteModal(e); },
+  voidNote: async el => {
+    if (!confirm('Remove this documentation entry?')) return;
+    await afterSave(await api('voidNote', { id: el.dataset.id }), 'Entry removed.');
+  },
+  readPaste: () => startUpload($('guPaste').value),
+  cancelUpload: () => { state.gu = null; render(); },
+  saveGrades: async () => {
+    const gu = state.gu; if (!gu) return;
+    const rows = uploadModel().filter(m => m.ok).map(m => ({ studentId: m.stu.id, values: m.vals }));
+    const r = await api('saveGradeReport', { month: gu.month, rows });
+    if (handleAuthError(r)) return;
+    if (r.error) { state.notice = { type: 'err', text: r.error }; render(); return; }
+    state.gu = null; state.notice = { type: 'ok', text: `Saved ${monthLabel(gu.month)} grades for ${r.saved} students.` + (r.skipped ? ` ${r.skipped} skipped.` : '') };
+    await loadAll();
+  },
+  deleteMonth: async el => {
+    if (!confirm('Remove every student\'s ' + monthLabel(el.dataset.m) + ' grades?')) return;
+    const r = await api('deleteGradeMonth', { month: el.dataset.m });
+    if (handleAuthError(r)) return;
+    state.notice = r.error ? { type: 'err', text: r.error } : { type: 'ok', text: monthLabel(el.dataset.m) + ' grades removed.' }; await loadAll();
+  },
+  report: el => { state.rep = el.dataset.k; render(); },
+  downloadReport: () => {
+    const d = reportData(state.rep || 'service');
+    try { const url = URL.createObjectURL(new Blob([csvOf(d)], { type: 'text/csv' })); const a = document.createElement('a'); a.href = url; a.download = 'elementary-' + (state.rep || 'service') + '-' + today() + '.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+    catch (e) { state.notice = { type: 'err', text: 'Could not create the download in this browser.' }; render(); }
+  },
+  printPage: () => window.print()
 };
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]'); if (!el) return;
@@ -793,6 +1146,12 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   const id = e.target.id;
+  if (id === 'guMonth') { state.guMonth = e.target.value; if (state.gu) state.gu.month = e.target.value; render(); }
+  if (id === 'guName' && state.gu) { state.gu.nameCol = +e.target.value; render(); }
+  if (e.target.name === 'guSubj' && state.gu) { state.gu.subj = [...document.querySelectorAll('input[name="guSubj"]:checked')].map(x => +x.value); render(); }
+  if (e.target.dataset && e.target.dataset.pick !== undefined && state.gu) { state.gu.picks[e.target.dataset.pick] = e.target.value; render(); }
+  if (id === 'guFile' && e.target.files && e.target.files[0]) { const rd = new FileReader(); rd.onload = () => startUpload(String(rd.result || '')); rd.readAsText(e.target.files[0]); }
+  if (id === 'rpFrom' || id === 'rpTo' || id === 'rpType') { state.rp = { from: val('rpFrom'), to: val('rpTo'), type: val('rpType') }; render(); }
   if (id === 'gradeSel') { state.filters.grade = e.target.value; render(); }
   if (id === 'groupSel') { state.filters.group = e.target.value; render(); }
   if (id === 'sGroup') { const g = groupById(e.target.value); if (g) { $('attBody').innerHTML = attRows(g, null); $('sStart').value = g.start || ''; $('sEnd').value = g.end || ''; $('sMin').value = (g.start && g.end) ? minsBetween(g.start, g.end) : ''; } }
@@ -832,7 +1191,19 @@ function demoInit() {
   const sessions = [ses('x1', groups[5], ago(1), [att('s2','B','Present'), att('s8','H','Absent','Out sick')], 'Review of short vowels', true), ses('x2', groups[0], ago(2), [att('s1','A','Present'), att('s8','H','Present')], 'Sight words'),
     ses('x3', groups[2], ago(3), [att('s2','B','Present')], 'Comprehension questions'), ses('x4', groups[4], ago(4), [att('s6','F','Present')], 'Blends')];
   const codes = { 'demo-admin':{ id:'admin', name:'Admin', role:'admin', scope:'all' }, 'demo-wendy':{ id:'u_w', name:'Wendy Blasingame', role:'interventionist', scope:'tiered' }, 'demo-abby':{ id:'u_a', name:'Abby Danielson', role:'interventionist', scope:'dyslexia' }, 'demo-principal':{ id:'u_p', name:'Courtney Pine', role:'principal', scope:'all' }, 'demo-teacher':{ id:'t4', name:'Teacher 4', role:'teacher', scope:'' } };
-  demo = { users, groups, students, schedules, sessions, codes, logins:[], tokens:{} };
+  const iso = n => ago(n);
+  const pr = (id, sid, name, measure, date, score, note, by) => ({ id, studentId:sid, studentName:'Sample Student ' + name, measure, date, score, value: (/^\s*(?:level\s*)?(\d{1,4}(?:\.\d+)?)\s*(?:rit|%)?\s*$/i.exec(score) || [])[1] != null ? +(/^\s*(?:level\s*)?(\d{1,4}(?:\.\d+)?)/i.exec(score)[1]) : null, note, byId:'u_w', byName: by || 'Wendy Blasingame', createdAt:date + 'T12:00:00Z' });
+  const nt = (id, sid, name, type, date, who, text) => ({ id, studentId:sid, studentName:'Sample Student ' + name, type, date, who, text, byId:'u_w', byName:'Wendy Blasingame', createdAt:date + 'T12:00:00Z' });
+  const gr = (id, sid, name, grade, month, kind, values) => { const nums = kind === 'number' ? Object.values(values) : []; return { id, studentId:sid, studentName:'Sample Student ' + name, gradeLevel:grade, month, kind, values, average: nums.length ? Math.round(nums.reduce((a, b) => a + b, 0) / nums.length * 10) / 10 : null, uploadedAt:new Date().toISOString() }; };
+  const ym = n => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
+  const records = {
+    progress: [pr('p1','s4','D','NWEA Reading',iso(200),'188','Fall'), pr('p2','s4','D','NWEA Reading',iso(120),'194','Winter'), pr('p3','s4','D','NWEA Reading',iso(40),'199','Spring'), pr('p4','s4','D','NWEA Math',iso(200),'192',''), pr('p5','s4','D','NWEA Math',iso(40),'204',''),
+      pr('p6','s4','D','DRA',iso(30),'Level 28','Instructional level'), pr('p7','s8','H','Take Flight',iso(5),'Unit 3 · 84%','Lesson check-in','Abby Danielson'), pr('p8','s2','B','DRA',iso(20),'Level 16','')],
+    notes: [nt('n1','s4','D','Parent phone call',iso(7),'Mom','Talked about the reading group. She asked for a progress note after testing.'), nt('n2','s4','D','Observation',iso(14),'','Needs prompts to start independent work. Strong with partner reading.'), nt('n3','s2','B','Intervention team meeting',iso(30),'Teacher 2, Barker','Agreed to start pull-out reading. Revisit in 6 weeks.')],
+    grades: [gr('g1','s4','D','3rd',ym(1),'number',{ Reading:91, Math:85, Science:90, Bible:94 }), gr('g2','s4','D','3rd',ym(0),'number',{ Reading:85, Math:81, Science:88, Bible:92 }), gr('g3','s8','H','3rd',ym(0),'number',{ Reading:90, Math:92, Science:88, Bible:95 }),
+      gr('g4','s1','A','K3',ym(1),'label',{ Literacy:'Approaching', Math:'Needs Improvement' }), gr('g5','s1','A','K3',ym(0),'label',{ Literacy:'Meets', Math:'Approaching' })]
+  };
+  demo = { users, groups, students, schedules, sessions, records, codes, logins:[], tokens:{} };
 }
 function demoApi(action, b) {
   if (!demo) demoInit();
@@ -855,7 +1226,9 @@ function demoApi(action, b) {
     const tids = new Set(); visible.forEach(s => s.teacherIds.forEach(t => tids.add(t)));
     const need = new Set(visible.map(s => s.scheduleId).filter(Boolean));
     const groups = me.role === 'teacher' ? [] : activeGroups().map(g => Object.assign({}, g, { mine: mine(g) }, mine(g) ? { members: demo.students.filter(s => !s.archived && s.groupIds.includes(g.id)).map(s => ({ id:s.id, name:s.name, grade:s.grade })) } : {}));
-    const out = { user:me, students:shaped, groups, schedules: demo.schedules.filter(x => !x.archived && (me.role !== 'teacher' || need.has(x.id))), sessions: me.role === 'teacher' ? [] : demo.sessions.filter(x => !x.voided), teachers: demo.users.filter(u => u.role === 'teacher' && u.active && (me.role !== 'teacher' || tids.has(u.id))).map(u => ({ id:u.id, name:u.name, email:u.email })) };
+    const vis = new Set(visible.map(s => s.id));
+    const records = { progress: demo.records.progress.filter(x => !x.voided && vis.has(x.studentId)), notes: demo.records.notes.filter(x => !x.voided && vis.has(x.studentId)), grades: demo.records.grades.filter(x => vis.has(x.studentId)) };
+    const out = { user:me, records, students:shaped, groups, schedules: demo.schedules.filter(x => !x.archived && (me.role !== 'teacher' || need.has(x.id))), sessions: me.role === 'teacher' ? [] : demo.sessions.filter(x => !x.voided), teachers: demo.users.filter(u => u.role === 'teacher' && u.active && (me.role !== 'teacher' || tids.has(u.id))).map(u => ({ id:u.id, name:u.name, email:u.email })) };
     if (me.role === 'admin') out.users = demo.users;
     if (me.role !== 'teacher') out.staff = demo.users.filter(u => u.role === 'interventionist' && u.active).map(u => ({ name:u.name, scope:u.scope }));
     return ok(out);
@@ -893,7 +1266,32 @@ function demoApi(action, b) {
     const rec = Object.assign(old || { id:'x' + Date.now(), loggedById:me.id, loggedByName:me.name, loggedAt:new Date().toISOString() }, { groupId:g.id, groupName:g.name, groupType:g.type, staffName:g.staffName, date:b.session.date || today(), start:b.session.start || '', end:b.session.end || '', minutes, attendance:att_, notes:b.session.notes || '', makeupNeeded:!!b.session.makeupNeeded });
     if (!old) demo.sessions.push(rec); return ok({ session:rec });
   }
+  if (action === 'saveProgress' || action === 'saveNote') {
+    if (!staffRole) return err('Not allowed');
+    const isP = action === 'saveProgress'; const list = isP ? demo.records.progress : demo.records.notes; const inp = isP ? b.entry : b.note;
+    const old = inp.id ? list.find(x => x.id === inp.id && !x.voided) : null;
+    if (old && me.role !== 'admin' && old.byId !== me.id) return err('Not allowed');
+    const stu = visible.find(x => x.id === (old ? old.studentId : inp.studentId)); if (!stu) return err('Student not found');
+    if (isP) { if (!PROGRESS_MEASURES.includes(inp.measure)) return err('Choose a measure'); if (!String(inp.score || '').trim()) return err('Enter a score or level'); }
+    else { if (!NOTE_TYPES.includes(inp.type)) return err('Choose a type'); if (!String(inp.text || '').trim()) return err('Write a note'); }
+    const m = isP ? /^\s*(?:level\s*)?(\d{1,4}(?:\.\d+)?)\s*(?:rit|%)?\s*$/i.exec(inp.score) : null;
+    const rec = Object.assign(old || { id:(isP ? 'p' : 'n') + Date.now(), studentId:stu.id, byId:me.id, byName:me.name, createdAt:new Date().toISOString() },
+      isP ? { measure:inp.measure, date:inp.date || today(), score:String(inp.score).trim(), value: m ? +m[1] : null, note:inp.note || '' } : { type:inp.type, date:inp.date || today(), who:inp.who || '', text:inp.text.trim() }, { studentName:stu.name });
+    if (!old) list.push(rec); return ok(isP ? { entry:rec } : { note:rec });
+  }
+  if (action === 'voidProgress' || action === 'voidNote') {
+    if (!staffRole) return err('Not allowed');
+    const x = (action === 'voidProgress' ? demo.records.progress : demo.records.notes).find(r => r.id === b.id && !r.voided); if (!x) return err('Entry not found');
+    if (me.role !== 'admin' && x.byId !== me.id) return err('Not allowed'); x.voided = true; return ok();
+  }
   if (me.role !== 'admin') return err('Not allowed');
+  if (action === 'saveGradeReport') {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(b.month || '')) return err('Choose the report month'); if (!(b.rows || []).length) return err('No rows to save');
+    let saved = 0, skipped = 0;
+    b.rows.forEach(r => { const s = demo.students.find(x => x.id === r.studentId && !x.archived); if (!s) { skipped++; return; } const lab = isLabelGrade(s.grade); const values = {}; Object.keys(r.values || {}).forEach(k => { const c = (function () { const t = String(r.values[k]).trim(); if (lab) return GRADE_LABELS.includes(t) ? t : ''; const n = parseFloat(t); return isFinite(n) && n >= 0 && n <= 100 ? n : ''; })(); if (c !== '') values[k] = c; }); if (!Object.keys(values).length) { skipped++; return; } const nums = lab ? [] : Object.values(values); demo.records.grades = demo.records.grades.filter(g => !(g.studentId === s.id && g.month === b.month)); demo.records.grades.push({ id:'g' + Date.now() + saved, studentId:s.id, studentName:s.name, gradeLevel:s.grade, month:b.month, kind: lab ? 'label' : 'number', values, average: nums.length ? Math.round(nums.reduce((a, c) => a + c, 0) / nums.length * 10) / 10 : null, uploadedAt:new Date().toISOString() }); saved++; });
+    if (!saved) return err('None of those rows had usable grades'); return ok({ saved, skipped });
+  }
+  if (action === 'deleteGradeMonth') { const n = demo.records.grades.length; demo.records.grades = demo.records.grades.filter(g => g.month !== b.month); return ok({ removed: n - demo.records.grades.length }); }
   if (action === 'saveStudent') {
     const i = demo.students.findIndex(s => s.id === b.student.id); const s = Object.assign({ id:'s' + Date.now(), accommodationLog:[], accommodations:[], archived:false }, i >= 0 ? demo.students[i] : {}, b.student);
     if (!s.name) return err('Student name is required'); if (i >= 0) demo.students[i] = s; else demo.students.push(s); return ok({ student:s });
