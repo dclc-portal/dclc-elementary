@@ -115,6 +115,45 @@ td{padding:11px 12px;border-bottom:1px solid #EEF2F6;vertical-align:top}
 @media(max-width:700px){.cal{grid-template-columns:1fr}.cal>div{min-height:0}}
 @media print{.hdr,.side,.tabs,.fc,button,.banner{display:none!important}.wrap{padding:0}.shell{border:0}}
 @media(max-width:700px){.side{max-width:none;border-right:0;border-bottom:1px solid #E3E8EE}.main{padding:16px}}
+.codebig{display:inline-block;font-size:40px;font-weight:700;letter-spacing:.25em;color:#2E4057;background:#EAF1FA;border:1px solid #C5D7EC;border-radius:12px;padding:6px 20px 6px 28px}
+.st{min-height:100vh;display:flex;flex-direction:column;background:#F5F3EE;font-family:Arial,Helvetica,sans-serif;color:#1B2733}
+.st-top{background:#2E4057;color:#fff;padding:12px 20px;display:flex;align-items:center;gap:16px;font-size:18px;font-weight:700;flex-wrap:wrap}
+.st-brand{font-size:20px}.st-prog{white-space:nowrap}
+.st-bar{flex:1 1 120px;height:12px;border-radius:999px;background:rgba(255,255,255,.25);overflow:hidden}.st-bar i{display:block;height:100%;background:#fff}
+.st-body{flex:1;display:flex;flex-direction:column;align-items:center;padding:20px 16px;gap:16px}
+.st-card{background:#fff;border:1px solid #E3E8EE;border-radius:18px;padding:32px;width:100%;max-width:460px;display:flex;flex-direction:column;gap:16px;align-items:stretch;text-align:center;margin-top:24px}
+.st-card.wide{max-width:900px}
+.st-card h1{margin:0;font-size:30px;color:#2E4057}.st-sub{margin:0;color:#4A5B6B;font-size:18px}.st-sub.center{text-align:center}
+.st-code{font-size:44px;text-align:center;letter-spacing:.3em;min-height:76px;border:2px solid #CBD5DF;border-radius:14px;width:100%}
+.st-btn{background:#2E4057;color:#fff;border:0;border-radius:16px;min-height:68px;font-size:24px;font-weight:700;padding:8px 28px}
+.st-btn.no{background:#fff;color:#2E4057;border:2px solid #2E4057}.st-btn:disabled{opacity:.4;cursor:default}
+.st-link{background:none;border:0;color:#1F3A5F;text-decoration:underline;font-size:16px;min-height:44px}.st-link.white{color:#fff;font-size:15px}
+.st-names{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.st-name{flex:1 1 260px;max-width:420px;min-height:76px;font-size:26px;font-weight:700;color:#2E4057;background:#EAF1FA;border:2px solid #C5D7EC;border-radius:16px;padding:8px 16px}
+.st-name:disabled{opacity:.55;background:#F1F4F8}.st-done{font-size:16px;color:#2F5D1A}
+.st-avatar{width:140px;height:140px;border-radius:50%;background:#DCE9F8;color:#123F73;font-size:52px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto}
+.st-check{width:110px;height:110px;border-radius:50%;background:#E3F4DA;color:#2F5D1A;font-size:64px;display:flex;align-items:center;justify-content:center;margin:0 auto}
+.st-err{background:#FBE3E4;border:1px solid #E8B4B7;color:#7A1A1F;border-radius:12px;padding:12px;font-size:17px}.st-err.top{max-width:900px;width:100%}
+.st-spin{width:56px;height:56px;border-radius:50%;border:6px solid #E3E8EE;border-top-color:#2E4057;margin:0 auto;animation:stspin 1s linear infinite}@keyframes stspin{to{transform:rotate(360deg)}}
+.st-split{width:100%;max-width:1100px;display:flex;flex-direction:column;gap:16px}
+.st-split.two{flex-direction:row;flex-wrap:wrap;align-items:flex-start}.st-split.two>*{flex:1 1 420px;min-width:0}
+.st-pas{background:#fff;border:2px solid #C5D7EC;border-radius:14px;padding:16px;font-size:20px;line-height:1.5;max-height:70vh;overflow:auto;text-align:left}
+.st-pas-h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:22px}.st-pas-t{white-space:pre-wrap}.st-pas img{max-width:100%;margin-top:10px;border-radius:8px}
+.st-q{background:#fff;border:1px solid #E3E8EE;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;width:100%;text-align:left}
+.st-head{width:100%;max-width:1100px;font-size:20px;font-weight:700;color:#2E4057}
+.st-stem{font-size:26px;font-weight:700;line-height:1.35}.st-qimg{max-width:100%;max-height:340px;align-self:flex-start;border-radius:8px}
+.st-opts{display:flex;flex-direction:column;gap:10px}
+.st-opt{min-height:64px;text-align:left;font-size:22px;background:#fff;border:2px solid #CBD5DF;border-radius:14px;padding:10px 16px;color:#1B2733}
+.st-opt.on{background:#DCE9F8;border-color:#2563A8;font-weight:700}
+.st-text{width:100%;border:2px solid #CBD5DF;border-radius:14px;font-size:24px;padding:12px;min-height:64px;font-family:inherit}.st-text.big{font-size:34px;letter-spacing:.04em}
+.st-match{display:flex;flex-direction:column;gap:10px}.st-mrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:22px}.st-mrow>span{flex:1 1 200px}
+.st-sel{flex:1 1 240px;min-height:56px;font-size:20px;border:2px solid #CBD5DF;border-radius:12px;padding:0 10px}
+.st-nav{width:100%;max-width:1100px;display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:auto;padding-top:8px}
+.st-sp{background:#fff;border:2px solid #2E4057;color:#2E4057;border-radius:14px;min-height:56px;font-size:20px;font-weight:700;padding:6px 18px}.st-sp.small{min-height:40px;font-size:16px;padding:4px 12px}
+.st-row{display:flex;gap:10px;flex-wrap:wrap}.st-row.center{justify-content:center}
+.st-mic{background:#fff;border:2px solid #2E4057;color:#2E4057;border-radius:14px;min-height:60px;font-size:20px;font-weight:700;padding:6px 20px}.st-mic.live{background:#A4262C;border-color:#A4262C;color:#fff}
+.st-word{text-align:center;font-size:34px;font-weight:700;color:#2E4057}
+.st-prev .st{min-height:620px;border-radius:14px;overflow:auto;max-height:86vh}
 </style>
 </head>
 <body>
@@ -246,7 +285,7 @@ function handleAuthError(r) {
 /* ---------- session ---------- */
 function saveSession() { try { sessionStorage.setItem('elem_session', JSON.stringify({ token: state.token, user: state.user })); } catch (e) {} }
 function signOutLocal(msg) {
-  state.token = null; state.user = null; state.data = null; state.selectedId = null; state.view = 'home';
+  state.token = null; state.user = null; state.data = null; state.selectedId = null; state.view = 'home'; if (state.hub) { clearInterval(state.hub.poll); state.hub.tests = null; state.hub.builder = state.hub.results = state.hub.finish = null; }
   state.loginMsg = msg || '';
   try { sessionStorage.removeItem('elem_session'); } catch (e) {}
   closeModal(); render();
@@ -304,7 +343,7 @@ function headerHtml() {
     <div class="nav">
       <button class="sync ${DEMO ? 'demo' : ''}" data-act="refresh" title="Refresh data">${syncLabel}</button>
       ${isAdmin() ? `<button class="icon ${state.view === 'access' ? 'on' : ''}" data-act="view" data-v="access" aria-label="Access and roles"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/></svg></button>` : ''}
-      ${pill('home','Students')}${pill('overview','Overview')}${pill('testing-calendar','Testing calendar' + (isApprover() && pendingCount() ? ' (' + pendingCount() + ')' : ''))}${pill('testing-summary','Testing summary')}
+      ${pill('home','Students')}${pill('overview','Overview')}${pill('testing-calendar','Testing calendar' + (isApprover() && pendingCount() ? ' (' + pendingCount() + ')' : ''))}${pill('testing-summary','Testing summary')}${(r === 'teacher' || isAdmin()) ? pill('hub','Testing Hub') : ''}
       ${r !== 'teacher' ? pill('reports','Reports') : ''}
       ${isAdmin() ? pill('grades','Grade upload') : ''}
       ${isAdmin() ? pill('logins','Login report') : ''}
@@ -323,6 +362,7 @@ function bodyHtml() {
   else if (v === 'overview') inner = overviewHtml();
   else if (v === 'testing-calendar') inner = calendarHtml();
   else if (v === 'testing-summary') inner = summaryHtml();
+  else if (v === 'hub') inner = (isTeacher() || isAdmin()) ? hubHtml() : emptyHtml();
   else if (v === 'access') inner = accessHtml();
   else if (v === 'logins') inner = loginsHtml();
   else { const c = VIEW_COMING[v]; inner = `<div class="card muted"><h2>${esc(c[0])}</h2><p class="empty">${esc(c[1])}</p></div>`; }
@@ -818,7 +858,7 @@ function csvOf(d) {
 
 /* ---------- modals ---------- */
 function openModal(html) { $('modalRoot').innerHTML = `<div class="overlay" data-act="overlay"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`; const f = $('modalRoot').querySelector('input,select,textarea'); if (f) f.focus(); }
-function closeModal() { $('modalRoot').innerHTML = ''; }
+function closeModal() { $('modalRoot').innerHTML = ''; if (typeof S !== 'undefined' && S && S.preview) { stuStopSpeech(); S = null; } }
 const modalErr = msg => { const e = $('modalErr') || $('inlineErr'); if (e) { e.textContent = msg; e.classList.remove('hidden'); } };
 const val = id => { const e = $(id); return e ? e.value.trim() : ''; };
 const chk = id => { const e = $(id); return !!(e && e.checked); };
@@ -1280,7 +1320,7 @@ const actions = {
   login: doLogin,
   signout: signOut,
   refresh: async () => { state.notice = null; await loadAll(); },
-  view: el => { state.view = el.dataset.v; state.notice = null; if (state.view === 'logins') state.logins = null; render(); },
+  view: el => { state.view = el.dataset.v; state.notice = null; if (state.view === 'logins') state.logins = null; if (state.view === 'hub') { hub.tests = null; hub.builder = hub.results = hub.finish = null; hub.msg = null; hubPollStart(); } render(); },
   select: el => { state.selectedId = el.dataset.id; state.tab = 'Overview'; state.notice = null; state.view = 'home'; render(); },
   tab: el => { state.tab = el.dataset.t; render(); },
   filter: el => { state.filters[el.dataset.k] = el.dataset.v; render(); },
@@ -1517,6 +1557,1026 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
 });
 
+/* ---------- Phase 5: reading a teacher's test document (.docx) ---------- */
+const W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+const IMG_MIME = { png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', gif:'image/gif', webp:'image/webp' };
+async function zipOpen(buf) {
+  const u8 = new Uint8Array(buf), dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let e = u8.length - 22;
+  while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+  if (e < 0) throw new Error('not a zip');
+  const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true);
+  const entries = {};
+  for (let i = 0; i < n; i++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nl = dv.getUint16(p + 28, true), el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lho = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nl));
+    const start = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+    entries[name] = { method, data: u8.subarray(start, start + csize) };
+    p += 46 + nl + el + cl;
+  }
+  return {
+    has: name => !!entries[name], names: () => Object.keys(entries),
+    async get(name) {
+      const en = entries[name]; if (!en) return null;
+      if (en.method === 0) return en.data;
+      const s = new Blob([en.data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      return new Uint8Array(await new Response(s).arrayBuffer());
+    }
+  };
+}
+const kids = (node, name) => [...node.childNodes].filter(c => c.nodeType === 1 && c.localName === name);
+const kid = (node, name) => kids(node, name)[0] || null;
+const wval = (node, name) => { const k = node && kid(node, name); return k ? (k.getAttributeNS(W_NS, 'val') || k.getAttribute('w:val') || '') : ''; };
+function descendants(node, name, out) { out = out || []; [...node.childNodes].forEach(c => { if (c.nodeType !== 1) return; if (c.localName === name) out.push(c); descendants(c, name, out); }); return out; }
+const attrAny = (el, local) => { for (const a of el.attributes) if (a.localName === local) return a.value; return ''; };
+const toAlpha = n => { let s = ''; n = Math.max(1, n); while (n > 0) { s = String.fromCharCode(65 + (n - 1) % 26) + s; n = Math.floor((n - 1) / 26); } return s; };
+
+function parseNumbering(xml) {
+  const doc = new DOMParser().parseFromString(xml, 'application/xml'), abs = {}, nums = {};
+  descendants(doc.documentElement, 'abstractNum').forEach(a => {
+    const lv = {}; kids(a, 'lvl').forEach(l => { lv[attrAny(l, 'ilvl')] = { fmt: wval(l, 'numFmt'), text: wval(l, 'lvlText'), start: +wval(l, 'start') || 1 }; });
+    abs[attrAny(a, 'abstractNumId')] = lv;
+  });
+  descendants(doc.documentElement, 'num').forEach(m => { const a = kid(m, 'abstractNumId'); if (a) nums[attrAny(m, 'numId')] = attrAny(a, 'val'); });
+  return { abs, nums };
+}
+
+/** Reads a .docx and returns ordered blocks: paragraphs (text, images) and tables. `shrink(bytes, mime)` returns a data URI. */
+async function docxBlocks(buf, shrink) {
+  const zip = await zipOpen(buf);
+  const dec = async n => { const b = await zip.get(n); return b ? new TextDecoder().decode(b) : ''; };
+  const docXml = await dec('word/document.xml'); if (!docXml) throw new Error('not a Word document');
+  const rels = {}, relDoc = new DOMParser().parseFromString(await dec('word/_rels/document.xml.rels') || '<r/>', 'application/xml');
+  descendants(relDoc.documentElement, 'Relationship').forEach(r => { rels[r.getAttribute('Id')] = r.getAttribute('Target'); });
+  const numXml = await dec('word/numbering.xml'), numbering = numXml ? parseNumbering(numXml) : { abs: {}, nums: {} };
+  const doc = new DOMParser().parseFromString(docXml, 'application/xml');
+  const body = kid(doc.documentElement, 'body'); if (!body) throw new Error('empty document');
+  const warnings = [], imgCache = {}, counters = {};
+  async function imageFor(rid) {
+    if (!rid || !rels[rid]) return '';
+    if (imgCache[rid] !== undefined) return imgCache[rid];
+    const target = rels[rid].replace(/^\//, '').replace(/^word\//, ''), ext = (target.split('.').pop() || '').toLowerCase();
+    let out = '';
+    if (!IMG_MIME[ext]) warnings.push('A picture in the ' + ext.toUpperCase() + ' format could not be used. Paste it as a PNG instead.');
+    else { const bytes = await zip.get('word/' + target); if (bytes && bytes.length > 600) out = await shrink(bytes, IMG_MIME[ext]); }
+    return (imgCache[rid] = out || '');
+  }
+  function numLabel(p) {
+    const ppr = kid(p, 'pPr'), np = ppr && kid(ppr, 'numPr'); if (!np) return '';
+    const il = wval(np, 'ilvl') || '0', id = wval(np, 'numId'); if (!id || id === '0') return '';
+    const lvl = (numbering.abs[numbering.nums[id]] || {})[il]; if (!lvl || lvl.fmt === 'bullet' || lvl.fmt === 'none') return '';
+    const c = counters[id] || (counters[id] = {});
+    c[il] = (c[il] == null ? lvl.start - 1 : c[il]) + 1;
+    Object.keys(c).forEach(k => { if (+k > +il) delete c[k]; });
+    const n = c[il], f = lvl.fmt === 'upperLetter' ? toAlpha(n) : lvl.fmt === 'lowerLetter' ? toAlpha(n).toLowerCase() : String(n);
+    return f + (/\)/.test(lvl.text) ? ')' : '.');
+  }
+  async function para(p) {
+    let text = '', allBold = true, anyText = false; const images = [];
+    async function walk(node) {
+      for (const c of [...node.childNodes]) {
+        if (c.nodeType !== 1) continue;
+        const ln = c.localName;
+        if (ln === 'r') {
+          const rpr = kid(c, 'rPr'); const b = rpr && kid(rpr, 'b'); const bold = !!b && !/^(0|false)$/.test(attrAny(b, 'val'));
+          let t = '';
+          for (const x of [...c.childNodes]) {
+            if (x.nodeType !== 1) continue;
+            if (x.localName === 't') t += x.textContent; else if (x.localName === 'tab') t += ' '; else if (x.localName === 'br') t += ' ';
+            else if (x.localName === 'drawing') { const bl = descendants(x, 'blip')[0]; if (bl) { const u = await imageFor(attrAny(bl, 'embed')); if (u) images.push(u); } }
+            else if (x.localName === 'pict' || x.localName === 'object') { const im = descendants(x, 'imagedata')[0]; if (im) { const u = await imageFor(attrAny(im, 'id')); if (u) images.push(u); } }
+          }
+          if (t.trim()) { anyText = true; if (!bold) allBold = false; }
+          text += t;
+        } else if (['hyperlink', 'smartTag', 'sdt', 'sdtContent', 'ins', 'fldSimple'].includes(ln)) await walk(c);
+      }
+    }
+    await walk(p);
+    const ppr = kid(p, 'pPr'); const st = ppr && wval(ppr, 'pStyle');
+    const label = numLabel(p);
+    text = text.replace(/\s+/g, ' ').trim();
+    return { kind: 'p', text: label && text ? label + ' ' + text : text, bold: anyText && allBold || /^Heading|^Title/i.test(st || ''), images };
+  }
+  const blocks = [];
+  async function top(node) {
+    for (const c of [...node.childNodes]) {
+      if (c.nodeType !== 1) continue;
+      if (c.localName === 'p') blocks.push(await para(c));
+      else if (c.localName === 'sdt') { const sc = kid(c, 'sdtContent'); if (sc) await top(sc); }
+      else if (c.localName === 'tbl') {
+        const rows = [], images = [];
+        for (const tr of kids(c, 'tr')) {
+          const cells = [];
+          for (const tc of kids(tr, 'tc')) {
+            const parts = [];
+            for (const pp of kids(tc, 'p')) { const r = await para(pp); if (r.text) parts.push(r.text); images.push(...r.images); }
+            cells.push(parts.join('\n'));
+          }
+          rows.push(cells);
+        }
+        blocks.push({ kind: 'table', rows, images });
+      }
+    }
+  }
+  await top(body);
+  return { blocks, warnings: [...new Set(warnings)] };
+}
+
+/** Turns document blocks into questions, with shared reading passages and pictures. Teachers check and fix the result in the builder. */
+function parseTestBlocks(blocks) {
+  const passages = [], questions = [], warnings = [];
+  const uid = p => p + Math.random().toString(36).slice(2, 10);
+  let cur = null, curP = null, passageOpen = false, inMatch = false, lastHead = -1, imgsUsed = 0;
+  const newQ = text => ({ id: uid('q'), type: 'short', text: text || '', image: '', passageId: curP ? curP.id : '', choices: [], answer: -1, left: [], bank: [], key: [] });
+  function finish() {
+    if (!cur) return; const q = cur; cur = null; inMatch = false;
+    if (q.left.length && q.bank.length) { q.type = 'match'; q.key = q.left.map(() => -1); }
+    else if (q.choices.length >= 2) q.type = 'mc';
+    else if (/_{3,}|\.{5,}/.test(q.text)) q.type = 'fill';
+    else q.type = 'short';
+    if (q.type !== 'mc') delete q.choices; if (q.type !== 'match') { delete q.left; delete q.bank; delete q.key; }
+    if (q.type === 'fill') q.answer = ''; else if (q.type !== 'mc') delete q.answer;
+    questions.push(q);
+  }
+  function startPassage(title) {
+    finish();
+    const p = { id: uid('p'), title: title || '', text: '', image: '' };
+    passages.push(p); curP = p; passageOpen = true; return p;
+  }
+  function addImage(u) {
+    imgsUsed++;
+    if (cur && !(cur.choices && cur.choices.length) && !cur.bank.length) { if (!cur.image) { cur.image = u; return; } }
+    if (passageOpen && curP && !curP.image && !cur) { curP.image = u; return; }
+    const p = startPassage(''); p.image = u;
+  }
+  const lines = [];
+  blocks.forEach((b, i) => {
+    if (b.kind === 'p') { lines.push(b); return; }
+    const rows = b.rows.filter(r => r.some(c => c.trim()));
+    const two = rows.length && rows.every(r => r.filter(c => c.trim()).length === 2 && r.length === 2);
+    if (two && (inMatch || (cur && /\bmatch/i.test(cur.text)))) { lines.push({ kind: 'matchtable', rows }); return; }
+    rows.forEach(r => r.forEach(c => c.split('\n').forEach(t => { if (t.trim()) lines.push({ kind: 'p', text: t.trim(), images: [] }); })));
+    b.images.forEach(u => lines.push({ kind: 'p', text: '', images: [u] }));
+  });
+  for (const b of lines) {
+    if (b.kind === 'matchtable') {
+      if (!cur) cur = newQ('Match each item.'); cur.left = b.rows.map(r => r[0].replace(/^\d+[.)]\s*/, '').trim()); cur.bank = b.rows.map(r => r[1].replace(/^[A-Ha-h][.)]\s*/, '').trim()); finish(); continue;
+    }
+    const text = (b.text || '').replace(/\s+/g, ' ').trim();
+    if (!text && !(b.images || []).length) { if (inMatch && cur && cur.bank.length) finish(); continue; }
+    if (text && /^(name|date|class|teacher|period)\b[^a-z]{0,3}(:|_)/i.test(text) && text.length < 90) continue;
+    const cm = /^\(?([A-Ha-h])[.)]\s+(\S.*)$/.exec(text), qm = /^(\d{1,3})\s*[.)]\s*(.*)$/.exec(text);
+    if (cm && cur) {
+      const parts = /^\(?A[.)]\s/i.test(text) && /\s\(?B[.)]\s/.test(text) ? text.split(/\s+(?=\(?[A-H][.)]\s)/) : [text];
+      parts.forEach(pt => { const m = /^\(?[A-Ha-h][.)]\s+(.*)$/.exec(pt.trim()); if (m) (inMatch ? cur.bank : cur.choices).push(m[1].trim()); });
+    } else if (qm && !(inMatch && cur && cur.bank.length === 0 && false)) {
+      if (inMatch && cur && !cur.bank.length) cur.left.push(qm[2].trim());
+      else {
+        finish(); cur = newQ(qm[2].trim());
+        inMatch = /^match(ing)?\b|\bmatch\b.*\b(with|to)\b/i.test(cur.text);
+        if (cur.passageId === '' && curP && passageOpen) cur.passageId = curP.id;
+        passageOpen = false; lastHead = -1;
+      }
+    } else if (text) {
+      const cue = /^(read|use|look at|study|passage|story|text|poem|article)\b/i.test(text) && text.length > 25;
+      if (cur && !(cur.choices && cur.choices.length) && !(inMatch && cur.bank.length) && text.length <= 220 && !cue) cur.text += (cur.text ? '\n' : '') + text;
+      else if (text.length > 120 || cue) {
+        let title = '';
+        if (lastHead >= 0 && lastHead === questions.length - 1 && !cur) { title = questions[lastHead].text; questions.splice(lastHead, 1); lastHead = -1; }
+        if (!(passageOpen && curP && !cur)) startPassage(title); else if (title && !curP.title) curP.title = title;
+        curP.text += (curP.text ? '\n\n' : '') + text;
+      } else {
+        finish(); passageOpen = false; curP = null;
+        questions.push({ id: uid('q'), type: 'heading', text }); lastHead = questions.length - 1;
+      }
+    }
+    (b.images || []).forEach(addImage);
+  }
+  finish();
+  questions.forEach(q => { if (q.type === 'heading') return; if (!q.passageId) q.passageId = ''; });
+  const real = questions.filter(q => q.type !== 'heading');
+  if (!real.length) warnings.push('No numbered questions were found. You can add them yourself below.');
+  const mcN = real.filter(q => q.type === 'mc').length;
+  if (mcN) warnings.push('Choose the right answer on each multiple choice question if you want matches marked. This is optional.');
+  return { passages, questions, warnings, found: { questions: real.length, pictures: imgsUsed, passages: passages.length } };
+}
+
+/** Spelling lists: one word per line, optional sentence after a dash. */
+function parseSpellingText(text) {
+  return String(text || '').split(/\r?\n/).map(l => l.replace(/^\s*(\d+[.)]|[-•*])\s*/, '').trim()).filter(Boolean).map(l => {
+    const m = /^(\S[^\-–—:|]*?)\s*(?:[-–—:|])\s*(.+)$/.exec(l);
+    return m ? { word: m[1].trim(), sentence: m[2].trim() } : { word: l, sentence: '' };
+  });
+}
+/** Shrinks a picture so tests stay small. Pictures with text or charts stay sharp (max 900 px wide). */
+function canvasUri(cv, srcIsJpeg) {
+  let out = cv.toDataURL('image/png');
+  if (out.length > 160000 || srcIsJpeg) out = cv.toDataURL('image/jpeg', 0.82);
+  return out.length > 690000 ? cv.toDataURL('image/jpeg', 0.6) : out;
+}
+async function shrinkImage(bytes, mime) {
+  const blob = new Blob([bytes], { type: mime });
+  try {
+    const bmp = await createImageBitmap(blob);
+    const sc = Math.min(1, 900 / bmp.width), w = Math.round(bmp.width * sc), h = Math.round(bmp.height * sc);
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h); cx.drawImage(bmp, 0, 0, w, h);
+    return canvasUri(cv, mime === 'image/jpeg');
+  } catch (e) { return ''; }
+}
+
+/* ---------- PDF tests: text by line, pictures cropped from the page where they sit ---------- */
+const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+async function loadPdfJs() {
+  if (window.pdfjsLib) return window.pdfjsLib;
+  await new Promise((res, rej) => { const s = document.createElement('script'); s.src = PDFJS + 'pdf.min.js'; s.onload = res; s.onerror = () => rej(new Error('Could not load the PDF reader. Check the connection.')); document.head.appendChild(s); });
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js';
+  return window.pdfjsLib;
+}
+async function pdfBlocks(buf) {
+  const lib = await loadPdfJs(), pdf = await lib.getDocument({ data: new Uint8Array(buf) }).promise;
+  const blocks = [], warnings = []; let textChars = 0;
+  for (let pn = 1; pn <= pdf.numPages; pn++) {
+    const page = await pdf.getPage(pn), tc = await page.getTextContent(), items = [];
+    // text lines, top to bottom
+    const lines = [];
+    tc.items.forEach(it => { if (!it.str || !it.str.trim()) return; const y = it.transform[5], h = it.height || 10;
+      let ln = lines.find(l => Math.abs(l.y - y) < Math.max(2, h * 0.4)); if (!ln) { ln = { y, h, parts: [] }; lines.push(ln); } ln.parts.push({ x: it.transform[4], w: it.width, s: it.str }); });
+    lines.forEach(l => { l.parts.sort((a, b) => a.x - b.x); let t = '', end = null; l.parts.forEach(p => { if (end !== null && p.x - end > 1.5) t += ' '; t += p.s; end = p.x + p.w; }); l.text = t.replace(/\s+/g, ' ').trim(); textChars += l.text.length; items.push({ top: l.y + l.h, y: l.y, h: l.h, text: l.text }); });
+    // pictures
+    const ops = await page.getOperatorList(), OPS = lib.OPS, rects = [], stack = []; let ctm = [1, 0, 0, 1, 0, 0];
+    const mul = (m, n) => [m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1], m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3], m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]];
+    ops.fnArray.forEach((fn, i) => {
+      const a = ops.argsArray[i];
+      if (fn === OPS.save) stack.push(ctm.slice()); else if (fn === OPS.restore) ctm = stack.pop() || ctm;
+      else if (fn === OPS.transform) ctm = mul(ctm, a);
+      else if (fn === OPS.paintImageXObject || fn === OPS.paintInlineImageXObject || fn === OPS.paintJpegXObject) {
+        const x = Math.min(ctm[4], ctm[4] + ctm[0]), w = Math.abs(ctm[0]), y = Math.min(ctm[5], ctm[5] + ctm[3]), h = Math.abs(ctm[3]);
+        if (w > 24 && h > 24) rects.push({ x, y, w, h });
+      }
+    });
+    if (rects.length) {
+      const vp = page.getViewport({ scale: 2 }), cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
+      await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      for (const r of rects) {
+        const [x1, y1, x2, y2] = vp.convertToViewportRectangle([r.x, r.y, r.x + r.w, r.y + r.h]);
+        const sx = Math.max(0, Math.min(x1, x2)), sy = Math.max(0, Math.min(y1, y2)), sw = Math.min(vp.width - sx, Math.abs(x2 - x1)), sh = Math.min(vp.height - sy, Math.abs(y2 - y1));
+        if (sw < 20 || sh < 20) continue;
+        const k = Math.min(1, 900 / sw), c2 = document.createElement('canvas'); c2.width = Math.round(sw * k); c2.height = Math.round(sh * k);
+        const cx = c2.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c2.width, c2.height); cx.drawImage(cv, sx, sy, sw, sh, 0, 0, c2.width, c2.height);
+        items.push({ top: r.y + r.h, y: r.y + r.h, image: canvasUri(c2, false) });
+      }
+    }
+    items.sort((a, b) => b.top - a.top);
+    let prevY = null, prevH = 10;
+    items.forEach(it => {
+      if (it.image) { blocks.push({ kind: 'p', text: '', images: [it.image] }); prevY = null; return; }
+      if (prevY !== null && prevY - it.y > prevH * 1.9) blocks.push({ kind: 'p', text: '', images: [] });
+      blocks.push({ kind: 'p', text: it.text, images: [] }); prevY = it.y; prevH = it.h || 10;
+    });
+    blocks.push({ kind: 'p', text: '', images: [] });
+  }
+  if (textChars < 40) warnings.push('This PDF looks like a scan, so the text could not be read. Upload the Word version instead, or retype the questions.');
+  return { blocks, warnings };
+}
+
+/* ====================================================================
+   Phase 5: Testing Hub (teacher side). Tests are built here; students take them in class.
+   ==================================================================== */
+const HUB_GRADES = ['1st','2nd','3rd','4th','5th'];
+const Q_LABEL = { mc:'Multiple choice', fill:'Fill in the blank', match:'Matching', short:'Short answer', heading:'Heading or directions' };
+const RESULT_CHOICES = ['Used','Offered, declined','Not needed'];
+const hub = state.hub = { tab:'today', tests:null, runs:null, builder:null, results:null, finish:null, msg:null, poll:null };
+const fmtDur = s => { s = Math.round(+s || 0); if (s < 60) return s ? s + ' sec' : '0 min'; const m = Math.round(s / 60); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' hr ' + (m % 60) + ' min'; };
+const hubUrl = () => location.origin + location.pathname.replace(/index\.html$/, '') + '?test';
+const hubStudents = () => (state.data.students || []).filter(s => HUB_GRADES.includes(s.grade));
+const letter = i => String.fromCharCode(65 + i);
+const uid = p => p + Math.random().toString(36).slice(2, 10);
+
+async function hubLoad(quiet) {
+  const r = await api('hubAll');
+  if (handleAuthError(r)) return;
+  if (r.error) { hub.msg = { type:'err', text:r.error }; if (!quiet) render(); return; }
+  hub.tests = r.tests; hub.runs = r.runs;
+  if (state.view === 'hub' && !$('modalRoot').innerHTML && !hub.builder && !hub.results && !hub.finish) render();
+}
+function hubPollStart() {
+  clearInterval(hub.poll);
+  hub.poll = setInterval(() => {
+    if (state.view !== 'hub' || hub.builder || hub.results || hub.finish || $('modalRoot').innerHTML) return;
+    if ((hub.runs || []).some(r => r.status === 'ready' || r.status === 'running')) hubLoad(true);
+  }, 12000);
+}
+
+/* ---------- main view ---------- */
+function hubHtml() {
+  if (hub.builder) return builderHtml();
+  if (hub.finish) return finishHtml();
+  if (hub.results) return resultsHtml();
+  if (hub.tests === null) { hubLoad(); return '<div class="card muted"><p class="empty">Loading the Testing Hub...</p></div>'; }
+  const tab = (t, label) => `<button class="tab ${hub.tab === t ? 'on' : ''}" data-act="hubTab" data-t="${t}">${label}</button>`;
+  const msg = hub.msg ? `<div class="banner ${hub.msg.type}" role="status">${esc(hub.msg.text)}</div>` : '';
+  return `<div class="tabs">${tab('today', 'Testing today')}${tab('tests', 'My tests')}</div>${msg}${hub.tab === 'tests' ? hubTestsHtml() : hubTodayHtml()}`;
+}
+const accNames = s => ((s && (s.accommodations || s.accs)) || []).map(a => a.name);
+function runStatusChip(a) {
+  if (!a || a.status === 'none') return '<span class="chip nosc">Not started</span>';
+  if (a.status === 'done') return `<span class="chip svc">${a.partial ? 'Stopped' : 'Finished'} · ${esc(fmtDur(a.seconds))}</span>`;
+  return `<span class="chip t2">Taking it · ${a.answered} answered</span>`;
+}
+function runCard(r) {
+  const running = r.status === 'running', started = Object.values(r.attempts).filter(a => a.status !== 'none').length;
+  const rows = r.students.map(s => {
+    const full = studentById(s.id), a = r.attempts[s.id];
+    return `<tr><td><b>${esc(s.name)}</b></td><td>${accNames(full).map(n => `<span class="chip grp">${esc(n)}</span>`).join('') || '<span class="small">None</span>'}</td><td>${runStatusChip(a)}${a && a.audio ? ` <span class="chip dys">${a.audio} voice</span>` : ''}</td>
+      <td>${a && a.status !== 'none' ? `<button class="link" data-act="hubReset" data-run="${esc(r.id)}" data-sid="${esc(s.id)}">Reset</button>` : ''}</td></tr>`;
+  }).join('');
+  const done = Object.values(r.attempts).filter(a => a.status === 'done').length;
+  return `<section class="card"><h2>${esc(r.testTitle)} · ${esc([...new Set(r.students.map(s => s.grade))].join(', '))}${isAdmin() ? ' · ' + esc(r.teacherName) : ''}</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin-bottom:12px">
+      <div><div class="fh">CLASS CODE (type once on each Chromebook)</div><span class="codebig" id="code_${esc(r.id)}">${esc(r.code)}</span></div>
+      <div style="flex:1 1 260px"><div class="fh">STUDENTS OPEN THIS PAGE</div><div style="font-size:14px;word-break:break-all"><b>${esc(hubUrl())}</b></div><div class="small">Bookmark it on the class Chromebooks.</div></div></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      ${running ? `<span class="chip svc" style="align-self:center">Started · ${done} of ${r.students.length} finished</span><button class="primary" data-act="hubFinish" data-run="${esc(r.id)}">Finish test and log accommodations</button>`
+        : `<button class="primary" data-act="hubStart" data-run="${esc(r.id)}">Start everyone</button>`}
+      ${!started && !running ? `<button class="secondary" data-act="hubCancelRun" data-run="${esc(r.id)}">Cancel</button>` : ''}
+    </div>
+    <div class="tw"><table><thead><tr><th>Student</th><th>Accommodations</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="note">${running ? 'Students see their name on the Chromebook now.' : 'Students only see their names after you press <b>Start everyone</b>.'} Reset clears one student's attempt if the wrong name was tapped. The test closes when you press Finish.</div></section>`;
+}
+function hubTodayHtml() {
+  const active = hub.runs.filter(r => r.status !== 'closed'), closed = hub.runs.filter(r => r.status === 'closed');
+  const mineCal = tests().filter(t => t.where === 'hub' && t.status === 'approved' && !t.voided && t.date >= today() && t.date <= addDays(today(), 14) && (isAdmin() || t.teacherId === state.user.id));
+  const cal = mineCal.length ? `<section class="card"><h2>On the calendar for the Hub</h2>${mineCal.sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start)).map(t => `<div class="kv"><span>${esc(mdShort(t.date))} · ${esc(tClock(t))} · ${esc(t.title)}</span><span><button class="link" data-act="hubNewRun" data-cal="${esc(t.id)}">Set up</button></span></div>`).join('')}</section>` : '';
+  const ncl = hub.tests.length === 0 ? '<div class="banner">Build your first test under <b>My tests</b>, then come back here to start it with your class.</div>' : '';
+  return `<div class="row" style="align-items:center;justify-content:space-between"><div style="font-size:20px;font-weight:700;color:#2E4057">Testing today · ${esc(longDate(today()))}</div><button class="primary" data-act="hubNewRun">+ Start a test</button></div>${ncl}
+    ${active.length ? active.map(runCard).join('') : '<section class="card muted"><p class="empty">No test is set up right now. Press <b>+ Start a test</b> to choose a test and your students.</p></section>'}
+    ${cal}
+    <section class="card"><h2>Finished tests</h2>${closed.length ? `<div class="tw"><table><thead><tr><th>Date</th><th>Test</th>${isAdmin() ? '<th>Teacher</th>' : ''}<th>Finished</th><th></th></tr></thead><tbody>${closed.map(r => `<tr><td>${esc(shortDate(r.date))}</td><td><b>${esc(r.testTitle)}</b></td>${isAdmin() ? `<td>${esc(r.teacherName)}</td>` : ''}<td>${Object.values(r.attempts).filter(a => a.status === 'done').length} of ${r.students.length}</td><td><button class="link" data-act="hubResults" data-run="${esc(r.id)}">Results</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">Finished tests from the last 45 days show here.</p>'}</section>`;
+}
+function hubTestsHtml() {
+  return `<div class="row" style="align-items:center;justify-content:space-between"><div style="font-size:20px;font-weight:700;color:#2E4057">My tests</div><button class="primary" data-act="bNew">+ New test</button></div>
+  <section class="card">${hub.tests.length ? `<div class="tw"><table><thead><tr><th>Test</th>${isAdmin() ? '<th>Teacher</th>' : ''}<th>Kind</th><th>Items</th><th>Updated</th><th></th></tr></thead><tbody>${hub.tests.map(t => `<tr><td><b>${esc(t.title)}</b></td>${isAdmin() ? `<td>${esc(t.teacherName)}</td>` : ''}<td>${t.kind === 'spelling' ? 'Spelling list' : 'Test or quiz'}</td><td>${t.count} ${t.kind === 'spelling' ? 'words' : 'questions'}</td><td>${esc(shortDate(String(t.updated).slice(0, 10)))}</td>
+    <td style="white-space:nowrap"><button class="link" data-act="hubNewRun" data-test="${esc(t.id)}">Use now</button><button class="link" data-act="bEdit" data-id="${esc(t.id)}">Edit</button><button class="link" data-act="bPrintId" data-id="${esc(t.id)}">Print</button></td></tr>`).join('')}</tbody></table></div>`
+    : '<p class="empty">You have not built a test yet. Press <b>+ New test</b> and upload your test document. The Hub does the rest.</p>'}</section>`;
+}
+
+/* ---------- start a test modal ---------- */
+function runModal(testId, preSids) {
+  const stu = sortStudents(hubStudents());
+  if (!stu.length) { hub.msg = { type:'warn', text:'You have no 1st to 5th grade students to test. K3 to K5 stay on paper.' }; render(); return; }
+  if (!hub.tests.length) { hub.msg = { type:'warn', text:'Build a test first, under My tests.' }; hub.tab = 'tests'; render(); return; }
+  const byGrade = {}; stu.forEach(s => (byGrade[s.grade] = byGrade[s.grade] || []).push(s));
+  openModal(`<h2>Start a test</h2>
+    <label class="fl">Test<select class="field" id="rTest">${hub.tests.map(t => `<option value="${esc(t.id)}" ${t.id === testId ? 'selected' : ''}>${esc(t.title)}${isAdmin() ? ' (' + esc(t.teacherName) + ')' : ''}</option>`).join('')}</select></label>
+    <div><div class="fh">WHO IS TESTING <button class="link" data-act="hubAllStu">Select all</button> <button class="link" data-act="hubNoStu">None</button></div>
+    <div id="rStu" style="max-height:340px;overflow:auto;border:1px solid #E3E8EE;border-radius:10px;padding:8px 12px">${HUB_GRADES.filter(g => byGrade[g]).map(g => `<div class="fh" style="margin-top:6px">${esc(g.toUpperCase())}</div>${byGrade[g].map(s => `<label class="chk"><input type="checkbox" name="rStu" value="${esc(s.id)}" ${preSids && preSids.includes(s.id) ? 'checked' : ''}> ${esc(s.name)} ${accNames(s).length ? `<span class="small">· ${esc(accNames(s).join(', '))}</span>` : ''}</label>`).join('')}`).join('')}</div></div>
+    <div class="banner err hidden" id="modalErr" role="alert"></div>
+    <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="hubCreateRun">Create class code</button></div>`);
+}
+
+/* ---------- finish + results ---------- */
+function finishHtml() {
+  const f = hub.finish, r = f.run;
+  const unfinished = f.students.filter(s => s.attempt && !s.attempt.finishedAt).length, never = f.students.filter(s => !s.attempt).length;
+  const rows = f.students.map(s => {
+    if (!s.attempt) return `<tr><td><b>${esc(s.name)}</b></td><td class="small">Did not start</td></tr>`;
+    const cells = s.accs.map(a => a.by === 'hub' ? `<div>${esc(a.name)} <span class="chip svc">Hub did this · Used</span></div>`
+      : `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0">${esc(a.name)} <span class="chip cf">You confirm</span><span class="seg">${RESULT_CHOICES.map(c => `<label class="segopt"><input type="radio" name="fa_${esc(s.id)}_${esc(a.id)}" value="${esc(c)}" data-sid="${esc(s.id)}" data-aid="${esc(a.id)}"><span>${esc(c)}</span></label>`).join('')}</span></div>`).join('') || '<span class="small">No accommodations on file</span>';
+    return `<tr><td><b>${esc(s.name)}</b></td><td>${cells}</td></tr>`;
+  }).join('');
+  return `<div style="font-size:20px;font-weight:700;color:#2E4057">Finish test · ${esc(r.testTitle)}</div>
+    ${unfinished + never ? `<div class="banner warn">${unfinished ? unfinished + ' student' + (unfinished > 1 ? 's have' : ' has') + ' not finished. Their answers so far are kept and marked as stopped. ' : ''}${never ? never + ' did not start.' : ''}</div>` : ''}
+    <section class="card"><h2>Accommodations used</h2><div class="small" style="margin-bottom:8px">The Hub already logged what it delivered (read aloud, extra time, speaking answers, one question at a time). Confirm anything you handled yourself. Everything goes to each student's Accommodations log. A choice left blank is not logged.</div>
+    <div class="tw"><table><thead><tr><th>Student</th><th>Accommodations</th></tr></thead><tbody>${rows}</tbody></table></div></section>
+    <div id="inlineErr" class="banner err hidden"></div>
+    <div style="display:flex;gap:10px"><button class="primary" data-act="hubClose">Save and close the test</button><button class="secondary" data-act="hubBack">Cancel</button></div>`;
+}
+const answerOf = (a, qid) => a && a.answers ? a.answers[qid] : undefined;
+function fmtAnswer(q, v) {
+  if (v === undefined || v === '' || v === null) return { html: '<span class="small">No answer</span>', mark: '' };
+  if (q.type === 'mc') { const i = +v, ok = q.answer >= 0 ? (i === q.answer) : null; return { html: `<b>${esc(letter(i))}. ${esc((q.choices || [])[i] || '')}</b>`, mark: ok === null ? '' : ok ? 'ok' : 'diff' }; }
+  if (q.type === 'match') {
+    const keyed = (q.key || []).some(k => k >= 0), picks = (q.left || []).map((l, i) => (v && v[i] != null && v[i] !== '' ? letter(+v[i]).toLowerCase() : '?'));
+    const ok = keyed ? (q.key || []).every((k, i) => k < 0 || +v[i] === k) : null;
+    return { html: (q.left || []).map((l, i) => `${i + 1} → ${picks[i]}`).join(' · '), mark: ok === null ? '' : ok ? 'ok' : 'diff' };
+  }
+  if (q.type === 'fill') { const ok = q.answer ? String(v).trim().toLowerCase() === String(q.answer).trim().toLowerCase() : null; return { html: `<b>${esc(v)}</b>`, mark: ok === null ? '' : ok ? 'ok' : 'diff' }; }
+  return { html: `<div style="white-space:pre-wrap">${esc(v)}</div>`, mark: '' };
+}
+const markChip = m => m === 'ok' ? '<span class="chip svc">Matches your key</span>' : m === 'diff' ? '<span class="chip cf">Different from your key</span>' : '';
+function resultsHtml() {
+  const R = hub.results, r = R.run, st = R.students, sel = st.find(s => s.id === R.sel) || st[0];
+  const finished = st.filter(s => s.attempt && s.attempt.finishedAt && !s.attempt.partial).length, notStarted = st.filter(s => !s.attempt).length, voice = st.filter(s => s.attempt && Object.keys(s.attempt.audio).length).length;
+  const test = R.test;
+  let detail = '<p class="empty">Select a student.</p>';
+  if (sel && test) {
+    const a = sel.attempt, items = [];
+    if (!a) detail = `<h2>${esc(sel.name)}</h2><p class="empty">Did not start this test.</p>`;
+    else {
+      const used = a.used || {}, hubAcc = sel.accs.filter(x => x.by === 'hub').map(x => x.name);
+      if (test.kind === 'spelling') {
+        (test.spelling || []).forEach((w, i) => { const v = a.answers['w' + i]; const ok = v != null && String(v).trim().toLowerCase() === w.word.toLowerCase();
+          items.push(`<div class="qc" style="border:1px solid #E3E8EE;border-radius:10px;padding:10px;margin-bottom:8px"><div class="small">WORD ${i + 1}</div><div>${v ? `<b>${esc(v)}</b>` : '<span class="small">No answer</span>'} <span class="small">· correct spelling: ${esc(w.word)}</span> ${v ? (ok ? '<span class="chip svc">Spelled correctly</span>' : '<span class="chip cf">Different</span>') : ''}</div></div>`); });
+      } else {
+        let n = 0; const pass = {};
+        test.questions.forEach(q => {
+          if (q.type === 'heading') { items.push(`<div class="fh" style="margin:10px 0 4px">${esc(q.text)}</div>`); return; }
+          n++; const v = answerOf(a, q.id), f = fmtAnswer(q, v), au = a.audio[q.id];
+          items.push(`<div style="border:1px solid #E3E8EE;border-radius:10px;padding:10px;margin-bottom:8px"><div class="small">${n} · ${esc(Q_LABEL[q.type].toUpperCase())}</div><div style="margin:2px 0 6px;white-space:pre-wrap">${esc(q.text)}</div><div>${f.html} ${markChip(f.mark)}</div>
+            ${au ? `<div style="margin-top:6px"><button class="secondary" style="min-height:36px;padding:4px 12px" data-act="hubPlay" data-sid="${esc(sel.id)}" data-qid="${esc(q.id)}">&#9654; Play voice answer · ${esc(fmtDur(au.secs))}</button> <span class="small">The typed words came from speak-to-type</span></div>` : ''}</div>`);
+        });
+      }
+      detail = `<h2>${esc(sel.name)} · answers</h2><div class="note" style="margin-bottom:10px">Time on the test: <b>${esc(fmtDur(a.seconds))}</b>${a.partial ? ' (stopped by teacher)' : a.finishedAt ? '' : ' (still working)'}${hubAcc.length ? ' · Hub delivered: ' + esc(hubAcc.join(', ')) : ''}. Nothing is scored automatically.</div>${items.join('')}`;
+    }
+  }
+  return `<div class="row" style="align-items:center;justify-content:space-between"><div style="font-size:20px;font-weight:700;color:#2E4057">Results · ${esc(r.testTitle)}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary" data-act="hubBack">Back</button><button class="secondary" data-act="hubPrintResults">Print all</button><button class="secondary" data-act="hubCsv">Download CSV</button>${voice ? '<button class="danger" data-act="hubPurge">Remove voice recordings</button>' : ''}</div></div>
+    <div class="tiles"><div class="tile"><div class="tn">${finished} of ${st.length}</div><div class="tl">Finished</div></div><div class="tile"><div class="tn">${notStarted}</div><div class="tl">Not started</div></div><div class="tile"><div class="tn">${voice}</div><div class="tl">With saved voice answers</div></div></div>
+    <div class="row" style="align-items:flex-start"><section class="card" style="flex:1 1 220px"><h2>Students</h2>${st.map(s => `<button class="srow ${sel && s.id === sel.id ? 'sel' : ''}" data-act="hubSel" data-sid="${esc(s.id)}" style="flex-direction:column;align-items:flex-start;gap:2px"><span class="sn">${esc(s.name)}</span><span class="ss">${s.attempt ? (s.attempt.finishedAt ? (s.attempt.partial ? 'Stopped · ' : 'Finished · ') + esc(fmtDur(s.attempt.seconds)) : 'Working') : 'Not started'}</span></button>`).join('')}</section>
+    <section class="card" style="flex:3 1 520px">${detail}</section></div>`;
+}
+
+/* ---------- printing ---------- */
+function printWindow(title, bodyHtml) {
+  const w = window.open('', '_blank');
+  if (!w) { state.notice = { type:'warn', text:'Your browser blocked the print window. Allow pop-ups for this page and try again.' }; render(); return; }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font-family:Arial,Helvetica,sans-serif;max-width:760px;margin:24px auto;color:#000;line-height:1.45}h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:18px 0 6px}.q{margin:14px 0;page-break-inside:avoid}.pas{border:1px solid #888;padding:10px;margin:12px 0;white-space:pre-wrap}.o{margin:2px 0 2px 18px}img{max-width:100%;max-height:260px;display:block;margin:6px 0}.line{border-bottom:1px solid #000;height:26px;margin:6px 0}.k{font-weight:bold}.hd{font-weight:bold;margin:16px 0 4px}</style></head><body>${bodyHtml}<script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>`);
+  w.document.close();
+}
+function testPrintHtml(t, withKey) {
+  let h = `<h1>${esc(t.title)}${withKey ? ' · ANSWER KEY' : ''}</h1>${withKey ? '' : '<div>Name: ______________________ &nbsp; Date: ______________</div>'}`;
+  if (t.kind === 'spelling') {
+    h += (t.spelling || []).map((w, i) => `<div class="q">${i + 1}. ${withKey ? `<span class="k">${esc(w.word)}</span>${w.sentence ? ' <i>' + esc(w.sentence) + '</i>' : ''}` : '<span style="display:inline-block;width:70%;border-bottom:1px solid #000">&nbsp;</span>'}</div>`).join('');
+    return h;
+  }
+  const pas = {}; (t.passages || []).forEach(p => { pas[p.id] = p; }); let shown = '', n = 0;
+  (t.questions || []).forEach(q => {
+    if (q.type === 'heading') { h += `<div class="hd">${esc(q.text)}</div>`; return; }
+    if (q.passageId && q.passageId !== shown && pas[q.passageId]) { const p = pas[q.passageId]; shown = q.passageId; h += `<div class="pas">${p.title ? `<b>${esc(p.title)}</b><br>` : ''}${esc(p.text)}${p.image ? `<img src="${p.image}">` : ''}</div>`; }
+    if (!q.passageId) shown = '';
+    n++; h += `<div class="q"><div>${n}. ${esc(q.text).replace(/\n/g, '<br>')}</div>${q.image ? `<img src="${q.image}">` : ''}`;
+    if (q.type === 'mc') h += (q.choices || []).map((c, i) => `<div class="o ${withKey && q.answer === i ? 'k' : ''}">${letter(i)}. ${esc(c)}${withKey && q.answer === i ? '  ✓' : ''}</div>`).join('');
+    else if (q.type === 'match') h += `<table style="width:100%;margin-top:6px"><tr><td style="vertical-align:top;width:50%">${(q.left || []).map((l, i) => `<div class="o">${i + 1}. ${esc(l)} ${withKey && q.key && q.key[i] >= 0 ? '→ <span class="k">' + letter(q.key[i]).toLowerCase() + '</span>' : '____'}</div>`).join('')}</td><td style="vertical-align:top">${(q.bank || []).map((b, i) => `<div class="o">${letter(i).toLowerCase()}. ${esc(b)}</div>`).join('')}</td></tr></table>`;
+    else if (q.type === 'fill') h += withKey && q.answer ? `<div class="o k">${esc(q.answer)}</div>` : '';
+    else h += '<div class="line"></div><div class="line"></div>';
+    h += '</div>';
+  });
+  return h;
+}
+
+/* ---------- builder ---------- */
+const emptyTest = () => ({ id:'', title:'', kind:'test', passages:[], questions:[], spelling:[], spellingText:'', readPassages:false, source:'' });
+function bPath(path) { return path.split('.'); }
+function bSet(model, path, v) {
+  const p = bPath(path); let o = model;
+  for (let i = 0; i < p.length - 1; i++) { o = o[p[i]]; if (o == null) return; }
+  o[p[p.length - 1]] = v;
+}
+function bSync() {
+  const b = hub.builder; if (!b) return;
+  const m = b.test;
+  document.querySelectorAll('#bld [data-f]').forEach(el => {
+    const f = el.dataset.f; if (f.endsWith('answerRadio')) return;
+    let v = el.type === 'checkbox' ? el.checked : el.value;
+    if (/\.key\.\d+$/.test(f)) v = +v;
+    const parts = f.split('.'); if (parts[0] === 'q') parts[0] = 'questions'; else if (parts[0] === 'p') parts[0] = 'passages';
+    bSet(m, parts.join('.'), v);
+  });
+}
+function qCard(q, i, m) {
+  const f = k => `data-f="q.${i}.${k}"`;
+  let body = '';
+  if (q.type === 'heading') body = `<input class="field" ${f('text')} value="${esc(q.text)}" aria-label="Heading or directions">`;
+  else {
+    body = `<textarea class="field" ${f('text')} aria-label="Question" style="min-height:56px">${esc(q.text)}</textarea>`;
+    body += (m.passages.length ? `<label class="fl">Story or chart shown with this question<select class="field" ${f('passageId')}><option value="">None</option>${m.passages.map((p, pi) => `<option value="${esc(p.id)}" ${q.passageId === p.id ? 'selected' : ''}>${esc(p.title || 'Story ' + (pi + 1))}</option>`).join('')}</select></label>` : '');
+    body += imgBox('q', i, q.image);
+    if (q.type === 'mc') body += `<div style="display:flex;flex-direction:column;gap:6px">${(q.choices || []).map((c, j) => `<div style="display:flex;gap:8px;align-items:center"><input type="radio" name="ans_${i}" value="${j}" ${q.answer === j ? 'checked' : ''} data-f="q.${i}.answerRadio" data-ai="${i}" aria-label="Right answer"><span class="small" style="width:18px">${letter(j)}.</span><input class="field" ${f('choices.' + j)} value="${esc(c)}"><button class="link" data-act="bDelChoice" data-i="${i}" data-j="${j}">Remove</button></div>`).join('')}<button class="link" style="align-self:flex-start" data-act="bAddChoice" data-i="${i}">+ Add choice</button></div><div class="small">The filled circle marks the right answer. This is optional.</div>`;
+    if (q.type === 'fill') body += `<label class="fl">Right answer (optional)<input class="field" ${f('answer')} value="${esc(q.answer || '')}"></label>`;
+    if (q.type === 'match') body += `<div class="cols"><div style="display:flex;flex-direction:column;gap:6px"><div class="fh">LEFT SIDE</div>${(q.left || []).map((l, j) => `<div style="display:flex;gap:6px;align-items:center"><span class="small">${j + 1}.</span><input class="field" ${f('left.' + j)} value="${esc(l)}"><select class="field" style="max-width:90px" ${f('key.' + j)} aria-label="Right answer for item ${j + 1}"><option value="-1">-</option>${(q.bank || []).map((b, k) => `<option value="${k}" ${(q.key || [])[j] === k ? 'selected' : ''}>${letter(k).toLowerCase()}</option>`).join('')}</select></div>`).join('')}<button class="link" style="align-self:flex-start" data-act="bAddLeft" data-i="${i}">+ Add item</button></div>
+      <div style="display:flex;flex-direction:column;gap:6px"><div class="fh">ANSWER BANK</div>${(q.bank || []).map((b, j) => `<div style="display:flex;gap:6px;align-items:center"><span class="small">${letter(j).toLowerCase()}.</span><input class="field" ${f('bank.' + j)} value="${esc(b)}"></div>`).join('')}<button class="link" style="align-self:flex-start" data-act="bAddBank" data-i="${i}">+ Add choice</button></div></div><div class="small">The small box beside each left item marks its right answer. This is optional.</div>`;
+    if (q.type === 'short') body += '<div class="small">Students who speak their answers get a microphone here.</div>';
+  }
+  return `<div class="stuRow" style="border:1px solid #E3E8EE;border-radius:10px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px" data-qi="${i}"><div style="display:flex;justify-content:space-between;align-items:center"><span class="fh" style="margin:0">${i + 1} · ${esc(Q_LABEL[q.type].toUpperCase())}</span><span><button class="link" data-act="bUp" data-i="${i}">Up</button><button class="link" data-act="bDown" data-i="${i}">Down</button><button class="link" data-act="bDel" data-i="${i}">Remove</button></span></div>${body}</div>`;
+}
+function imgBox(kind, i, img) {
+  return img ? `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><img src="${img}" alt="Picture in this ${kind === 'q' ? 'question' : 'passage'}" style="max-width:200px;max-height:130px;border:1px solid #E3E8EE;border-radius:8px"><label class="link" style="cursor:pointer">Replace<input type="file" accept="image/*" class="sr" data-img="${kind}.${i}"></label><button class="link" data-act="bImgDel" data-kind="${kind}" data-i="${i}">Remove picture</button></div>`
+    : `<label class="link" style="cursor:pointer;align-self:flex-start">+ Add a picture<input type="file" accept="image/*" class="sr" data-img="${kind}.${i}"></label>`;
+}
+function builderHtml() {
+  const b = hub.builder, m = b.test, sp = m.kind === 'spelling';
+  const imp = b.importMsg ? `<div class="banner ${b.importMsg.type}" role="status">${b.importMsg.html}</div>` : '';
+  return `<div id="bld" style="display:flex;flex-direction:column;gap:14px">
+    <div class="row" style="align-items:center;justify-content:space-between"><div style="font-size:20px;font-weight:700;color:#2E4057">${m.id ? 'Edit test' : 'New test'}</div><button class="secondary" data-act="bClose">Back</button></div>
+    <section class="card" style="display:flex;flex-direction:column;gap:10px"><h2 style="margin-bottom:0">Start from your test document</h2>
+      <div class="small">Upload your Word file (.docx) or PDF, or paste the text. The Hub finds the questions and pulls in the pictures, charts and reading passages by itself. You only check and fix. Nothing is uploaded separately. Google Doc? Use File &gt; Download &gt; Microsoft Word, then upload that.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="primary" style="display:inline-flex;align-items:center;cursor:pointer">Upload test document<input type="file" id="bDoc" class="sr" accept=".docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"></label><button class="secondary" data-act="bPaste">Paste text instead</button></div>${imp}</section>
+    <section class="card" style="display:flex;flex-direction:column;gap:12px"><div class="cols"><label class="fl" style="flex:2 1 220px">Test name<input class="field" data-f="title" id="bTitle" value="${esc(m.title)}"></label>
+      <label class="fl">Kind<select class="field" data-f="kind" id="bKind"><option value="test" ${sp ? '' : 'selected'}>Test or quiz</option><option value="spelling" ${sp ? 'selected' : ''}>Spelling list</option></select></label></div>
+      ${sp ? `<div class="fh">SPELLING LIST</div><textarea class="field" data-f="spellingText" style="min-height:170px" placeholder="because - I was late because it rained.">${esc(m.spellingText)}</textarea><div class="small">One word per line. Put the sentence after a dash. Students hear the word and the sentence as many times as they want. They never see the word.</div>`
+      : `${m.passages.length ? `<div class="fh">READING PASSAGES AND CHARTS</div>${m.passages.map((p, i) => `<div class="stuRow" style="border:1px solid #E3E8EE;border-radius:10px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px" data-pi="${i}"><div style="display:flex;justify-content:space-between"><span class="fh" style="margin:0">${esc(p.title || 'Story ' + (i + 1)).toUpperCase()}</span><button class="link" data-act="bDelPassage" data-i="${i}">Remove</button></div><input class="field" data-f="p.${i}.title" placeholder="Title (optional)" value="${esc(p.title)}"><textarea class="field" data-f="p.${i}.text" style="min-height:90px" placeholder="Story text, if any">${esc(p.text)}</textarea>${imgBox('p', i, p.image)}<div class="small">Shown on screen with every question that uses it.</div></div>`).join('')}` : ''}
+      <label class="chk"><input type="checkbox" data-f="readPassages" ${m.readPassages ? 'checked' : ''}> Read the story passages aloud (leave off for reading tests)</label>
+      <div class="fh">QUESTIONS</div>${m.questions.length ? m.questions.map((q, i) => qCard(q, i, m)).join('') : '<p class="empty">No questions yet. Upload a document above, or add questions below.</p>'}
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary" data-act="bAdd" data-type="mc">+ Multiple choice</button><button class="secondary" data-act="bAdd" data-type="fill">+ Fill in the blank</button><button class="secondary" data-act="bAdd" data-type="match">+ Matching</button><button class="secondary" data-act="bAdd" data-type="short">+ Short answer</button><button class="secondary" data-act="bAdd" data-type="heading">+ Heading or directions</button><button class="secondary" data-act="bAddPassage">+ Story or chart</button></div>`}
+      <div id="inlineErr" class="banner err hidden" role="alert"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="primary" data-act="bSave">Save</button><button class="secondary" data-act="bPreview">Preview as a student</button><button class="secondary" data-act="bPrint">Print paper copy</button><button class="secondary" data-act="bPrintKey">Print answer key</button></div></section></div>`;
+}
+function bModelOut() {
+  const m = hub.builder.test;
+  const out = { id: m.id || undefined, title: m.title, kind: m.kind, readPassages: m.readPassages, source: m.source, passages: m.passages, questions: m.questions, spelling: m.kind === 'spelling' ? parseSpellingText(m.spellingText) : [] };
+  if (m.kind === 'spelling') { out.questions = []; out.passages = []; }
+  return out;
+}
+async function bLoadFile(file) {
+  const b = hub.builder, name = file.name;
+  b.importMsg = { type:'ok', html:'Reading ' + esc(name) + '...' }; render();
+  try {
+    const buf = await file.arrayBuffer(); let blocks, warn = [];
+    if (/\.pdf$/i.test(name)) { const r = await pdfBlocks(buf); blocks = r.blocks; warn = r.warnings; }
+    else { const r = await docxBlocks(buf, shrinkImage); blocks = r.blocks; warn = r.warnings; }
+    bApplyBlocks(blocks, warn, name);
+  } catch (e) {
+    b.importMsg = { type:'err', html:'That file could not be read. Make sure it is a Word (.docx) or PDF file. Older .doc files: open in Word and choose Save As .docx. You can also use Paste text instead.' }; render();
+  }
+}
+function bApplyBlocks(blocks, warn, name) {
+  const b = hub.builder, m = b.test;
+  if (m.kind === 'spelling') {
+    const text = blocks.filter(x => x.kind === 'p').map(x => x.text).filter(Boolean).join('\n');
+    m.spellingText = parseSpellingText(text).map(w => w.word + (w.sentence ? ' - ' + w.sentence : '')).join('\n');
+    b.importMsg = { type:'ok', html:`<b>${esc(name)}</b> · ${parseSpellingText(m.spellingText).length} words found. Check the list below.` };
+  } else {
+    const r = parseTestBlocks(blocks);
+    m.passages = r.passages; m.questions = r.questions;
+    b.importMsg = { type: r.found.questions ? 'ok' : 'warn', html: `<b>${esc(name)}</b> · ${r.found.questions} question${r.found.questions === 1 ? '' : 's'} found · ${r.found.pictures} picture${r.found.pictures === 1 ? '' : 's'} added · ${r.found.passages} reading passage${r.found.passages === 1 ? '' : 's'}. Look over the questions below and fix anything that needs it.${warn.concat(r.warnings).map(w => '<br>' + esc(w)).join('')}` };
+  }
+  if (!m.title) m.title = name.replace(/\.(docx|pdf)$/i, '').replace(/[_]+/g, ' ');
+  m.source = name;
+  render();
+}
+function pasteBlocks(text) {
+  return String(text).split(/\r?\n/).map(t => ({ kind:'p', text: t.trim(), images: [] }));
+}
+async function imageFromFile(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  return shrinkImage(bytes, file.type || 'image/png');
+}
+function bPreviewTest() {
+  const m = bModelOut();
+  const clean = JSON.parse(JSON.stringify(m)); clean.id = 'preview'; clean.questions.forEach(q => { delete q.key; });
+  clean.questions = (clean.questions || []).map(q => Object.assign({}, q));
+  stuPreview(clean, { read:true, speak:true, time:false, format:false });
+}
+
+/* ---------- actions ---------- */
+function hubReload(msg) { hub.msg = msg || null; return hubLoad(); }
+async function hubDo(promise, okMsg) {
+  const r = await promise;
+  if (handleAuthError(r)) return null;
+  if (r.error) { hub.msg = { type:'err', text:r.error }; render(); return null; }
+  if (okMsg) hub.msg = { type:'ok', text:okMsg };
+  return r;
+}
+function bFresh(t) {
+  const m = Object.assign(emptyTest(), JSON.parse(JSON.stringify(t || {})));
+  m.passages = m.passages || []; m.questions = m.questions || [];
+  m.spellingText = (m.spelling || []).map(w => w.word + (w.sentence ? ' - ' + w.sentence : '')).join('\n');
+  return m;
+}
+function bBlank(type) {
+  const q = { id: uid('q'), type, text: '', image: '', passageId: '' };
+  if (type === 'mc') { q.choices = ['', '', '']; q.answer = -1; }
+  if (type === 'fill') q.answer = '';
+  if (type === 'match') { q.left = ['', '']; q.bank = ['', '']; q.key = [-1, -1]; }
+  if (type === 'heading') { delete q.image; delete q.passageId; }
+  return q;
+}
+const bq = el => hub.builder.test.questions[+el.dataset.i];
+const hubActions = {
+  hubTab: el => { hub.tab = el.dataset.t; hub.msg = null; render(); },
+  closeModal: () => closeModal(),
+  hubNewRun: el => {
+    let pre = null;
+    if (el.dataset.cal) { const t = tests().find(x => x.id === el.dataset.cal); pre = t ? (t.studentIds || []) : null; }
+    runModal(el.dataset.test, pre);
+  },
+  hubAllStu: () => document.querySelectorAll('input[name="rStu"]').forEach(c => { c.checked = true; }),
+  hubNoStu: () => document.querySelectorAll('input[name="rStu"]').forEach(c => { c.checked = false; }),
+  hubCreateRun: async () => {
+    const ids = [...document.querySelectorAll('input[name="rStu"]:checked')].map(c => c.value);
+    if (!ids.length) return modalErr('Choose at least one student.');
+    const r = await api('createRun', { testId: val('rTest'), studentIds: ids });
+    if (handleAuthError(r)) return;
+    if (!r || r.error) return modalErr((r && r.error) || 'Could not start.');
+    closeModal(); hub.tab = 'today'; await hubReload({ type:'ok', text:'Class code ' + r.run.code + ' is ready. Press Start everyone when the class is ready.' });
+  },
+  hubStart: async el => { if (await hubDo(api('startRun', { id: el.dataset.run }))) await hubReload({ type:'ok', text:'Started. Students can now tap their names.' }); },
+  hubCancelRun: async el => { if (!confirm('Cancel this test? Nothing has been started.')) return; if (await hubDo(api('cancelRun', { id: el.dataset.run }))) await hubReload(); },
+  hubReset: async el => {
+    if (!confirm('Clear this student\'s attempt so they can start over? Their answers and voice recording will be removed.')) return;
+    if (await hubDo(api('resetAttempt', { runId: el.dataset.run, studentId: el.dataset.sid }))) await hubReload({ type:'ok', text:'Cleared. That student can tap their name again.' });
+  },
+  hubFinish: async el => {
+    const r = await hubDo(api('getRunResults', { id: el.dataset.run })); if (!r) return;
+    hub.finish = r; hub.msg = null; render();
+  },
+  hubBack: () => { hub.finish = null; hub.results = null; hub.msg = null; hubLoad(); render(); },
+  hubClose: async () => {
+    const confirmMap = {}; document.querySelectorAll('#app input[type=radio][data-aid]:checked').forEach(r => { confirmMap[r.dataset.sid + '|' + r.dataset.aid] = r.value; });
+    const run = hub.finish.run;
+    const r = await api('closeRun', { id: run.id, confirm: confirmMap });
+    if (handleAuthError(r)) return;
+    if (!r || r.error) { const e = $('inlineErr'); if (e) { e.textContent = (r && r.error) || 'Could not save.'; e.classList.remove('hidden'); } return; }
+    hub.finish = null; await loadAll();   // refreshes each student's accommodation log
+    const res = await hubDo(api('getRunResults', { id: run.id })); if (!res) return;
+    hub.results = res; hub.results.sel = res.students[0] && res.students[0].id; hub.msg = null; await hubLoad(true); render();
+  },
+  hubResults: async el => { const r = await hubDo(api('getRunResults', { id: el.dataset.run })); if (!r) return; hub.results = r; r.sel = r.students.find(s => s.attempt) ? r.students.find(s => s.attempt).id : (r.students[0] || {}).id; hub.msg = null; render(); },
+  hubSel: el => { hub.results.sel = el.dataset.sid; render(); },
+  hubPlay: async el => {
+    el.disabled = true;
+    const r = await api('getAudio', { runId: hub.results.run.id, studentId: el.dataset.sid, qid: el.dataset.qid });
+    el.disabled = false;
+    if (!r || r.error) { alert((r && r.error) || 'Could not load the recording.'); return; }
+    const bin = atob(r.b64), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    const a = new Audio(URL.createObjectURL(new Blob([u8], { type: r.mime }))); a.play();
+  },
+  hubPurge: async () => {
+    if (!confirm('Delete all voice recordings for this test? The typed answers stay. This cannot be undone.')) return;
+    const r = await hubDo(api('purgeRunAudio', { id: hub.results.run.id }), 'Voice recordings removed.'); if (!r) return;
+    const res = await hubDo(api('getRunResults', { id: hub.results.run.id })); if (res) { res.sel = hub.results.sel; hub.results = res; render(); }
+  },
+  hubPrintResults: () => {
+    const R = hub.results, t = R.test; let h = `<h1>${esc(R.run.testTitle)} · results</h1>`;
+    R.students.forEach(s => {
+      h += `<h2>${esc(s.name)}${s.attempt ? ' · ' + esc(fmtDur(s.attempt.seconds)) : ''}</h2>`;
+      if (!s.attempt) { h += '<div>Did not start.</div>'; return; }
+      if (t.kind === 'spelling') (t.spelling || []).forEach((w, i) => { h += `<div class="q">${i + 1}. ${esc(s.attempt.answers['w' + i] || '')} <i>(${esc(w.word)})</i></div>`; });
+      else { let n = 0; t.questions.forEach(q => { if (q.type === 'heading') return; n++; const f = fmtAnswer(q, s.attempt.answers[q.id]); h += `<div class="q">${n}. ${esc(q.text)}<br>${f.html}</div>`; }); }
+    });
+    printWindow(R.run.testTitle + ' results', h);
+  },
+  hubCsv: () => {
+    const R = hub.results, t = R.test, cols = t.kind === 'spelling' ? (t.spelling || []).map((w, i) => ['w' + i, 'Word ' + (i + 1)]) : t.questions.filter(q => q.type !== 'heading').map((q, i) => [q.id, (i + 1) + '. ' + q.text.slice(0, 40)]);
+    const cell = v => '"' + String(v == null ? '' : typeof v === 'object' ? Object.values(v).join('/') : v).replace(/"/g, '""') + '"';
+    const rows = [['Student', 'Grade', 'Status', 'Minutes'].concat(cols.map(c => c[1]))];
+    R.students.forEach(s => rows.push([s.name, s.grade, !s.attempt ? 'Not started' : s.attempt.partial ? 'Stopped' : s.attempt.finishedAt ? 'Finished' : 'Working', s.attempt ? (s.attempt.seconds / 60).toFixed(1) : ''].concat(cols.map(c => s.attempt ? s.attempt.answers[c[0]] : ''))));
+    const blob = new Blob([rows.map(r => r.map(cell).join(',')).join('\n')], { type:'text/csv' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = (R.run.testTitle + ' results.csv').replace(/[^\w. -]+/g, ''); a.click();
+  },
+  /* builder */
+  bNew: () => { hub.builder = { test: bFresh(), importMsg: null }; render(); },
+  bEdit: async el => { const r = await hubDo(api('getHubTest', { id: el.dataset.id })); if (!r) return; hub.builder = { test: bFresh(r.test), importMsg: null }; render(); },
+  bClose: () => { if (!confirm('Leave without saving?')) return; hub.builder = null; hubLoad(); render(); },
+  bPrintId: async el => { const r = await hubDo(api('getHubTest', { id: el.dataset.id })); if (r) printWindow(r.test.title, testPrintHtml(r.test, false)); },
+  bAdd: el => { bSync(); const q = bBlank(el.dataset.type); hub.builder.test.questions.push(q); render(); },
+  bAddPassage: () => { bSync(); hub.builder.test.passages.push({ id: uid('p'), title: '', text: '', image: '' }); render(); },
+  bDelPassage: el => { bSync(); const m = hub.builder.test, p = m.passages[+el.dataset.i]; m.questions.forEach(q => { if (q.passageId === p.id) q.passageId = ''; }); m.passages.splice(+el.dataset.i, 1); render(); },
+  bAddChoice: el => { bSync(); const q = bq(el); if (q.choices.length < 8) q.choices.push(''); render(); },
+  bDelChoice: el => { bSync(); const q = bq(el), j = +el.dataset.j; q.choices.splice(j, 1); if (q.answer === j) q.answer = -1; else if (q.answer > j) q.answer--; render(); },
+  bAddLeft: el => { bSync(); const q = bq(el); q.left.push(''); q.key.push(-1); render(); },
+  bAddBank: el => { bSync(); bq(el).bank.push(''); render(); },
+  bUp: el => { bSync(); const a = hub.builder.test.questions, i = +el.dataset.i; if (i > 0) { [a[i - 1], a[i]] = [a[i], a[i - 1]]; render(); } },
+  bDown: el => { bSync(); const a = hub.builder.test.questions, i = +el.dataset.i; if (i < a.length - 1) { [a[i + 1], a[i]] = [a[i], a[i + 1]]; render(); } },
+  bDel: el => { bSync(); hub.builder.test.questions.splice(+el.dataset.i, 1); render(); },
+  bImgDel: el => { bSync(); const m = hub.builder.test, o = el.dataset.kind === 'q' ? m.questions[+el.dataset.i] : m.passages[+el.dataset.i]; o.image = ''; render(); },
+  bPaste: () => openModal(`<h2>Paste your test</h2><div class="small">Paste the text of your test. Number the questions (1. 2. 3.) and letter the choices (A. B. C.). Pictures cannot come through pasted text, so upload the document if it has pictures.</div><textarea class="field" id="bPasteText" style="min-height:260px"></textarea><div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="bPasteGo">Build my test</button></div>`),
+  bPasteGo: () => { const t = $('bPasteText').value; if (!t.trim()) return; closeModal(); bSync(); bApplyBlocks(pasteBlocks(t), [], 'Pasted text'); },
+  bSave: async () => {
+    bSync(); const m = hub.builder.test;
+    const out = bModelOut();
+    if (!String(out.title).trim()) { const e = $('inlineErr'); e.textContent = 'Enter a test name.'; e.classList.remove('hidden'); return; }
+    const r = await api('saveHubTest', { test: out });
+    if (handleAuthError(r)) return;
+    if (!r || r.error) { const e = $('inlineErr'); e.textContent = (r && r.error) || 'Could not save.'; e.classList.remove('hidden'); e.scrollIntoView && e.scrollIntoView({ block:'center' }); return; }
+    hub.builder = null; hub.tab = 'tests'; await hubReload({ type:'ok', text:'Test saved.' });
+  },
+  bPreview: () => { bSync(); bPreviewTest(); },
+  bPrint: () => { bSync(); const o = bModelOut(); if (o.kind === 'spelling') o.spelling = parseSpellingText(hub.builder.test.spellingText); printWindow(o.title || 'Test', testPrintHtml(o, false)); },
+  bPrintKey: () => { bSync(); const o = bModelOut(); printWindow(o.title || 'Test', testPrintHtml(o, true)); }
+};
+Object.assign(actions, hubActions);
+document.addEventListener('change', async e => {
+  const el = e.target;
+  if (el.id === 'bDoc' && el.files && el.files[0] && hub.builder) { bSync(); const f = el.files[0]; el.value = ''; await bLoadFile(f); return; }
+  if (el.id === 'bKind' && hub.builder) { bSync(); render(); return; }
+  if (el.dataset && el.dataset.ai !== undefined && hub.builder) { hub.builder.test.questions[+el.dataset.ai].answer = +el.value; return; }
+  if (el.dataset && el.dataset.img && el.files && el.files[0] && hub.builder) {
+    bSync(); const [kind, i] = el.dataset.img.split('.'), o = kind === 'q' ? hub.builder.test.questions[+i] : hub.builder.test.passages[+i];
+    const url = await imageFromFile(el.files[0]);
+    if (!url) { hub.builder.importMsg = { type:'warn', html:'That picture could not be used. Try a PNG or JPG.' }; } else o.image = url;
+    render();
+  }
+});
+document.addEventListener('paste', async e => {
+  if (!hub.builder || state.view !== 'hub') return;
+  const item = [...(e.clipboardData ? e.clipboardData.items : [])].find(x => x.type.startsWith('image/')); if (!item) return;
+  const card = e.target.closest && e.target.closest('[data-qi]'); if (!card) return;
+  e.preventDefault(); bSync();
+  const url = await imageFromFile(item.getAsFile()); if (url) { hub.builder.test.questions[+card.dataset.qi].image = url; render(); }
+});
+
+/* ====================================================================
+   Phase 5: Student Testing Center. Opened with  ...?test  (no sign-in, protected by the class code)
+   ==================================================================== */
+let S = null;
+const stuStore = { get(k) { try { return sessionStorage.getItem(k) || ''; } catch (e) { return ''; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }, del(k) { try { sessionStorage.removeItem(k); } catch (e) {} } };
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+function stuVoice() {
+  try {
+    const vs = speechSynthesis.getVoices();
+    return vs.find(v => v.name === 'Chrome OS US English 4') || vs.find(v => /US English/i.test(v.name)) || vs.find(v => /^en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
+  } catch (e) { return null; }
+}
+function stuStopSpeech() { try { speechSynthesis.cancel(); } catch (e) {} }
+function stuSay(parts) {
+  stuStopSpeech();
+  if (!window.speechSynthesis || !S) return;
+  S.used.read = true; S.usedDirty = true;
+  const v = stuVoice();
+  (Array.isArray(parts) ? parts : [parts]).filter(Boolean).forEach(p => {
+    const u = new SpeechSynthesisUtterance(String(p)); u.rate = 0.8; u.lang = 'en-US'; if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  });
+}
+function stuBuildSteps(test) {
+  if (test.kind === 'spelling') return (test.spelling || []).map((w, i) => ({ kind:'spell', key:'w' + i, word:w.word, sentence:w.sentence }));
+  const steps = []; let heads = [];
+  (test.questions || []).forEach(q => { if (q.type === 'heading') heads.push(q.text); else { steps.push({ kind:'q', key:q.id, q, heads }); heads = []; } });
+  return steps;
+}
+const stuPassage = id => (S.test.passages || []).find(p => p.id === id);
+
+/* ---------- starting ---------- */
+function studentMain() {
+  document.title = 'Testing Center';
+  S = { root: $('app'), page:'code', code: stuStore.get('stu_code'), used:{}, answers:{}, q:Promise.resolve(), err:'', preview:false };
+  if (S.code) stuOpen(S.code, true); else stuRender();
+  try { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; } catch (e) {}
+}
+async function stuOpen(code, quiet) {
+  const r = await api('stuOpen', { code });
+  if (!r || r.error) {
+    stuStore.del('stu_code'); S.code = ''; S.page = 'code';
+    S.msg = !r ? 'Could not connect.' : r.error === 'nocode' ? (quiet ? '' : 'That code did not work. Check with your teacher.') : (r.message || r.error);
+    return stuRender();
+  }
+  stuStore.set('stu_code', code); S.code = code; S.run = r; S.msg = '';
+  S.page = r.waiting ? 'wait' : 'names'; stuRender(); stuPollStart();
+}
+function stuPollStart() {
+  clearInterval(S.poll);
+  S.poll = setInterval(async () => {
+    if (!S || S.preview || !['wait', 'names'].includes(S.page)) return;
+    const r = await api('stuOpen', { code: S.code });
+    if (!S || !['wait', 'names'].includes(S.page)) return;
+    if (!r || r.error) { if (r && r.error === 'nocode') { stuStore.del('stu_code'); S.code = ''; S.page = 'code'; S.msg = 'This test is finished. Ask your teacher for the next code.'; stuRender(); } return; }
+    const changed = r.waiting !== S.run.waiting || JSON.stringify(r.students) !== JSON.stringify(S.run.students);
+    S.run = r; if (changed) { S.page = r.waiting ? 'wait' : 'names'; stuRender(); }
+  }, 5000);
+}
+
+/* ---------- rendering ---------- */
+const shell = (inner, top) => `<div class="st"><div class="st-top">${top || '<span class="st-brand">Testing Center</span>'}</div><div class="st-body">${inner}</div></div>`;
+function stuRender() {
+  if (!S) return;
+  const p = S.page; let h = '';
+  if (p === 'code') h = shell(`<div class="st-card"><h1>Testing Center</h1><p class="st-sub">Teacher: type your class code</p>
+    <input class="st-code" id="stuCode" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="0000" aria-label="Class code">
+    ${S.msg ? `<div class="st-err" role="alert">${esc(S.msg)}</div>` : ''}<button class="st-btn" data-act="stuGo">Go</button></div>`);
+  else if (p === 'wait') h = shell(`<div class="st-card"><h1>${esc(S.run.title)}</h1><p class="st-sub">Please wait. Your teacher will press Start.</p><div class="st-spin" aria-hidden="true"></div><button class="st-link" data-act="stuCodeReset">Change class code</button></div>`);
+  else if (p === 'names') h = shell(`<div class="st-card wide"><h1>Tap your name</h1><div class="st-names">${S.run.students.map(s => `<button class="st-name" data-act="stuPick" data-id="${esc(s.id)}" ${s.done ? 'disabled' : ''}>${esc(s.name)}${s.done ? ' <span class="st-done">&#10003; Done</span>' : ''}</button>`).join('')}</div>
+    ${S.msg ? `<div class="st-err" role="alert">${esc(S.msg)}</div>` : ''}<p class="st-sub">${esc(S.run.title)} · ${esc(S.run.teacher)}</p><button class="st-link" data-act="stuCodeReset">Change class code</button></div>`);
+  else if (p === 'confirm') {
+    const s = S.run.students.find(x => x.id === S.pick), ini = (s.name.split(/\s+/).map(w => w[0]).join('')).slice(0, 2).toUpperCase();
+    h = shell(`<div class="st-card"><h1>Are you ${esc(s.name)}?</h1><div class="st-avatar" aria-hidden="true">${esc(ini)}</div>
+      ${S.msg ? `<div class="st-err" role="alert">${esc(S.msg)}</div>` : ''}<button class="st-btn" data-act="stuYes">Yes, that is me</button><button class="st-btn no" data-act="stuNo">No, go back</button></div>`);
+  }
+  else if (p === 'done') h = shell(`<div class="st-card"><div class="st-check" aria-hidden="true">&#10003;</div><h1>All done!</h1><p class="st-sub">Great job. Your teacher will see your answers.</p><button class="st-btn" data-act="stuNext">Next student</button></div>`);
+  else if (p === 'review') h = stuReviewHtml();
+  else if (p === 'test') h = stuStepHtml();
+  S.root.innerHTML = h;
+  if (p === 'code') { const i = $('stuCode'); if (i) i.focus(); }
+  if (p === 'test') stuAfterStep();
+}
+function stuReviewHtml() {
+  const miss = S.steps.map((st, i) => ({ st, i })).filter(x => !stuHasAnswer(x.st));
+  return shell(`<div class="st-card wide"><h1>${miss.length ? 'Check your work' : 'Ready to finish?'}</h1>
+    <p class="st-sub">${miss.length ? 'You have not answered ' + miss.length + ' ' + (S.test.kind === 'spelling' ? 'word' : 'question') + (miss.length > 1 ? 's' : '') + ' yet.' : 'You answered everything.'}</p>
+    ${miss.length ? `<div class="st-names">${miss.map(x => `<button class="st-name" data-act="stuGoto" data-i="${x.i}">${S.test.kind === 'spelling' ? 'Word' : 'Question'} ${x.i + 1}</button>`).join('')}</div>` : ''}
+    ${S.err ? `<div class="st-err" role="alert">${esc(S.err)}</div>` : ''}
+    <button class="st-btn" data-act="stuFinish">${miss.length ? 'Finish anyway' : 'Yes, I am finished'}</button><button class="st-btn no" data-act="stuBackToTest">Go back to the test</button></div>`);
+}
+function stuHasAnswer(st) {
+  const v = S.answers[st.key]; if (v == null || v === '') return false;
+  if (st.kind === 'q' && st.q.type === 'match') { const n = (st.q.left || []).length; return (st.q.left || []).every((_, i) => v[i] != null && v[i] !== ''); }
+  return true;
+}
+function stuTopBar() {
+  const n = S.steps.length, i = S.i, noAns = !Object.keys(S.answers).length && !S.preview;
+  return `<span class="st-prog">${S.test.kind === 'spelling' ? 'Spelling · word' : 'Question'} ${i + 1} of ${n}</span><span class="st-bar" aria-hidden="true"><i style="width:${Math.round((i / n) * 100)}%"></i></span>${noAns ? '<button class="st-link white" data-act="stuNotMe">Not me</button>' : ''}${S.preview ? '<button class="st-link white" data-act="stuClosePreview">Close preview</button>' : ''}`;
+}
+function stuStepHtml() {
+  const st = S.steps[S.i], last = S.i === S.steps.length - 1, v = S.answers[st.key];
+  let body = '';
+  if (st.kind === 'spell') {
+    body = `<div class="st-q"><div class="st-word">Word ${S.i + 1}</div><div class="st-row center"><button class="st-sp" data-act="stuHearWord">&#128266; Hear the word</button>${st.sentence ? '<button class="st-sp" data-act="stuHearSentence">&#128266; Hear the sentence</button>' : ''}</div>
+      <input class="st-text big" id="stuIn" data-key="${esc(st.key)}" value="${esc(v || '')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Type the word" style="text-align:center"><p class="st-sub center">You can listen as many times as you want.</p></div>`;
+  } else {
+    const q = st.q, p = q.passageId ? stuPassage(q.passageId) : null;
+    const heads = st.heads.map(h => `<div class="st-head">${esc(h)}</div>`).join('');
+    const pas = p ? `<div class="st-pas"><div class="st-pas-h">${p.title ? `<b>${esc(p.title)}</b>` : ''}${p.text && (S.test.readPassages || S.flags.read) ? '<button class="st-sp small" data-act="stuHearPassage">&#128266; Read the story</button>' : ''}</div>${p.text ? `<div class="st-pas-t">${esc(p.text)}</div>` : ''}${p.image ? `<img src="${p.image}" alt="">` : ''}</div>` : '';
+    let inp = '';
+    if (q.type === 'mc') inp = `<div class="st-opts" role="radiogroup">${(q.choices || []).map((c, j) => `<button class="st-opt ${String(v) === String(j) ? 'on' : ''}" role="radio" aria-checked="${String(v) === String(j)}" data-act="stuPickOpt" data-j="${j}"><b>${letter(j)}.</b> ${esc(c)}</button>`).join('')}</div>`;
+    else if (q.type === 'match') inp = `<div class="st-match">${(q.left || []).map((l, j) => `<div class="st-mrow"><span>${j + 1}. ${esc(l)}</span><select class="st-sel" data-mj="${j}" aria-label="Match for ${esc(l)}"><option value="">Choose...</option>${(q.bank || []).map((b, k) => `<option value="${k}" ${v && String(v[j]) === String(k) ? 'selected' : ''}>${letter(k).toLowerCase()}. ${esc(b)}</option>`).join('')}</select></div>`).join('')}</div>`;
+    else if (q.type === 'fill') inp = `<input class="st-text" id="stuIn" data-key="${esc(st.key)}" value="${esc(v || '')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Your answer">${stuMicHtml()}`;
+    else inp = `<textarea class="st-text" id="stuIn" data-key="${esc(st.key)}" rows="5" spellcheck="false" autocomplete="off" aria-label="Your answer">${esc(v || '')}</textarea>${stuMicHtml()}`;
+    body = `${heads}<div class="st-split ${p ? 'two' : ''}">${pas}<div class="st-q">${q.image ? `<img class="st-qimg" src="${q.image}" alt="">` : ''}<div class="st-stem">${esc(q.text).replace(/\n/g, '<br>')}</div>${inp}</div></div>`;
+  }
+  return shell(`${S.err ? `<div class="st-err top" role="alert">${esc(S.err)}</div>` : ''}${body}
+    <div class="st-nav"><button class="st-btn no" data-act="stuPrev" ${S.i === 0 ? 'disabled' : ''}>Back</button><button class="st-sp" data-act="stuHear">&#128266; Hear again</button><button class="st-btn" data-act="stuNextQ">${last ? 'I am done' : 'Next'}</button></div>`, stuTopBar());
+}
+function stuMicHtml() {
+  if (!S.flags.speak) return '';
+  const on = S.mic && S.mic.live;
+  return `<div class="st-row"><button class="st-mic ${on ? 'live' : ''}" data-act="stuMic">${on ? '&#9679; Listening... tap to stop' : '&#127908; Tap to speak your answer'}</button></div><p class="st-sub">${S.micMsg ? esc(S.micMsg) : 'Speaking fills in the box. You can fix it by typing. Your voice is also saved so your teacher can listen.'}</p>`;
+}
+
+/* ---------- reading aloud ---------- */
+function stuQuestionSpeech(st) {
+  if (st.kind === 'spell') return [st.word, st.sentence, st.word];
+  const q = st.q, parts = st.heads.slice();
+  const p = q.passageId ? stuPassage(q.passageId) : null;
+  if (p && p.text && S.test.readPassages && !S.readP[p.id]) { S.readP[p.id] = true; parts.push((p.title ? p.title + '. ' : '') + p.text); }
+  parts.push(q.text);
+  if (q.type === 'mc') (q.choices || []).forEach((c, j) => parts.push(letter(j) + '. ' + c));
+  if (q.type === 'match') { (q.left || []).forEach((l, j) => parts.push((j + 1) + '. ' + l)); parts.push('Choose from:'); (q.bank || []).forEach((b, k) => parts.push(letter(k).toLowerCase() + '. ' + b)); }
+  return parts;
+}
+function stuAfterStep() {
+  const st = S.steps[S.i];
+  setTimeout(() => { if (S && S.page === 'test' && S.steps[S.i] === st) stuSay(stuQuestionSpeech(st)); }, 350);
+  if (st.kind === 'q' && st.q.type !== 'mc' && st.q.type !== 'match' || st.kind === 'spell') { const i = $('stuIn'); if (i && !S.preview) i.focus({ preventScroll:true }); }
+}
+
+/* ---------- answers and saving ---------- */
+function stuEnqueue(fn) { S.q = S.q.then(fn).catch(() => {}); return S.q; }
+async function stuSaveReq(payload) {
+  if (S.preview) return { ok:true };
+  for (let t = 0; t < 4; t++) {
+    const r = await api('stuSave', Object.assign({ code: S.code, studentId: S.sid, token: S.token, used: S.used }, payload));
+    if (r && r.ok) { S.err = ''; return r; }
+    if (r && (r.error === 'Sign in again' || r.error === 'done' || r.error === 'notrunning')) { S.err = r.message || 'Please ask your teacher for help.'; return r; }
+    await new Promise(res => setTimeout(res, 800 * (t + 1)));
+  }
+  S.err = 'Your answer could not be saved. Check the Wi-Fi and press Next again.'; return null;
+}
+function stuSetAnswer(key, value) { S.answers[key] = value; return stuEnqueue(() => stuSaveReq({ qid: key, value })); }
+let stuTimer = null;
+function stuDebounceSave(key, value) { S.answers[key] = value; clearTimeout(stuTimer); stuTimer = setTimeout(() => stuSetAnswer(key, value), 500); }
+async function stuLeaveStep() {
+  clearTimeout(stuTimer); stuStopSpeech();
+  const st = S.steps[S.i], inp = $('stuIn');
+  if (inp) S.answers[st.key] = inp.value;
+  await stuStopMic();
+  if (S.answers[st.key] !== undefined) await stuSetAnswer(st.key, S.answers[st.key]);
+  await S.q;
+}
+
+/* ---------- speak to type + record ---------- */
+async function stuMicSupported() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder); }
+async function stuToggleMic() {
+  if (S.mic && S.mic.live) return stuPauseMic();
+  const inp = $('stuIn'); if (!inp) return;
+  S.micMsg = '';
+  try {
+    if (!S.mic || !S.mic.rec) {
+      if (!(await stuMicSupported())) throw new Error('nomic');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+      const rec = new MediaRecorder(stream), chunks = [];
+      rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+      S.mic = { stream, rec, chunks, key: S.steps[S.i].key, started: Date.now(), ms: 0, live:false };
+      rec.start(1000);
+      S.mic.cap = setTimeout(() => { if (S && S.mic && S.mic.live) stuPauseMic(); }, 4 * 60 * 1000);
+    } else if (S.mic.rec.state === 'paused') S.mic.rec.resume();
+    S.mic.live = true; S.mic.resumed = Date.now(); S.used.speak = true; S.usedDirty = true;
+    if (SpeechRec) stuStartSR(); else S.micMsg = 'Your voice is being saved. Type your answer, or tell your teacher if you want it written for you.';
+  } catch (e) {
+    S.mic = null; S.micMsg = 'The microphone is not available. Type your answer, or tell your teacher.';
+  }
+  stuRefreshMic();
+}
+function stuStartSR() {
+  const m = S.mic; if (!m || !m.live) return;
+  const inp = $('stuIn'); if (!inp) return;
+  const sr = new SpeechRec(); sr.continuous = true; sr.interimResults = true; sr.lang = 'en-US';
+  const base = inp.value; let got = false;
+  sr.onresult = ev => {
+    got = true; let fin = '', interim = '';
+    for (let i = 0; i < ev.results.length; i++) { const r = ev.results[i]; if (r.isFinal) fin += r[0].transcript; else interim += r[0].transcript; }
+    const el = $('stuIn'); if (!el) return;
+    el.value = (base ? base.replace(/\s+$/, '') + ' ' : '') + (fin + interim).trim();
+    const key = S.steps[S.i].key; S.answers[key] = el.value; clearTimeout(stuTimer); stuTimer = setTimeout(() => stuSetAnswer(key, el.value), 800);
+  };
+  sr.onerror = ev => { if (['not-allowed', 'service-not-allowed', 'audio-capture', 'network'].includes(ev.error)) { m.srFailed = true; S.micMsg = 'Your voice is being saved, but typing from your voice is not working. Type your answer, or tell your teacher.'; stuRefreshMic(); } };
+  sr.onend = () => { if (S && S.mic === m && m.live && !m.srFailed) setTimeout(() => stuStartSR(), 200); };
+  m.sr = sr; try { sr.start(); } catch (e) {}
+}
+function stuPauseMic() {
+  if (!S.mic) return;
+  S.mic.live = false;
+  try { if (S.mic.sr) { const sr = S.mic.sr; S.mic.sr = null; sr.onend = null; sr.stop(); } } catch (e) {}
+  try { if (S.mic.rec.state === 'recording') { S.mic.rec.pause(); S.mic.ms += Date.now() - S.mic.resumed; } } catch (e) {}
+  stuRefreshMic();
+}
+function stuRefreshMic() {
+  const b = document.querySelector('[data-act="stuMic"]'); if (!b) return;
+  const on = S.mic && S.mic.live; b.classList.toggle('live', !!on);
+  b.innerHTML = on ? '&#9679; Listening... tap to stop' : '&#127908; Tap to speak your answer';
+  const sub = b.closest('.st-row') && b.closest('.st-row').nextElementSibling; if (sub && S.micMsg) sub.textContent = S.micMsg;
+}
+async function stuStopMic() {
+  const m = S.mic; if (!m) return; S.mic = null;
+  clearTimeout(m.cap);
+  if (m.live) m.ms += Date.now() - m.resumed;
+  try { if (m.sr) { m.sr.onend = null; m.sr.stop(); } } catch (e) {}
+  await new Promise(res => { try { if (m.rec.state === 'inactive') return res(); m.rec.onstop = res; m.rec.stop(); } catch (e) { res(); } });
+  try { m.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+  if (!m.chunks.length || S.preview) return;
+  const blob = new Blob(m.chunks, { type: m.rec.mimeType || 'audio/webm' });
+  const b64 = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1] || ''); fr.readAsDataURL(blob); });
+  if (b64) await stuEnqueue(() => stuSaveReq({ qid: m.key, value: S.answers[m.key] || '', audio: { b64, mime: blob.type, secs: Math.round(m.ms / 1000) } }));
+}
+
+/* ---------- actions ---------- */
+const stuActions = {
+  stuGo: () => { const c = ($('stuCode').value || '').trim(); if (!/^\d{4}$/.test(c)) { S.msg = 'Type the 4 numbers.'; return stuRender(); } stuOpen(c); },
+  stuCodeReset: () => { stuStore.del('stu_code'); clearInterval(S.poll); S.code = ''; S.page = 'code'; S.msg = ''; stuRender(); },
+  stuPick: el => { S.pick = el.dataset.id; S.msg = ''; S.page = 'confirm'; stuRender(); },
+  stuNo: () => { S.pick = null; S.page = 'names'; stuRender(); },
+  stuYes: async () => {
+    const r = await api('stuBegin', { code: S.code, studentId: S.pick });
+    if (!r || r.error || r.waiting) { S.msg = !r ? 'Could not connect. Try again.' : r.error === 'done' ? 'You already finished this test.' : (r.message || 'Ask your teacher for help.'); if (r && r.error === 'done') { S.page = 'names'; } return stuRender(); }
+    Object.assign(S, { sid: S.pick, token: r.token, test: r.test, flags: r.flags, answers: r.answers || {}, steps: stuBuildSteps(r.test), i: 0, readP: {}, used: {} });
+    const answered = S.steps.findIndex(st => !stuHasAnswer(st)); S.i = answered < 0 ? 0 : answered;
+    S.page = 'test'; S.err = ''; stuRender();
+  },
+  stuNotMe: () => { stuStopSpeech(); S.page = 'names'; S.sid = null; stuRender(); },
+  stuPickOpt: el => { const st = S.steps[S.i]; stuSetAnswer(st.key, el.dataset.j); document.querySelectorAll('.st-opt').forEach(b => { const on = b === el; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); }); },
+  stuHear: () => stuSay(stuQuestionSpeech(S.steps[S.i])),
+  stuHearWord: () => stuSay([S.steps[S.i].word]),
+  stuHearSentence: () => stuSay([S.steps[S.i].sentence]),
+  stuHearPassage: () => { const q = S.steps[S.i].q, p = stuPassage(q.passageId); stuSay([(p.title ? p.title + '. ' : '') + p.text]); },
+  stuMic: () => stuToggleMic(),
+  stuPrev: async () => { await stuLeaveStep(); S.i = Math.max(0, S.i - 1); stuRender(); },
+  stuNextQ: async () => {
+    await stuLeaveStep();
+    if (S.i < S.steps.length - 1) { S.i++; stuRender(); } else { S.page = 'review'; stuRender(); }
+  },
+  stuGoto: el => { S.i = +el.dataset.i; S.page = 'test'; stuRender(); },
+  stuBackToTest: () => { S.page = 'test'; S.i = S.steps.length - 1; stuRender(); },
+  stuFinish: async () => {
+    if (S.preview) { S.page = 'done'; return stuRender(); }
+    await S.q;
+    const r = await api('stuFinish', { code: S.code, studentId: S.sid, token: S.token });
+    if (!r || !r.ok) { S.err = (r && r.message) || 'Could not finish. Check the Wi-Fi and try again.'; return stuRender(); }
+    S.page = 'done'; S.err = ''; stuRender();
+    S.doneTimer = setTimeout(() => { if (S && S.page === 'done') actions.stuNext(); }, 12000);
+  },
+  stuNext: () => { clearTimeout(S.doneTimer); if (S.preview) return actions.stuClosePreview(); S.sid = null; S.pick = null; S.test = null; S.answers = {}; stuOpen(S.code, true); },
+  stuClosePreview: () => { stuStopSpeech(); if (S && S.mic) { try { S.mic.stream.getTracks().forEach(t => t.stop()); } catch (e) {} } S = null; closeModal(); }
+};
+Object.assign(actions, stuActions);
+document.addEventListener('input', e => {
+  if (!S || S.page !== 'test') return;
+  if (e.target.id === 'stuIn') stuDebounceSave(e.target.dataset.key, e.target.value);
+});
+document.addEventListener('change', e => {
+  if (!S || S.page !== 'test') return;
+  if (e.target.dataset && e.target.dataset.mj !== undefined) {
+    const st = S.steps[S.i], cur = Object.assign({}, S.answers[st.key] || {});
+    document.querySelectorAll('.st-sel').forEach(s => { cur[s.dataset.mj] = s.value; });
+    stuSetAnswer(st.key, cur);
+  }
+});
+document.addEventListener('keydown', e => {
+  if (!S) return;
+  if (S.page === 'code' && e.key === 'Enter') actions.stuGo();
+});
+
+/* ---------- teacher preview ---------- */
+function stuPreview(test, flags) {
+  const prev = S;
+  S = { root:null, page:'test', code:'', preview:true, used:{}, answers:{}, q:Promise.resolve(), err:'', test, flags, steps: stuBuildSteps(test), i:0, readP:{}, sid:'preview', token:'' };
+  if (!S.steps.length) { S = prev; return alert('Add at least one question first.'); }
+  openModal('<div id="stuPrev" class="st-prev"></div>');
+  const m = document.querySelector('#modalRoot .modal'); if (m) { m.classList.add('wide'); m.style.padding = '0'; m.style.overflow = 'hidden'; }
+  S.root = $('stuPrev'); stuRender();
+}
+
 /* ---------- demo mode (fake data, no server) ---------- */
 let demo = null;
 function demoInit() {
@@ -1564,6 +2624,7 @@ function demoInit() {
 }
 function demoApi(action, b) {
   if (!demo) demoInit();
+  if (/^stu/.test(action) || ['hubAll', 'getHubTest', 'saveHubTest', 'archiveHubTest', 'createRun', 'startRun', 'resetAttempt', 'cancelRun', 'getRunResults', 'closeRun', 'getAudio', 'purgeRunAudio'].includes(action)) return Promise.resolve({ error: 'The Testing Hub needs the live server. It is not part of demo mode.' });
   const ok = x => Promise.resolve(JSON.parse(JSON.stringify(Object.assign({ ok:true }, x || {}))));
   const err = e => Promise.resolve({ error: e });
   if (action === 'login') {
@@ -1718,6 +2779,7 @@ function demoApi(action, b) {
 
 /* ---------- start ---------- */
 (async function init() {
+  if (/[?&]test(\b|=|&|$)/.test(location.search)) { studentMain(); return; }
   try {
     const saved = JSON.parse(sessionStorage.getItem('elem_session') || 'null');
     if (saved && saved.token && !DEMO) { state.token = saved.token; state.user = saved.user; await loadAll(); return; }
