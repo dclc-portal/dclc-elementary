@@ -1918,7 +1918,7 @@ function hubTodayHtml() {
     <section class="card"><h2>Finished tests</h2>${closed.length ? `<div class="tw"><table><thead><tr><th>Date</th><th>Test</th>${isAdmin() ? '<th>Teacher</th>' : ''}<th>Finished</th><th></th></tr></thead><tbody>${closed.map(r => `<tr><td>${esc(shortDate(r.date))}</td><td><b>${esc(r.testTitle)}</b></td>${isAdmin() ? `<td>${esc(r.teacherName)}</td>` : ''}<td>${Object.values(r.attempts).filter(a => a.status === 'done').length} of ${r.students.length}</td><td><button class="link" data-act="hubResults" data-run="${esc(r.id)}">Results</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">Finished tests from the last 45 days show here.</p>'}</section>`;
 }
 function hubTestsHtml() {
-  return `<div class="row" style="align-items:center;justify-content:space-between"><div style="font-size:20px;font-weight:700;color:#2E4057">My tests</div><button class="primary" data-act="bNew">+ New test</button></div>
+  return `<div class="row" style="align-items:center;justify-content:space-between"><div style="font-size:20px;font-weight:700;color:#2E4057">My tests</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="primary" data-act="bNew">+ New test</button><button class="primary" data-act="bNew" data-kind="spelling">+ New spelling test</button></div></div>
   <section class="card">${hub.tests.length ? `<div class="tw"><table><thead><tr><th>Test</th>${isAdmin() ? '<th>Teacher</th>' : ''}<th>Kind</th><th>Items</th><th>Updated</th><th></th></tr></thead><tbody>${hub.tests.map(t => `<tr><td><b>${esc(t.title)}</b></td>${isAdmin() ? `<td>${esc(t.teacherName)}</td>` : ''}<td>${t.kind === 'spelling' ? 'Spelling list' : 'Test or quiz'}</td><td>${t.count} ${t.kind === 'spelling' ? 'words' : 'questions'}</td><td>${esc(shortDate(String(t.updated).slice(0, 10)))}</td>
     <td style="white-space:nowrap"><button class="link" data-act="hubNewRun" data-test="${esc(t.id)}">Use now</button><button class="link" data-act="bEdit" data-id="${esc(t.id)}">Edit</button><button class="link" data-act="bPrintId" data-id="${esc(t.id)}">Print</button></td></tr>`).join('')}</tbody></table></div>`
     : '<p class="empty">You have not built a test yet. Press <b>+ New test</b> and upload your test document. The Hub does the rest.</p>'}</section>`;
@@ -1980,7 +1980,8 @@ function resultsHtml() {
       const used = a.used || {}, hubAcc = sel.accs.filter(x => x.by === 'hub').map(x => x.name);
       if (test.kind === 'spelling') {
         (test.spelling || []).forEach((w, i) => { const v = a.answers['w' + i]; const ok = v != null && String(v).trim().toLowerCase() === w.word.toLowerCase();
-          items.push(`<div class="qc" style="border:1px solid #E3E8EE;border-radius:10px;padding:10px;margin-bottom:8px"><div class="small">WORD ${i + 1}</div><div>${v ? `<b>${esc(v)}</b>` : '<span class="small">No answer</span>'} <span class="small">· correct spelling: ${esc(w.word)}</span> ${v ? (ok ? '<span class="chip svc">Spelled correctly</span>' : '<span class="chip cf">Different</span>') : ''}</div></div>`); });
+          const au = a.audio['w' + i];
+          items.push(`<div class="qc" style="border:1px solid #E3E8EE;border-radius:10px;padding:10px;margin-bottom:8px"><div class="small">WORD ${i + 1}</div><div>${v ? `<b>${esc(v)}</b>` : '<span class="small">No typed answer</span>'} <span class="small">· correct spelling: ${esc(w.word)}</span> ${v ? (ok ? '<span class="chip svc">Spelled correctly</span>' : '<span class="chip cf">Different</span>') : ''}</div>${au ? `<div style="margin-top:6px"><button class="secondary" style="min-height:36px;padding:4px 12px" data-act="hubPlay" data-sid="${esc(sel.id)}" data-qid="w${i}">&#9654; Play spoken spelling · ${esc(fmtDur(au.secs))}</button></div>` : ''}</div>`); });
       } else {
         let n = 0; const pass = {};
         test.questions.forEach(q => {
@@ -2071,7 +2072,7 @@ function builderHtml() {
   const b = hub.builder, m = b.test, sp = m.kind === 'spelling';
   const imp = b.importMsg ? `<div class="banner ${b.importMsg.type}" role="status">${b.importMsg.html}</div>` : '';
   return `<div id="bld" style="display:flex;flex-direction:column;gap:14px">
-    <div class="row" style="align-items:center;justify-content:space-between"><div style="font-size:20px;font-weight:700;color:#2E4057">${m.id ? 'Edit test' : 'New test'}</div><button class="secondary" data-act="bClose">Back</button></div>
+    <div class="row" style="align-items:center;justify-content:space-between"><div style="font-size:20px;font-weight:700;color:#2E4057">${m.id ? 'Edit ' + (sp ? 'spelling test' : 'test') : (sp ? 'New spelling test' : 'New test')}</div><button class="secondary" data-act="bClose">Back</button></div>
     <section class="card" style="display:flex;flex-direction:column;gap:10px"><h2 style="margin-bottom:0">Start from your test document</h2>
       <div class="small">Upload your Word file (.docx) or PDF, or paste the text. The Hub finds the questions and pulls in the pictures, charts and reading passages by itself. You only check and fix. Nothing is uploaded separately. Google Doc? Use File &gt; Download &gt; Microsoft Word, then upload that.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="primary" style="display:inline-flex;align-items:center;cursor:pointer">Upload test document<input type="file" id="bDoc" class="sr" accept=".docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"></label><button class="secondary" data-act="bPaste">Paste text instead</button></div>${imp}</section>
@@ -2229,7 +2230,7 @@ const hubActions = {
     a.href = URL.createObjectURL(blob); a.download = (R.run.testTitle + ' results.csv').replace(/[^\w. -]+/g, ''); a.click();
   },
   /* builder */
-  bNew: () => { hub.builder = { test: bFresh(), importMsg: null }; render(); },
+  bNew: el => { const t = bFresh(); if (el && el.dataset.kind === 'spelling') t.kind = 'spelling'; hub.builder = { test: t, importMsg: null }; render(); },
   bEdit: async el => { const r = await hubDo(api('getHubTest', { id: el.dataset.id })); if (!r) return; hub.builder = { test: bFresh(r.test), importMsg: null }; render(); },
   bClose: () => { if (!confirm('Leave without saving?')) return; hub.builder = null; hubLoad(); render(); },
   bPrintId: async el => { const r = await hubDo(api('getHubTest', { id: el.dataset.id })); if (r) printWindow(r.test.title, testPrintHtml(r.test, false)); },
@@ -2385,7 +2386,7 @@ function stuStepHtml() {
   let body = '';
   if (st.kind === 'spell') {
     body = `<div class="st-q"><div class="st-word">Word ${S.i + 1}</div><div class="st-row center"><button class="st-sp" data-act="stuHearWord">&#128266; Hear the word</button>${st.sentence ? '<button class="st-sp" data-act="stuHearSentence">&#128266; Hear the sentence</button>' : ''}</div>
-      <input class="st-text big" id="stuIn" data-key="${esc(st.key)}" value="${esc(v || '')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Type the word" style="text-align:center"><p class="st-sub center">You can listen as many times as you want.</p></div>`;
+      <input class="st-text big" id="stuIn" data-key="${esc(st.key)}" value="${esc(v || '')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Type the word" style="text-align:center"><p class="st-sub center">You can listen as many times as you want.</p>${stuMicHtml()}</div>`;
   } else {
     const q = st.q, p = q.passageId ? stuPassage(q.passageId) : null;
     const heads = st.heads.map(h => `<div class="st-head">${esc(h)}</div>`).join('');
@@ -2402,8 +2403,8 @@ function stuStepHtml() {
 }
 function stuMicHtml() {
   if (!S.flags.speak) return '';
-  const on = S.mic && S.mic.live;
-  return `<div class="st-row"><button class="st-mic ${on ? 'live' : ''}" data-act="stuMic">${on ? '&#9679; Listening... tap to stop' : '&#127908; Tap to speak your answer'}</button></div><p class="st-sub">${S.micMsg ? esc(S.micMsg) : 'Speaking fills in the box. You can fix it by typing. Your voice is also saved so your teacher can listen.'}</p>`;
+  const on = S.mic && S.mic.live, sp = S.steps[S.i].kind === 'spell';
+  return `<div class="st-row ${sp ? 'center' : ''}"><button class="st-mic ${on ? 'live' : ''}" data-act="stuMic">${on ? '&#9679; Recording... tap to stop' : (sp ? '&#127908; Tap to say and spell the word' : '&#127908; Tap to speak your answer')}</button></div><p class="st-sub ${sp ? 'center' : ''}">${S.micMsg ? esc(S.micMsg) : (sp ? 'Say the word and spell it out loud. Your voice is saved so your teacher can listen. You can also type it.' : 'Speaking fills in the box. You can fix it by typing. Your voice is also saved so your teacher can listen.')}</p>`;
 }
 
 /* ---------- reading aloud ---------- */
@@ -2464,7 +2465,7 @@ async function stuToggleMic() {
       S.mic.cap = setTimeout(() => { if (S && S.mic && S.mic.live) stuPauseMic(); }, 4 * 60 * 1000);
     } else if (S.mic.rec.state === 'paused') S.mic.rec.resume();
     S.mic.live = true; S.mic.resumed = Date.now(); S.used.speak = true; S.usedDirty = true;
-    if (SpeechRec) stuStartSR(); else S.micMsg = 'Your voice is being saved. Type your answer, or tell your teacher if you want it written for you.';
+    if (SpeechRec && S.steps[S.i].kind !== 'spell') stuStartSR(); else if (S.steps[S.i].kind === 'spell') S.micMsg = '';  else S.micMsg = 'Your voice is being saved. Type your answer, or tell your teacher if you want it written for you.';
   } catch (e) {
     S.mic = null; S.micMsg = 'The microphone is not available. Type your answer, or tell your teacher.';
   }
@@ -2496,7 +2497,7 @@ function stuPauseMic() {
 function stuRefreshMic() {
   const b = document.querySelector('[data-act="stuMic"]'); if (!b) return;
   const on = S.mic && S.mic.live; b.classList.toggle('live', !!on);
-  b.innerHTML = on ? '&#9679; Listening... tap to stop' : '&#127908; Tap to speak your answer';
+  b.innerHTML = on ? '&#9679; Recording... tap to stop' : (S.steps[S.i].kind === 'spell' ? '&#127908; Tap to say and spell the word' : '&#127908; Tap to speak your answer');
   const sub = b.closest('.st-row') && b.closest('.st-row').nextElementSibling; if (sub && S.micMsg) sub.textContent = S.micMsg;
 }
 async function stuStopMic() {
