@@ -102,6 +102,17 @@ td{padding:11px 12px;border-bottom:1px solid #EEF2F6;vertical-align:top}
 .modal.wide{max-width:900px}
 .svc{background:#E3F4DA;color:#2F5D1A}.cf{background:#FFF4DB;color:#6B4A00}.nosc{background:#ECEFF2;color:#3E4C59}
 .chip.err{background:#FBE3E4;color:#7A1A1F}
+.cal{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;background:#E3E8EE;border:1px solid #E3E8EE;border-radius:10px;overflow:hidden}
+.cal>div{background:#fff;min-height:96px;padding:6px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.cal .off{background:#FAFAF8;color:#8A97A5}.cal .tod{box-shadow:inset 0 0 0 2px #2563A8}
+.cd{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#3E4C59}
+.tev,.evc{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;border:0;border-left:4px solid;border-radius:6px;padding:4px 6px;font-size:12px;font-weight:600;color:#1B2733;min-height:28px}
+.evc{font-size:13px;padding:8px 10px;margin-bottom:8px}
+.ev-ok{border-color:#2E7D5B;background:#E8F5EE}.ev-pend{border-color:#C98A00;background:#FFF4DB}.ev-no{border-color:#A4262C;background:#FBE3E4}
+.tev.ev-no b,.tev.ev-no{text-decoration:line-through}
+.wtag{background:#E9E3F6;color:#3F2A78;margin:0;padding:1px 7px;font-size:11px}
+.stuRow{padding:6px 0;border-bottom:1px solid #EEF2F6}.stuRow:last-child{border-bottom:0}
+@media(max-width:700px){.cal{grid-template-columns:1fr}.cal>div{min-height:0}}
 @media print{.hdr,.side,.tabs,.fc,button,.banner{display:none!important}.wrap{padding:0}.shell{border:0}}
 @media(max-width:700px){.side{max-width:none;border-right:0;border-bottom:1px solid #E3E8EE}.main{padding:16px}}
 </style>
@@ -128,13 +139,8 @@ const DAY_LABEL = { M:'Mon', T:'Tue', W:'Wed', R:'Thu', F:'Fri' };
 const ATTEND = ['Present','Absent','Excused','Left early'];
 const SCOPE_LABEL = { tiered:'Students with a tier', dyslexia:'Dyslexia students', all:'All students' };
 const TABS = ['Overview','Teacher Information','Accommodations','Progress Monitoring','Testing History','Documentation','Grade History'];
-const COMING = {
-  'Testing History':'Coming in Phase 4: appears once the elementary testing calendar is running.'
-};
-const VIEW_COMING = {
-  'testing-calendar':['Testing Calendar','Coming in Phase 4: the elementary testing calendar.'],
-  'testing-summary':['Testing Summary','Coming in Phase 4: testing prep and accommodation summary.']
-};
+const COMING = {};
+const VIEW_COMING = {};
 const PROGRESS_MEASURES = ['NWEA Reading','NWEA Math','DRA','BUILD','Take Flight','Other'];
 const NOTE_TYPES = ['Reminder','Observation','Parent phone call','Email','Fall conference','Spring conference','Intervention team meeting','Other'];
 const GRADE_LABELS = ['Meets','Approaching','Needs Improvement'];
@@ -298,7 +304,7 @@ function headerHtml() {
     <div class="nav">
       <button class="sync ${DEMO ? 'demo' : ''}" data-act="refresh" title="Refresh data">${syncLabel}</button>
       ${isAdmin() ? `<button class="icon ${state.view === 'access' ? 'on' : ''}" data-act="view" data-v="access" aria-label="Access and roles"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/></svg></button>` : ''}
-      ${pill('home','Students')}${pill('overview','Overview')}${pill('testing-calendar','Testing calendar')}${pill('testing-summary','Testing summary')}
+      ${pill('home','Students')}${pill('overview','Overview')}${pill('testing-calendar','Testing calendar' + (isApprover() && pendingCount() ? ' (' + pendingCount() + ')' : ''))}${pill('testing-summary','Testing summary')}
       ${r !== 'teacher' ? pill('reports','Reports') : ''}
       ${isAdmin() ? pill('grades','Grade upload') : ''}
       ${isAdmin() ? pill('logins','Login report') : ''}
@@ -315,6 +321,8 @@ function bodyHtml() {
   else if (v === 'reports') inner = reportsHtml();
   else if (v === 'grades') inner = gradesHtml();
   else if (v === 'overview') inner = overviewHtml();
+  else if (v === 'testing-calendar') inner = calendarHtml();
+  else if (v === 'testing-summary') inner = summaryHtml();
   else if (v === 'access') inner = accessHtml();
   else if (v === 'logins') inner = loginsHtml();
   else { const c = VIEW_COMING[v]; inner = `<div class="card muted"><h2>${esc(c[0])}</h2><p class="empty">${esc(c[1])}</p></div>`; }
@@ -378,6 +386,7 @@ function tabHtml(s) {
     case 'Progress Monitoring': return progressTab(s);
     case 'Documentation': return docTab(s);
     case 'Grade History': return gradeTab(s);
+    case 'Testing History': return testingTab(s);
     default: return `<div class="card muted"><h2>${esc(state.tab)}</h2><p class="empty">${esc(COMING[state.tab])}</p></div>`;
   }
 }
@@ -491,13 +500,13 @@ function overviewHtml() {
 /* access screen (admin) */
 function accessHtml() {
   const users = state.data.users || [];
-  const rows = users.map(u => `<tr><td><b>${esc(u.name)}</b>${u.active ? '' : ' <span class="small">(deactivated)</span>'}<div class="small">${esc(u.email)}</div></td><td><span class="chip ${ROLE_CLASS[u.role]}">${ROLE_LABEL[u.role]}</span></td><td>${esc(u.role === 'interventionist' ? SCOPE_LABEL[u.scope] || '' : u.role === 'teacher' ? 'Their own students' : 'All students, view only')}</td><td>${u.active ? `<button class="link" data-act="editUser" data-id="${esc(u.id)}">Edit</button><button class="link" data-act="removeUser" data-id="${esc(u.id)}">Deactivate</button>` : ''}</td></tr>`).join('');
-  const m = [['See students','All','Own caseload','All','Own students'],['Add or edit students, tiers, flags','Edit','No access','No access','No access'],['Groups and class schedules','Edit all','Edit own groups','View','View own students\' schedule'],['Service and session log','Edit all','Log and edit own','View','No access'],['Progress monitoring','Edit','Edit own entries','View','View own students'],['Documentation and meeting notes','Edit','Edit own entries','View','View own students'],['Monthly grade reports','Upload','View','View','View own students'],['Accommodations','Edit','View','View','View'],['Log in-class accommodation use','No access','No access','No access','Log'],['Testing calendar and prep center','Approve and edit','View','View','View own tests'],['Reports','All','Own caseload','View','No access'],['Access and settings','Edit','No access','No access','No access']];
+  const rows = users.map(u => `<tr><td><b>${esc(u.name)}</b>${u.active ? '' : ' <span class="small">(deactivated)</span>'}<div class="small">${esc(u.email)}</div></td><td><span class="chip ${ROLE_CLASS[u.role]}">${ROLE_LABEL[u.role]}</span></td><td>${esc(u.role === 'interventionist' ? SCOPE_LABEL[u.scope] || '' : u.role === 'teacher' ? 'Their own students' : 'All students, view only')}${u.role === 'interventionist' && u.canApprove ? ' <span class="chip svc">Approves tests</span>' : ''}</td><td>${u.active ? `<button class="link" data-act="editUser" data-id="${esc(u.id)}">Edit</button><button class="link" data-act="removeUser" data-id="${esc(u.id)}">Deactivate</button>` : ''}</td></tr>`).join('');
+  const m = [['See students','All','Own caseload','All','Own students'],['Add or edit students, tiers, flags','Edit','No access','No access','No access'],['Groups and class schedules','Edit all','Edit own groups','View','View own students\' schedule'],['Service and session log','Edit all','Log and edit own','View','No access'],['Progress monitoring','Edit','Edit own entries','View','View own students'],['Documentation and meeting notes','Edit','Edit own entries','View','View own students'],['Monthly grade reports','Upload','View','View','View own students'],['Accommodations','Edit','View','View','View'],['Log in-class accommodation use','No access','No access','No access','Log'],['Testing calendar: add a test','Add and approve','Add (waits for approval)','View only','Add for own students (waits for approval)'],['Testing calendar: approve or decline','Yes','Only if the admin turns it on (Mrs. Blasingame)','No','No'],['Testing prep summary','All tests','All tests','View','Own students'],['Reports','All','Own caseload','View','No access'],['Access and settings','Edit','No access','No access','No access']];
   return `${state.codeNotice ? `<div class="banner ok" role="status"><b>${esc(state.codeNotice.name)}</b>'s sign-in code is <b style="font-size:16px">${esc(state.codeNotice.code)}</b>. This is the only time it is shown. <button class="link" data-act="dismissCode">Dismiss</button></div>` : ''}
     <div class="banner">Only the admin code (you and Mrs. Barker) opens this screen and can assign access or change controls. The admin code is set in Apps Script, not here.</div>
     <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">People with access</h2><button class="primary" data-act="addUser">+ Add person</button></div>
     <div class="tw"><table style="min-width:640px"><thead><tr><th>Person</th><th>Role</th><th>Sees</th><th></th></tr></thead><tbody>
-    <tr><td><b>Admin (Betsy and Mrs. Barker)</b><div class="small">Shared admin code</div></td><td><span class="chip r-admin">Admin</span></td><td>All students and settings</td><td></td></tr>${rows}</tbody></table></div></section>
+    <tr><td><b>Admin (Betsy and Mrs. Barker)</b><div class="small">Shared admin code</div></td><td><span class="chip r-admin">Admin</span></td><td>All students and settings <span class="chip svc">Approves tests</span></td><td></td></tr>${rows}</tbody></table></div></section>
     <section class="card"><h2>What each role can do</h2><div class="tw"><table style="min-width:720px"><thead><tr><th>Capability</th><th>Admin</th><th>Interventionist</th><th>Principal</th><th>Teacher</th></tr></thead><tbody>${m.map(r => `<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('')}</tbody></table></div><p class="small" style="margin-top:8px">The server enforces these rules. Hiding a button is never the only protection.</p></section>`;
 }
 
@@ -515,7 +524,7 @@ async function loadLogins() {
 }
 
 /* ---------- Phase 3 helpers: progress, documentation, grades ---------- */
-const recs = () => (state.data && state.data.records) || { progress:[], notes:[], grades:[] };
+const recs = () => (state.data && state.data.records) || { progress:[], notes:[], grades:[], tests:[], windows:[] };
 const canWrite = () => isAdmin() || role() === 'interventionist';
 const canEditRec = x => isAdmin() || (role() === 'interventionist' && x.byId === state.user.id);
 const byDateDesc = (a, b) => (b.date + (b.createdAt || '')).localeCompare(a.date + (a.createdAt || ''));
@@ -978,8 +987,287 @@ function userModal(u) {
     <div class="cols"><label class="fl">Full name<input class="field" id="uName" value="${esc(u.name)}" maxlength="80"></label><label class="fl">Email (optional)<input class="field" id="uEmail" value="${esc(u.email)}" maxlength="100"></label></div>
     <div class="cols"><label class="fl">Role<select class="field" id="uRole"><option value="teacher" ${u.role === 'teacher' ? 'selected' : ''}>Teacher</option><option value="interventionist" ${u.role === 'interventionist' ? 'selected' : ''}>Interventionist</option><option value="principal" ${u.role === 'principal' ? 'selected' : ''}>Principal (view only)</option></select></label>
     <label class="fl">Interventionist sees<select class="field" id="uScope"><option value="tiered" ${u.scope === 'tiered' ? 'selected' : ''}>Students with a tier</option><option value="dyslexia" ${u.scope === 'dyslexia' ? 'selected' : ''}>Dyslexia students only</option><option value="all" ${u.scope === 'all' ? 'selected' : ''}>All students</option></select></label></div>
+    <label class="chk ${u.role === 'interventionist' ? '' : 'hidden'}" id="uApproveWrap"><input type="checkbox" id="uApprove" ${u.canApprove ? 'checked' : ''}>Can approve tests on the testing calendar</label>
     <label class="fl">${isNew ? 'Sign-in code (leave blank to use lastname2627)' : 'New sign-in code (leave blank to keep the current one)'}<input class="field" id="uCode" maxlength="60" autocomplete="off"></label>
     <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveUser">Save</button></div>`);
+}
+
+/* ---------- Phase 4: testing calendar, approval, prep summary, testing history ---------- */
+const WHERE_LABEL = { hub:'Testing Hub (in class)', wendy:'With Mrs. Blasingame', abby:'With Mrs. Danielson', tbd:'Not sure yet' };
+const WHERE_SHORT = { hub:'Hub', wendy:'Blasingame', abby:'Danielson', tbd:'Not set' };
+const WHERE_STAFF = { wendy:'blasingame', abby:'danielson' };
+const TEST_TYPES = ['Classroom test','Quiz'];
+const STATUS_LABEL = { approved:'Approved', pending:'Waiting for approval', declined:'Declined' };
+const STATUS_CLASS = { approved:'svc', pending:'cf', declined:'err' };
+const EV_CLASS = { approved:'ev-ok', pending:'ev-pend', declined:'ev-no' };
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const tests = () => recs().tests || [];
+const windows = () => recs().windows || [];
+const isApprover = () => isAdmin() || !!(state.user && state.user.canApprove);
+const canAddTest = () => role() !== 'principal';
+const canAddHere = () => canAddTest() && !isTeacher();   // teachers add tests on the Google Calendar
+const tRange = t => t.allDay ? 'All day' : rangeStr(t.start, t.end);
+const tClock = t => t.allDay ? 'All day' : hm(t.start);
+const canEditTest = t => canAddTest() && (isApprover() || (t.submittedById === state.user.id && t.source !== 'calendar'));
+const pendingCount = () => tests().filter(t => t.status === 'pending').length;
+const isoOf = ms => { const d = new Date(ms); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0'); };
+const addDays = (d, n) => isoOf(dayMs(d) + n * 86400000);
+const dowOf = d => new Date(dayMs(d)).getUTCDay();
+const dayKeyOf = d => ({ 1:'M', 2:'T', 3:'W', 4:'R', 5:'F' })[dowOf(d)] || '';
+const weekStartOf = d => addDays(d, -((dowOf(d) + 6) % 7));
+const nextSchoolDay = (d, dir) => { let x = addDays(d, dir); while (!dayKeyOf(x)) x = addDays(x, dir); return x; };
+const onOrAfterSchoolDay = d => dayKeyOf(d) ? d : nextSchoolDay(d, 1);
+const mdShort = d => (+d.slice(5, 7)) + '/' + (+d.slice(8));
+const dayLabel = d => DAY_NAMES[dowOf(d)].slice(0, 3) + ' ' + (+d.slice(8));
+const longDate = d => DAY_NAMES[dowOf(d)] + ', ' + MONTH_ABBR[+d.slice(5, 7) - 1] + ' ' + (+d.slice(8)) + ', ' + d.slice(0, 4);
+const winRange = w => mdShort(w.start) + ' – ' + mdShort(w.end);
+const winGrades = w => (w.grades || []).length ? w.grades.join(', ') : 'all grades';
+const winApplies = (w, grade) => !(w.grades || []).length || w.grades.includes(grade);
+const studentById = id => (state.data.students || []).find(s => s.id === id);
+const accChips = s => (s.accs || s.accommodations || []).map(a => `<span class="chip grp">${esc(a.name)}</span>`).join('');
+
+function tcState() {
+  if (!state.tc) state.tc = { view:'month', date:today(), grade:'', where:'', status:'active', past:false };
+  if (state.tc.view === 'day' && !dayKeyOf(state.tc.date)) state.tc.date = nextSchoolDay(state.tc.date, 1);
+  return state.tc;
+}
+function calTests() {
+  const c = tcState();
+  return tests().filter(t => (c.status === 'active' ? t.status !== 'declined' : c.status === 'all' || t.status === c.status) && (!c.where || t.where === c.where) && (!c.grade || (t.students || []).some(s => s.grade === c.grade)))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start) || a.title.localeCompare(b.title));
+}
+function calWindows() { const c = tcState(); return windows().filter(w => !c.grade || winApplies(w, c.grade)); }
+
+/* conflicts: a student's specials, lunch and pull-out services, and other tests at the same time; staff who are busy */
+function conflictsFor(date, start, end, stu, excludeId) {
+  const out = []; const dk = dayKeyOf(date);
+  if (!dk || !start || !end || end <= start) return out;
+  const sc = schedById(stu.scheduleId);
+  if (sc) sc.blocks.forEach(b => { if (b.kind === 'fixed' && (b.days || []).includes(dk) && overlaps(start, end, b.start, b.end)) out.push(b.name + ' ' + rangeStr(b.start, b.end)); });
+  const full = studentById(stu.id);
+  ((full && full.groupIds) || []).map(groupById).filter(g => g && g.start && g.end && g.type !== 'push-in' && (g.days || []).includes(dk) && overlaps(start, end, g.start, g.end)).forEach(g => out.push(groupLabel(g) + ' ' + rangeStr(g.start, g.end)));
+  tests().filter(x => x.id !== excludeId && x.date === date && x.status !== 'declined' && (x.studentIds || []).includes(stu.id) && overlaps(start, end, x.start, x.end)).forEach(x => out.push('Another test: ' + x.title + ' ' + rangeStr(x.start, x.end)));
+  return out;
+}
+function staffBusy(where, date, start, end, excludeId) {
+  const ln = WHERE_STAFF[where]; const dk = dayKeyOf(date); const out = [];
+  if (!ln || !dk || !start || !end || end <= start) return out;
+  (state.data.groups || []).filter(g => lastName(g.staffName || '') === ln && g.start && g.end && (g.days || []).includes(dk) && overlaps(start, end, g.start, g.end)).forEach(g => out.push(groupLabel(g) + ' ' + rangeStr(g.start, g.end)));
+  tests().filter(x => x.id !== excludeId && x.where === where && x.date === date && x.status !== 'declined' && overlaps(start, end, x.start, x.end)).forEach(x => out.push(x.title + ' ' + rangeStr(x.start, x.end) + (x.status === 'pending' ? ' (waiting)' : '')));
+  return out;
+}
+const tConf = (t, s) => t.allDay ? [] : conflictsFor(t.date, t.start, t.end, s, t.id);
+const testConflicts = t => (t.students || []).map(s => ({ s, c: tConf(t, s) })).filter(x => x.c.length);
+
+/* ----- calendar page ----- */
+const statusChip = t => `<span class="chip ${STATUS_CLASS[t.status]}">${STATUS_LABEL[t.status]}</span>`;
+const evBtn = t => `<button class="tev ${EV_CLASS[t.status]}" data-act="openTest" data-id="${esc(t.id)}"><b>${esc(tClock(t))}</b> ${esc(t.title)}</button>`;
+function evCard(t) {
+  const names = (t.students || []).map(s => s.name); const hidden = (t.studentCount || 0) - names.length;
+  const shown = names.length > 4 ? names.slice(0, 3).join(', ') + ' +' + (names.length - 3) + ' more' : names.join(', ');
+  const tch = teacherById(t.teacherId);
+  return `<button class="evc ${EV_CLASS[t.status]}" data-act="openTest" data-id="${esc(t.id)}"><span><b>${esc(tRange(t))}</b> · ${esc(t.title)}</span>
+    <span class="small">${esc(t.type)}${tch ? ' · ' + esc(tch.name) : ''} · ${esc(WHERE_SHORT[t.where])}</span>
+    <span class="small">${esc(shown)}${hidden > 0 ? ' (+' + hidden + ' not shown)' : ''}</span>${t.status === 'approved' ? '' : `<span>${statusChip(t)}</span>`}</button>`;
+}
+function winTags(d) { return calWindows().filter(w => w.start <= d && d <= w.end).map(w => `<span class="chip wtag">${esc(w.measure)}</span>`).join(''); }
+function monthGrid(c) {
+  const first = c.date.slice(0, 7) + '-01'; const list = calTests();
+  let d = weekStartOf(first); const cells = []; const ym = c.date.slice(0, 7);
+  const lastMs = Date.UTC(+c.date.slice(0, 4), +c.date.slice(5, 7), 0);
+  while (dayMs(d) <= lastMs) {
+    for (let i = 0; i < 5; i++) {
+      const day = addDays(d, i); const ev = list.filter(t => t.date === day); const off = day.slice(0, 7) !== ym;
+      cells.push(`<div class="${off ? 'off' : ''} ${day === today() ? 'tod' : ''}"><div class="cd"><button class="link" style="min-height:24px;padding:0" data-act="goDay" data-d="${day}">${esc(dayLabel(day))}</button>${winTags(day)}</div>${ev.slice(0, 3).map(evBtn).join('')}${ev.length > 3 ? `<button class="link" data-act="goDay" data-d="${day}">+${ev.length - 3} more</button>` : ''}</div>`);
+    }
+    d = addDays(d, 7);
+  }
+  return `<div class="cal">${cells.join('')}</div>`;
+}
+function weekGrid(c) {
+  const ws = weekStartOf(c.date); const list = calTests();
+  return `<div class="cal">${[0, 1, 2, 3, 4].map(i => { const day = addDays(ws, i); const ev = list.filter(t => t.date === day);
+    return `<div class="${day === today() ? 'tod' : ''}"><div class="cd"><button class="link" style="min-height:24px;padding:0" data-act="goDay" data-d="${day}">${esc(dayLabel(day))}</button>${winTags(day)}</div>${ev.map(evCard).join('') || '<div class="small">Nothing scheduled</div>'}</div>`; }).join('')}</div>`;
+}
+function dayView(c) {
+  const day = c.date; const ev = calTests().filter(t => t.date === day);
+  const load = ['hub', 'wendy', 'abby'].map(w => `${WHERE_SHORT[w]}: ${ev.filter(t => t.where === w && t.status !== 'declined').length}`).join(' · ');
+  const rows = ev.map(t => {
+    const names = (t.students || []).map(s => `<div class="small"><b>${esc(s.name)}</b> (${esc(s.grade)})${(s.accs || []).length ? ' · ' + esc(s.accs.map(a => a.name).join(', ')) : ''}</div>`).join('');
+    return `<button class="evc ${EV_CLASS[t.status]}" data-act="openTest" data-id="${esc(t.id)}"><span><b>${esc(tRange(t))}</b> · ${esc(t.title)} ${statusChip(t)}</span><span class="small">${esc(t.type)} · ${esc(WHERE_LABEL[t.where])}${teacherById(t.teacherId) ? ' · ' + esc(teacherById(t.teacherId).name) : ''}</span>${names}</button>`; }).join('');
+  return `<div class="banner" style="margin-bottom:10px"><b>${esc(longDate(day))}</b> ${winTags(day)}<div class="small">${ev.length} test${ev.length === 1 ? '' : 's'} · ${esc(load)}</div></div>${rows || '<p class="empty">Nothing scheduled this day.</p>'}`;
+}
+function listView(c) {
+  const t0 = today(); const all = calTests().filter(t => c.past || t.date >= t0);
+  const rows = all.map(t => `<tr><td style="white-space:nowrap">${esc(shortDate(t.date))}<div class="small">${esc(DAY_NAMES[dowOf(t.date)].slice(0, 3))}</div></td><td style="white-space:nowrap">${esc(tRange(t))}</td><td><b>${esc(t.title)}</b><div class="small">${esc(t.type)}</div></td><td>${esc((t.students || []).length ? (t.students.length + ' student' + (t.students.length === 1 ? '' : 's')) : (t.studentCount || 0) + ' students')}</td><td>${esc(WHERE_SHORT[t.where])}</td><td>${statusChip(t)}</td><td><button class="link" data-act="openTest" data-id="${esc(t.id)}">${isApprover() && t.status === 'pending' ? 'Review' : 'Open'}</button></td></tr>`).join('');
+  return `<div style="margin-bottom:8px"><button class="fc ${c.past ? 'on' : ''}" data-act="tcPast">Include past tests</button></div>${all.length ? `<div class="tw"><table style="min-width:640px"><thead><tr><th>Date</th><th>Time</th><th>Test</th><th>Students</th><th>Where</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty">No tests to show.</p>'}`;
+}
+function calTitle(c) {
+  if (c.view === 'month') return MONTH_LONG[+c.date.slice(5, 7) - 1] + ' ' + c.date.slice(0, 4);
+  if (c.view === 'week') { const ws = weekStartOf(c.date), we = addDays(ws, 4); return MONTH_ABBR[+ws.slice(5, 7) - 1] + ' ' + (+ws.slice(8)) + ' – ' + (ws.slice(5, 7) === we.slice(5, 7) ? '' : MONTH_ABBR[+we.slice(5, 7) - 1] + ' ') + (+we.slice(8)) + ', ' + we.slice(0, 4); }
+  if (c.view === 'day') return longDate(c.date);
+  return 'Upcoming tests';
+}
+function calendarHtml() {
+  const c = tcState(); const pend = tests().filter(t => t.status === 'pending');
+  const head = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">Testing calendar</h2>${canAddHere() ? '<button class="primary" data-act="addTest">+ Add a test</button>' : ''}${isApprover() ? '<button class="secondary" data-act="syncCal">Refresh from Google Calendar</button>' : ''}</div>`;
+  let queue = '';
+  if (isApprover() && pend.length) queue = `<div class="banner warn" style="margin-bottom:10px"><b>${pend.length} test${pend.length === 1 ? '' : 's'} waiting for approval.</b> ${pend.slice(0, 6).map(t => `<button class="link" data-act="openTest" data-id="${esc(t.id)}">Review: ${esc(t.title)} (${esc(mdShort(t.date))})</button>`).join(' ')}${pend.length > 6 ? ' and more in List view.' : ''}</div>`;
+  else if (!isApprover()) { const mine = pend.filter(t => t.submittedById === state.user.id).length; if (mine) queue = `<div class="banner warn" style="margin-bottom:10px">${mine} of your test${mine === 1 ? ' is' : 's are'} waiting for approval.</div>`; }
+  if (isTeacher()) queue += `<div class="banner" style="margin-bottom:10px"><b>To add a test,</b> put it on the elementary testing Google Calendar with the grade level and the test name in the title (for example, "3rd Math Unit 4 Test"). It shows up here for approval within a few minutes.</div>`;
+  if (isApprover() && state.data.calendar && state.data.calendar.error) queue += `<div class="banner err" style="margin-bottom:10px"><b>Google Calendar is not connected:</b> ${esc(state.data.calendar.error)}</div>`;
+  const t0 = today(); const wins = calWindows().filter(w => w.end >= t0).sort((a, b) => a.start.localeCompare(b.start));
+  const winBanner = wins.length ? `<div class="banner" style="margin-bottom:10px">${wins.map(w => `<div><b>${esc(w.name)}</b> (${esc(w.measure)}): ${esc(winRange(w))} · ${esc(winGrades(w))}</div>`).join('')}</div>` : '';
+  const vbtn = (v, l) => `<button class="fc ${c.view === v ? 'on' : ''}" data-act="tcView" data-v="${v}">${l}</button>`;
+  const sbtn = (v, l) => `<button class="fc ${c.status === v ? 'on' : ''}" data-act="tcStatus" data-v="${v}">${l}</button>`;
+  const nav = c.view === 'list' ? '' : `<button class="secondary" data-act="tcNav" data-n="-1" aria-label="Previous">&lsaquo; Prev</button><button class="secondary" data-act="tcToday">Today</button><button class="secondary" data-act="tcNav" data-n="1" aria-label="Next">Next &rsaquo;</button>`;
+  const bodyV = c.view === 'month' ? monthGrid(c) : c.view === 'week' ? weekGrid(c) : c.view === 'day' ? dayView(c) : listView(c);
+  const adminWin = isAdmin() ? windowsCard() : '';
+  return `<section class="card">${head}${queue}${winBanner}
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px"><div>${vbtn('month', 'Month')}${vbtn('week', 'Week')}${vbtn('day', 'Day')}${vbtn('list', 'List')}</div>${nav}<b style="font-size:16px;color:#2E4057">${esc(calTitle(c))}</b></div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px"><select class="field" id="tcGrade" aria-label="Grade" style="width:auto"><option value="">All grades</option>${GRADES.map(g => `<option ${c.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select>
+      <select class="field" id="tcWhere" aria-label="Where" style="width:auto"><option value="">Anywhere</option>${Object.keys(WHERE_LABEL).map(k => `<option value="${k}" ${c.where === k ? 'selected' : ''}>${esc(WHERE_LABEL[k])}</option>`).join('')}</select>
+      <div>${sbtn('active', 'Active')}${sbtn('approved', 'Approved')}${sbtn('pending', 'Waiting')}${sbtn('declined', 'Declined')}</div></div>
+    ${bodyV}
+    <div class="small" style="margin-top:12px"><span class="chip ev-ok" style="border:1px solid #2E7D5B">Approved</span><span class="chip ev-pend" style="border:1px solid #C98A00">Waiting for approval</span><span class="chip ev-no" style="border:1px solid #A4262C">Declined</span> Teachers add tests on the elementary testing Google Calendar. Only the admin and Mrs. Blasingame approve them.${isApprover() ? '' : ' You will see Approved or Declined here once they decide.'}</div></section>${adminWin}`;
+}
+function windowsCard() {
+  const ws = windows().slice().sort((a, b) => a.start.localeCompare(b.start));
+  const rows = ws.map(w => `<tr><td><b>${esc(w.name)}</b></td><td>${esc(w.measure)}</td><td>${esc(winRange(w))}</td><td>${esc(winGrades(w))}</td><td style="white-space:nowrap"><button class="link" data-act="editWindow" data-id="${esc(w.id)}">Edit</button><button class="link" data-act="archiveWindow" data-id="${esc(w.id)}">Remove</button></td></tr>`).join('');
+  return `<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">NWEA and DRA windows</h2><button class="secondary" data-act="addWindow">+ Add window</button></div>
+    ${ws.length ? `<div class="tw"><table style="min-width:520px"><thead><tr><th>Name</th><th>Test</th><th>Dates</th><th>Grades</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty">No windows yet. Add the NWEA window once for all grades. Add DRA windows for the grades that take it.</p>'}
+    <div class="small" style="margin-top:8px">A student\'s Testing History marks a window Done when a progress entry for that test is dated inside it.</div></section>`;
+}
+function windowModal(w) {
+  const isNew = !w; w = w || { name:'', measure:'NWEA', start:'', end:'', grades:[] };
+  state.editingWindow = w.id || null;
+  openModal(`<h2>${isNew ? 'Add a window' : 'Edit window'}</h2><div class="banner err hidden" id="modalErr" role="alert"></div>
+    <div class="cols"><label class="fl">Name<input class="field" id="wName" maxlength="60" value="${esc(w.name)}" placeholder="Fall NWEA"></label><label class="fl">Test<select class="field" id="wMeasure">${['NWEA', 'DRA'].map(m => `<option ${w.measure === m ? 'selected' : ''}>${m}</option>`).join('')}</select></label></div>
+    <div class="cols"><label class="fl">First day<input class="field" type="date" id="wStart" value="${esc(w.start)}"></label><label class="fl">Last day<input class="field" type="date" id="wEnd" value="${esc(w.end)}"></label></div>
+    <div><div class="fh">GRADES (leave all unchecked for every grade)</div><div style="display:flex;flex-wrap:wrap;gap:4px 14px">${GRADES.map(g => `<label class="chk"><input type="checkbox" name="wGrade" value="${g}" ${(w.grades || []).includes(g) ? 'checked' : ''}>${g}</label>`).join('')}</div></div>
+    <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveWindow">Save</button></div>`);
+}
+
+/* ----- add / edit a test ----- */
+function testModal(t, preSid, preDate) {
+  const isNew = !t;
+  t = t || { title:'', type:'Classroom test', date: onOrAfterSchoolDay(preDate || today()), start:'', end:'', where:'hub', teacherId:'', studentIds: preSid ? [preSid] : [], notes:'' };
+  state.editingTest = t.id || null;
+  const stus = sortStudents(state.data.students || []);
+  const tch = state.data.teachers || [];
+  const teacherPick = isTeacher() ? `<div class="fl">Class<div style="min-height:44px;display:flex;align-items:center;font-weight:700;color:#1B2733">${esc(state.user.name)}</div></div>`
+    : `<label class="fl">Class (teacher)<select class="field" id="tTeacher"><option value="">(not set)</option>${tch.map(x => `<option value="${esc(x.id)}" ${t.teacherId === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>`;
+  const rows = stus.map(s => `<div class="stuRow" data-sid="${esc(s.id)}" data-name="${esc(s.name.toLowerCase())}" data-teachers="${esc((s.teacherIds || []).join(','))}"><label class="chk" style="align-items:flex-start"><input type="checkbox" name="tStu" value="${esc(s.id)}" ${(t.studentIds || []).includes(s.id) ? 'checked' : ''}><span><b>${esc(s.name)}</b> <span class="small">${esc(s.grade)}</span><div>${accChips(s)}</div><div class="small warnTxt" data-warn style="color:#7A1A1F"></div></span></label></div>`).join('');
+  openModal(`<h2>${isNew ? 'Add a test' : 'Edit test'}</h2><div class="banner err hidden" id="modalErr" role="alert"></div>
+    <div class="cols"><label class="fl">Test or quiz name<input class="field" id="tTitle" maxlength="120" value="${esc(t.title)}" placeholder="Unit 4 math test"></label><label class="fl">Type<select class="field" id="tType">${optList(TEST_TYPES, t.type)}</select></label></div>
+    <div class="cols"><label class="fl">Date (school days)<input class="field" type="date" id="tDate" value="${esc(t.date)}"></label><label class="fl">Starts<input class="field" type="time" id="tStart" value="${esc(t.start)}"></label><label class="fl">Ends<input class="field" type="time" id="tEnd" value="${esc(t.end)}"></label></div>
+    ${teacherPick}
+    <div><div class="fh">WHERE WILL IT BE TAKEN?</div>${Object.keys(WHERE_LABEL).map(k => `<label class="chk"><input type="radio" name="tWhere" value="${k}" ${t.where === k ? 'checked' : ''}>${esc(WHERE_LABEL[k])}</label>`).join('')}<div class="small warnTxt" id="tStaffWarn" style="color:#7A1A1F"></div></div>
+    <div><div class="fh">STUDENTS TAKING IT</div>
+      <div class="cols" style="margin-bottom:8px"><input class="field" id="tSearch" placeholder="Search by name..." aria-label="Search students" autocomplete="off">${isTeacher() ? '' : `<select class="field" id="tClassFilter" aria-label="Filter by teacher"><option value="">All teachers</option>${tch.map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</select>`}</div>
+      <div style="margin-bottom:6px"><button class="link" data-act="tSelShown">Select everyone shown</button><button class="link" data-act="tClearAll">Clear</button></div>
+      <div id="tStuList" style="max-height:300px;overflow:auto;border:1px solid #E3E8EE;border-radius:10px;padding:6px 10px">${rows || '<p class="empty">No students to choose from.</p>'}</div>
+      <div class="small" style="margin-top:6px">Their accommodations are shown so the plan is ready. Red notes are only a heads-up about their schedule.</div></div>
+    <label class="fl">Notes (optional)<textarea class="field" id="tNotes" maxlength="1000">${esc(t.notes)}</textarea></label>
+    <div class="banner">${isApprover() ? 'Tests you add are approved right away.' : 'This goes to the admin and Mrs. Blasingame for approval. You will see Approved or Declined on the calendar.'}</div>
+    <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveTest">${isApprover() ? 'Save test' : 'Submit for approval'}</button></div>`);
+  tmWarn();
+}
+function tmWarn() {
+  const date = val('tDate'), start = val('tStart'), end = val('tEnd'); const w = document.querySelector('input[name="tWhere"]:checked');
+  document.querySelectorAll('#tStuList .stuRow').forEach(r => {
+    const on = r.querySelector('input').checked; const s = studentById(r.dataset.sid); const el = r.querySelector('[data-warn]');
+    el.textContent = (on && s) ? conflictsFor(date, start, end, s, state.editingTest).map(c => 'Overlaps ' + c).join('; ') : '';
+  });
+  const sw = $('tStaffWarn'); if (sw) { const b = w ? staffBusy(w.value, date, start, end, state.editingTest) : []; sw.textContent = b.length ? 'Busy then: ' + b.join('; ') : ''; }
+}
+function collectTest() {
+  const w = document.querySelector('input[name="tWhere"]:checked');
+  return { id: state.editingTest || undefined, title: val('tTitle'), type: val('tType'), date: val('tDate'), start: val('tStart'), end: val('tEnd'), where: w ? w.value : 'tbd',
+    teacherId: isTeacher() ? '' : val('tTeacher'), studentIds: [...document.querySelectorAll('input[name="tStu"]:checked')].map(e => e.value), notes: val('tNotes') };
+}
+
+/* ----- test details and review ----- */
+function testDetail(t) {
+  state.viewTest = t.id;
+  const tch = teacherById(t.teacherId); const conf = testConflicts(t);
+  const stuRows = (t.students || []).map(s => { const c = tConf(t, s);
+    return `<tr><td><b>${esc(s.name)}</b><div class="small">${esc(s.grade)}</div></td><td>${accChips(s) || '<span class="small">None on file</span>'}</td><td>${c.length ? c.map(x => `<div class="small" style="color:#7A1A1F">Overlaps ${esc(x)}</div>`).join('') : '<span class="small">No overlaps</span>'}</td></tr>`; }).join('');
+  const hidden = (t.studentCount || 0) - (t.students || []).length;
+  
+  const staff = isApprover() ? ['wendy', 'abby'].map(k => { const b = t.allDay ? [] : staffBusy(k, t.date, t.start, t.end, t.id); return `<div class="kv"><span>${esc(k === 'wendy' ? 'Mrs. Blasingame' : 'Mrs. Danielson')}</span><span style="${b.length ? 'color:#7A1A1F' : ''}">${b.length ? esc('Busy: ' + b.join('; ')) : 'Free at that time'}</span></div>`; }).join('') : '';
+  const decide = (isApprover() && t.status === 'pending') ? `<section style="border-top:2px solid #E3E8EE;padding-top:12px"><div class="fh">YOUR DECISION</div>
+      <div style="margin-bottom:8px">${Object.keys(WHERE_LABEL).map(k => `<label class="chk"><input type="radio" name="rvWhere" value="${k}" ${t.where === k ? 'checked' : ''}>${esc(WHERE_LABEL[k])}</label>`).join('')}</div>
+      <div class="cols" style="margin-bottom:8px"><label class="fl">Starts<input class="field" type="time" id="rvStart" value="${esc(t.allDay ? '' : t.start)}"></label><label class="fl">Ends<input class="field" type="time" id="rvEnd" value="${esc(t.allDay ? '' : t.end)}"></label></div>
+      ${t.allDay ? '<div class="small" style="margin-bottom:8px">The teacher made this an all-day event. Set the time it will be taken.</div>' : ''}
+      <label class="fl">Note to the teacher (required if you decline)<textarea class="field" id="rvNote" maxlength="500"></textarea></label>
+      <div class="btns" style="margin-top:10px"><button class="danger" data-act="declineTest" data-id="${esc(t.id)}">Decline</button><button class="primary" data-act="approveTest" data-id="${esc(t.id)}">Approve</button></div></section>` : '';
+  openModal(`<h2>${esc(t.title)} ${statusChip(t)}</h2><div class="banner err hidden" id="modalErr" role="alert"></div>
+    <div>${[['When', longDate(t.date) + ', ' + tRange(t)], ['Type', t.type], ['Class', tch ? tch.name : ''], ['Where', WHERE_LABEL[t.where]], ['Added by', t.source === 'calendar' ? (t.submittedByName || t.calCreator || '') + ' on the Google Calendar' : (t.submittedByName || '')], ['Decision', t.status === 'pending' ? '' : (STATUS_LABEL[t.status] + (t.decidedByName ? ' by ' + t.decidedByName : ''))], ['Note', t.decisionNote || ''], ['Details', t.notes || '']].filter(r => r[1]).map(r => `<div class="kv"><span>${r[0]}</span><span style="max-width:70%">${esc(r[1])}</span></div>`).join('')}</div>
+    ${t.source === 'calendar' && !t.teacherId ? '<div class="banner warn"><b>Teacher not matched.</b> Use Edit to choose the class and students. Matching works from the teacher\'s email on the Access screen.</div>' : ''}
+    ${t.source === 'calendar' && t.teacherId && !(t.students || []).length ? '<div class="banner warn">No students matched this grade level for that teacher. Use Edit to choose students.</div>' : ''}
+    ${conf.length ? `<div class="banner warn"><b>Schedule check:</b> ${conf.length} student${conf.length === 1 ? ' has' : 's have'} something at this time. It is only a heads-up.</div>` : ''}
+    <div class="tw"><table style="min-width:480px"><thead><tr><th>Student</th><th>Accommodations</th><th>Schedule</th></tr></thead><tbody>${stuRows || '<tr><td colspan="3" class="small">No students to show.</td></tr>'}</tbody></table></div>
+    ${hidden > 0 ? `<div class="small">${hidden} more student${hidden === 1 ? ' is' : 's are'} on this test but not in your caseload.</div>` : ''}
+    ${staff ? `<div><div class="fh">STAFF AT THAT TIME</div>${staff}</div>` : ''}
+    ${decide}
+    <div class="btns">${canEditTest(t) ? `<button class="danger" data-act="cancelTest" data-id="${esc(t.id)}" style="margin-right:auto">Cancel this test</button><button class="secondary" data-act="editTest" data-id="${esc(t.id)}">Edit</button>` : ''}<button class="secondary" data-act="closeModal">Close</button></div>`);
+}
+
+/* ----- testing prep summary ----- */
+function prepRange() {
+  const r = (state.ts && state.ts.range) || 'week'; const t = today(); const ws = weekStartOf(t);
+  if (r === 'next') return [addDays(ws, 7), addDays(ws, 11), 'Next week'];
+  if (r === 'month') { const y = +t.slice(0, 4), m = +t.slice(5, 7); return [t.slice(0, 7) + '-01', isoOf(Date.UTC(y, m, 0)), MONTH_LONG[m - 1]]; }
+  return [ws, addDays(ws, 4), 'This week'];
+}
+function prepData() {
+  const [a, b] = prepRange(); const inR = tests().filter(t => t.date >= a && t.date <= b && t.status !== 'declined');
+  const ok = inR.filter(t => t.status === 'approved');
+  const rows = [];
+  ok.forEach(t => (t.students || []).forEach(s => rows.push({ t, s, c: tConf(t, s) })));
+  rows.sort((p, q) => p.t.date.localeCompare(q.t.date) || p.t.start.localeCompare(q.t.start) || p.s.name.localeCompare(q.s.name));
+  return { a, b, ok, rows, pending: inR.filter(t => t.status === 'pending') };
+}
+function prepCsv(d) {
+  return { head: ['Date', 'Time', 'Test', 'Student', 'Grade', 'Where', 'Accommodations', 'Schedule overlaps'],
+    rows: d.rows.map(r => [fmtDate(r.t.date), tRange(r.t), r.t.title, r.s.name, r.s.grade, WHERE_LABEL[r.t.where], (r.s.accs || []).map(x => x.name).join('; '), r.c.join('; ')]) };
+}
+function summaryHtml() {
+  if (!state.ts) state.ts = { range:'week' };
+  const d = prepData(); const label = prepRange()[2];
+  const ids = new Set(d.rows.map(r => r.s.id)); const withAcc = new Set(d.rows.filter(r => (r.s.accs || []).length).map(r => r.s.id));
+  const tile = (n, l) => `<div class="tile"><div class="tn">${n}</div><div class="tl">${l}</div></div>`;
+  const cnt = k => d.ok.filter(t => t.where === k).length;
+  const days = []; for (let x = d.a; x <= d.b; x = addDays(x, 1)) if (dayKeyOf(x)) days.push(x);
+  const loadRows = days.map(x => { const e = d.ok.filter(t => t.date === x); const c = k => e.filter(t => t.where === k).length; return `<tr><td>${esc(dayLabel(x))}</td><td>${c('hub')}</td><td>${c('wendy')}</td><td>${c('abby')}</td><td>${c('tbd')}</td></tr>`; }).join('');
+  const rows = d.rows.map(r => `<tr><td style="white-space:nowrap">${esc(shortDate(r.t.date))}<div class="small">${esc(tRange(r.t))}</div></td><td><b>${esc(r.s.name)}</b><div class="small">${esc(r.s.grade)}</div></td><td>${esc(r.t.title)}</td><td>${esc(WHERE_SHORT[r.t.where])}</td><td>${accChips(r.s) || '<span class="small">None</span>'}</td><td>${r.c.map(x => `<div class="small" style="color:#7A1A1F">${esc(x)}</div>`).join('') || '<span class="small">-</span>'}</td></tr>`).join('');
+  const rb = (k, l) => `<button class="fc ${state.ts.range === k ? 'on' : ''}" data-act="tsRange" data-r="${k}">${l}</button>`;
+  return `<div class="tiles">${tile(d.ok.length, 'Approved tests')}${tile(ids.size, 'Students testing')}${tile(withAcc.size, 'With accommodations')}${tile(cnt('wendy'), 'With Mrs. Blasingame')}${tile(cnt('abby'), 'With Mrs. Danielson')}${tile(d.pending.length, 'Waiting for approval')}</div>
+    <section class="card"><h2>Testing summary: ${esc(label)}</h2><div style="margin-bottom:10px">${rb('week', 'This week')}${rb('next', 'Next week')}${rb('month', 'This month')}</div>
+      ${d.pending.length ? `<div class="banner warn" style="margin-bottom:10px">${d.pending.length} test${d.pending.length === 1 ? ' is' : 's are'} not approved yet and not counted below.</div>` : ''}
+      <div class="fh">TESTS BY DAY AND PLACE</div><div class="tw"><table style="min-width:420px"><thead><tr><th>Day</th><th>Hub (in class)</th><th>Blasingame</th><th>Danielson</th><th>Not set</th></tr></thead><tbody>${loadRows}</tbody></table></div></section>
+    <section class="card"><h2>What each student needs</h2>${rows ? `<div class="tw"><table style="min-width:720px"><thead><tr><th>When</th><th>Student</th><th>Test</th><th>Where</th><th>Accommodations</th><th>Schedule overlaps</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty">No approved tests in this range.</p>'}
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="secondary" data-act="downloadPrep" ${rows ? '' : 'disabled'}>Download CSV</button><button class="secondary" data-act="printPage">Print</button></div>
+      <div class="small" style="margin-top:8px">${isTeacher() ? 'Shows your own students.' : role() === 'principal' ? 'View only.' : 'Shows tests you can see.'}</div></section>`;
+}
+
+/* ----- student's Testing History tab ----- */
+function testingTab(s) {
+  const t0 = today(); const prog = stuProgress(s);
+  const wins = windows().filter(w => winApplies(w, s.grade)).sort((a, b) => b.start.localeCompare(a.start));
+  const wRows = wins.map(w => {
+    const hits = prog.filter(x => x.date >= w.start && x.date <= w.end && (w.measure === 'NWEA' ? /^NWEA/.test(x.measure) : x.measure === 'DRA'));
+    const st = hits.length ? 'Done' : t0 < w.start ? 'Upcoming' : t0 <= w.end ? 'Open' : 'Missed';
+    const cls = { Done:'svc', Upcoming:'none', Open:'cf', Missed:'err' }[st];
+    return `<tr><td><b>${esc(w.name)}</b><div class="small">${esc(w.measure)}</div></td><td>${esc(winRange(w))}</td><td><span class="chip ${cls}">${st}</span></td><td>${hits.map(h => `<div>${esc(h.measure)}: <b>${esc(h.score)}</b> <span class="small">${esc(shortDate(h.date))}</span></div>`).join('') || '<span class="small">-</span>'}</td></tr>`; }).join('');
+  const mine = tests().filter(t => (t.studentIds || []).includes(s.id)).sort((a, b) => b.date.localeCompare(a.date));
+  const tRows = mine.map(t => `<tr><td style="white-space:nowrap">${esc(fmtDate(t.date))}</td><td><b>${esc(t.title)}</b><div class="small">${esc(t.type)}</div></td><td>${esc(WHERE_SHORT[t.where])}</td><td>${statusChip(t)}</td><td><button class="link" data-act="openTest" data-id="${esc(t.id)}">Open</button></td></tr>`).join('');
+  return `<section class="card"><h2>NWEA and DRA windows</h2>${wRows ? `<div class="tw"><table style="min-width:520px"><thead><tr><th>Window</th><th>Dates</th><th>Status</th><th>Results</th></tr></thead><tbody>${wRows}</tbody></table></div>` : '<p class="empty">No windows apply to this grade yet.' + (isAdmin() ? ' Add them on the Testing calendar page.' : '') + '</p>'}
+      <div class="small" style="margin-top:8px">Done means a progress entry for that test is dated inside the window.</div></section>
+    <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">Classroom tests and quizzes</h2>${canAddHere() ? '<button class="primary" data-act="addTestFor">+ Add a test</button>' : ''}</div>
+      ${tRows ? `<div class="tw"><table style="min-width:520px"><thead><tr><th>Date</th><th>Test</th><th>Where</th><th>Status</th><th></th></tr></thead><tbody>${tRows}</tbody></table></div>` : '<p class="empty">No tests on the calendar for this student yet.</p>'}</section>`;
 }
 
 /* ---------- actions ---------- */
@@ -1075,7 +1363,7 @@ const actions = {
   addUser: () => { state.editingUser = null; userModal(null); },
   editUser: el => { state.editingUser = el.dataset.id; userModal((state.data.users || []).find(u => u.id === el.dataset.id)); },
   saveUser: async () => {
-    const r = await api('saveUser', { user: { id: state.editingUser || undefined, name: val('uName'), email: val('uEmail'), role: val('uRole'), scope: val('uScope'), code: val('uCode') } });
+    const r = await api('saveUser', { user: { id: state.editingUser || undefined, name: val('uName'), email: val('uEmail'), role: val('uRole'), scope: val('uScope'), canApprove: val('uRole') === 'interventionist' ? chk('uApprove') : undefined, code: val('uCode') } });
     if (r && r.ok && r.code) state.codeNotice = { name: r.user.name, code: r.code };
     await afterSave(r, '');
   },
@@ -1131,7 +1419,63 @@ const actions = {
     try { const url = URL.createObjectURL(new Blob([csvOf(d)], { type: 'text/csv' })); const a = document.createElement('a'); a.href = url; a.download = 'elementary-' + (state.rep || 'service') + '-' + today() + '.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
     catch (e) { state.notice = { type: 'err', text: 'Could not create the download in this browser.' }; render(); }
   },
-  printPage: () => window.print()
+  printPage: () => window.print(),
+  openTest: el => { const t = tests().find(x => x.id === el.dataset.id); if (t) testDetail(t); },
+  syncCal: async () => {
+    const r = await api('syncCalendar'); if (handleAuthError(r)) return;
+    state.notice = r.error ? { type:'err', text: r.error } : { type:'ok', text: r.skipped ? 'Up to date.' : `Calendar checked: ${r.added} new, ${r.updated} changed, ${r.removed} removed.` };
+    await loadAll();
+  },
+  addTest: () => testModal(null, null, tcState().view === 'day' ? tcState().date : null),
+  addTestFor: () => testModal(null, state.selectedId, null),
+  editTest: el => { const t = tests().find(x => x.id === el.dataset.id); if (t) testModal(t); },
+  saveTest: async () => {
+    const r = await api('saveTest', { test: collectTest() });
+    const msg = r && r.ok ? (r.status === 'pending' ? (r.reset ? 'Saved. It needs approval again because it changed.' : 'Sent for approval. It will show as Approved or Declined on the calendar.') : 'Test saved on the calendar.') : '';
+    await afterSave(r, msg);
+  },
+  approveTest: async el => {
+    const w = document.querySelector('input[name="rvWhere"]:checked');
+    await afterSave(await api('decideTest', { id: el.dataset.id, decision: 'approve', where: w ? w.value : '', note: val('rvNote'), start: val('rvStart'), end: val('rvEnd') }), 'Test approved.');
+  },
+  declineTest: async el => {
+    if (!val('rvNote')) { modalErr('Add a short note so the teacher knows why.'); return; }
+    await afterSave(await api('decideTest', { id: el.dataset.id, decision: 'decline', note: val('rvNote') }), 'Test declined.');
+  },
+  cancelTest: async el => {
+    if (!confirm('Cancel this test? It will be removed from the calendar.')) return;
+    await afterSave(await api('cancelTest', { id: el.dataset.id }), 'Test cancelled.');
+  },
+  tcView: el => { const c = tcState(); c.view = el.dataset.v; if (c.view === 'day') c.date = onOrAfterSchoolDay(c.date); render(); },
+  tcStatus: el => { tcState().status = el.dataset.v; render(); },
+  tcPast: () => { const c = tcState(); c.past = !c.past; render(); },
+  tcToday: () => { const c = tcState(); c.date = c.view === 'day' ? onOrAfterSchoolDay(today()) : today(); render(); },
+  tcNav: el => {
+    const c = tcState(); const n = +el.dataset.n;
+    if (c.view === 'month') { const y = +c.date.slice(0, 4), m = +c.date.slice(5, 7) - 1 + n; c.date = isoOf(Date.UTC(y, m, 1)); }
+    else if (c.view === 'week') c.date = addDays(c.date, 7 * n);
+    else c.date = nextSchoolDay(c.date, n);
+    render();
+  },
+  goDay: el => { const c = tcState(); c.date = el.dataset.d; c.view = 'day'; render(); },
+  tSelShown: () => { document.querySelectorAll('#tStuList .stuRow:not(.hidden) input').forEach(i => { i.checked = true; }); tmWarn(); },
+  tClearAll: () => { document.querySelectorAll('#tStuList input').forEach(i => { i.checked = false; }); tmWarn(); },
+  tsRange: el => { state.ts = { range: el.dataset.r }; render(); },
+  downloadPrep: () => {
+    const d = prepCsv(prepData());
+    try { const url = URL.createObjectURL(new Blob([csvOf(d)], { type: 'text/csv' })); const a = document.createElement('a'); a.href = url; a.download = 'elementary-testing-' + today() + '.csv'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+    catch (e) { state.notice = { type:'err', text:'Could not create the download in this browser.' }; render(); }
+  },
+  addWindow: () => windowModal(null),
+  editWindow: el => windowModal(windows().find(w => w.id === el.dataset.id)),
+  saveWindow: async () => {
+    const grades = [...document.querySelectorAll('input[name="wGrade"]:checked')].map(e => e.value);
+    await afterSave(await api('saveWindow', { window: { id: state.editingWindow || undefined, name: val('wName'), measure: val('wMeasure'), start: val('wStart'), end: val('wEnd'), grades } }), 'Window saved.');
+  },
+  archiveWindow: async el => {
+    if (!confirm('Remove this window?')) return;
+    await afterSave(await api('archiveWindow', { id: el.dataset.id }), 'Window removed.');
+  }
 };
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]'); if (!el) return;
@@ -1142,6 +1486,8 @@ document.addEventListener('input', e => {
   const id = e.target.id;
   if (id === 'q') { state.filters.q = e.target.value; refreshList(); }
   if (id === 'sStart' || id === 'sEnd') { const a = val('sStart'), b = val('sEnd'); if (a && b && b > a) $('sMin').value = minsBetween(a, b); }
+  if (id === 'tSearch') { const q = e.target.value.trim().toLowerCase(); document.querySelectorAll('#tStuList .stuRow').forEach(r => r.classList.toggle('hidden', !!q && !r.dataset.name.includes(q))); }
+  if (id === 'tDate' || id === 'tStart' || id === 'tEnd') tmWarn();
   if (id === 'mSearch') { const q = e.target.value.trim().toLowerCase(); document.querySelectorAll('#mList [data-name]').forEach(l => l.classList.toggle('hidden', !!q && !l.dataset.name.includes(q))); }
 });
 document.addEventListener('change', e => {
@@ -1152,6 +1498,11 @@ document.addEventListener('change', e => {
   if (e.target.dataset && e.target.dataset.pick !== undefined && state.gu) { state.gu.picks[e.target.dataset.pick] = e.target.value; render(); }
   if (id === 'guFile' && e.target.files && e.target.files[0]) { const rd = new FileReader(); rd.onload = () => startUpload(String(rd.result || '')); rd.readAsText(e.target.files[0]); }
   if (id === 'rpFrom' || id === 'rpTo' || id === 'rpType') { state.rp = { from: val('rpFrom'), to: val('rpTo'), type: val('rpType') }; render(); }
+  if (id === 'tcGrade') { tcState().grade = e.target.value; render(); }
+  if (id === 'tcWhere') { tcState().where = e.target.value; render(); }
+  if (id === 'uRole') { const w = $('uApproveWrap'); if (w) w.classList.toggle('hidden', e.target.value !== 'interventionist'); }
+  if (id === 'tClassFilter') { const v = e.target.value; document.querySelectorAll('#tStuList .stuRow').forEach(r => { const hide = !!v && !(r.dataset.teachers || '').split(',').includes(v); r.classList.toggle('hidden', hide); if (hide) r.querySelector('input').checked = false; }); tmWarn(); }
+  if (e.target.name === 'tStu' || e.target.name === 'tWhere' || id === 'tDate' || id === 'tStart' || id === 'tEnd') tmWarn();
   if (id === 'gradeSel') { state.filters.grade = e.target.value; render(); }
   if (id === 'groupSel') { state.filters.group = e.target.value; render(); }
   if (id === 'sGroup') { const g = groupById(e.target.value); if (g) { $('attBody').innerHTML = attRows(g, null); $('sStart').value = g.start || ''; $('sEnd').value = g.end || ''; $('sMin').value = (g.start && g.end) ? minsBetween(g.start, g.end) : ''; } }
@@ -1172,7 +1523,7 @@ function demoInit() {
   const ago = n => { const d = new Date(); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
   const T = [1,2,3,4,5,6,7,8,9].map(i => ({ id:'t' + i, name:'Teacher ' + i, email:'teacher' + i + '@example.org', role:'teacher', scope:'', active:true }));
   const users = T.concat([
-    { id:'u_w', name:'Wendy Blasingame', email:'', role:'interventionist', scope:'tiered', active:true },
+    { id:'u_w', name:'Wendy Blasingame', email:'', role:'interventionist', scope:'tiered', active:true, canApprove:true },
     { id:'u_a', name:'Abby Danielson', email:'', role:'interventionist', scope:'dyslexia', active:true },
     { id:'u_p', name:'Courtney Pine', email:'', role:'principal', scope:'', active:true }]);
   const grp = (id, name, type, staffName, days, start, end) => ({ id, name, type, staffName, timeBlock:'', days, start, end });
@@ -1190,7 +1541,7 @@ function demoInit() {
   const ses = (id, g, date, att_, notes, makeup) => ({ id, groupId:g.id, groupName:g.name, groupType:g.type, staffName:g.staffName, date, start:g.start, end:g.end, minutes:minsBetween(g.start, g.end), attendance:att_, notes:notes || '', makeupNeeded:!!makeup, loggedById:g.staffName.startsWith('Wendy') ? 'u_w' : 'u_a', loggedByName:g.staffName, loggedAt:new Date().toISOString() });
   const sessions = [ses('x1', groups[5], ago(1), [att('s2','B','Present'), att('s8','H','Absent','Out sick')], 'Review of short vowels', true), ses('x2', groups[0], ago(2), [att('s1','A','Present'), att('s8','H','Present')], 'Sight words'),
     ses('x3', groups[2], ago(3), [att('s2','B','Present')], 'Comprehension questions'), ses('x4', groups[4], ago(4), [att('s6','F','Present')], 'Blends')];
-  const codes = { 'demo-admin':{ id:'admin', name:'Admin', role:'admin', scope:'all' }, 'demo-wendy':{ id:'u_w', name:'Wendy Blasingame', role:'interventionist', scope:'tiered' }, 'demo-abby':{ id:'u_a', name:'Abby Danielson', role:'interventionist', scope:'dyslexia' }, 'demo-principal':{ id:'u_p', name:'Courtney Pine', role:'principal', scope:'all' }, 'demo-teacher':{ id:'t4', name:'Teacher 4', role:'teacher', scope:'' } };
+  const codes = { 'demo-admin':{ id:'admin', name:'Admin', role:'admin', scope:'all', canApprove:true }, 'demo-wendy':{ id:'u_w', name:'Wendy Blasingame', role:'interventionist', scope:'tiered', canApprove:true }, 'demo-abby':{ id:'u_a', name:'Abby Danielson', role:'interventionist', scope:'dyslexia' }, 'demo-principal':{ id:'u_p', name:'Courtney Pine', role:'principal', scope:'all' }, 'demo-teacher':{ id:'t4', name:'Teacher 4', role:'teacher', scope:'' } };
   const iso = n => ago(n);
   const pr = (id, sid, name, measure, date, score, note, by) => ({ id, studentId:sid, studentName:'Sample Student ' + name, measure, date, score, value: (/^\s*(?:level\s*)?(\d{1,4}(?:\.\d+)?)\s*(?:rit|%)?\s*$/i.exec(score) || [])[1] != null ? +(/^\s*(?:level\s*)?(\d{1,4}(?:\.\d+)?)/i.exec(score)[1]) : null, note, byId:'u_w', byName: by || 'Wendy Blasingame', createdAt:date + 'T12:00:00Z' });
   const nt = (id, sid, name, type, date, who, text) => ({ id, studentId:sid, studentName:'Sample Student ' + name, type, date, who, text, byId:'u_w', byName:'Wendy Blasingame', createdAt:date + 'T12:00:00Z' });
@@ -1203,6 +1554,12 @@ function demoInit() {
     grades: [gr('g1','s4','D','3rd',ym(1),'number',{ Reading:91, Math:85, Science:90, Bible:94 }), gr('g2','s4','D','3rd',ym(0),'number',{ Reading:85, Math:81, Science:88, Bible:92 }), gr('g3','s8','H','3rd',ym(0),'number',{ Reading:90, Math:92, Science:88, Bible:95 }),
       gr('g4','s1','A','K3',ym(1),'label',{ Literacy:'Approaching', Math:'Needs Improvement' }), gr('g5','s1','A','K3',ym(0),'label',{ Literacy:'Meets', Math:'Approaching' })]
   };
+  const sd = n => { const d = new Date(); let k = Math.abs(n); const st = n < 0 ? -1 : 1; while (k > 0) { d.setDate(d.getDate() + st); if (d.getDay() !== 0 && d.getDay() !== 6) k--; } return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+  const tt = (id, title, type, date, start, end, where, teacherId, studentIds, status, by, byId, note) => ({ id, title, type, date, start, end, where, teacherId, studentIds, notes:note || '', status, decisionNote:'', decidedByName: status === 'pending' ? '' : 'Wendy Blasingame', submittedById:byId, submittedByName:by, createdAt:new Date().toISOString() });
+  records.tests = [tt('tt1','Unit 4 math test','Classroom test',sd(2),'09:00','09:45','hub','t4',['s4'],'approved','Teacher 4','t4'), Object.assign(tt('tt2','Spelling quiz','Quiz',sd(3),'10:00','10:20','hub','t4',['s4','s8'],'pending','Teacher 4','t4'), { source:'calendar', allDay:true }),
+    tt('tt3','Reading test','Classroom test',sd(2),'13:00','13:45','wendy','t2',['s2'],'approved','Wendy Blasingame','u_w','Read aloud, small group'), tt('tt4','Phonics check','Quiz',sd(4),'11:00','11:30','abby','t7',['s6'],'pending','Abby Danielson','u_a')];
+  records.tests.forEach(x => { if (!x.source) x.source = 'calendar'; });
+  records.windows = [{ id:'w1', measure:'NWEA', name:'Fall NWEA', start:ago(40), end:ago(25), grades:[], archived:false }, { id:'w2', measure:'DRA', name:'Fall DRA', start:ago(30), end:ago(10), grades:['K5','1st','2nd'], archived:false }, { id:'w3', measure:'NWEA', name:'Winter NWEA', start:sd(25), end:sd(40), grades:[], archived:false }];
   demo = { users, groups, students, schedules, sessions, records, codes, logins:[], tokens:{} };
 }
 function demoApi(action, b) {
@@ -1227,7 +1584,12 @@ function demoApi(action, b) {
     const need = new Set(visible.map(s => s.scheduleId).filter(Boolean));
     const groups = me.role === 'teacher' ? [] : activeGroups().map(g => Object.assign({}, g, { mine: mine(g) }, mine(g) ? { members: demo.students.filter(s => !s.archived && s.groupIds.includes(g.id)).map(s => ({ id:s.id, name:s.name, grade:s.grade })) } : {}));
     const vis = new Set(visible.map(s => s.id));
-    const records = { progress: demo.records.progress.filter(x => !x.voided && vis.has(x.studentId)), notes: demo.records.notes.filter(x => !x.voided && vis.has(x.studentId)), grades: demo.records.grades.filter(x => vis.has(x.studentId)) };
+    const apv = me.role === 'admin' || !!me.canApprove; const allV = me.role === 'admin' || me.role === 'principal' || apv; const WS = { wendy:'blasingame', abby:'danielson' };
+    const dtests = demo.records.tests.filter(t => !t.voided && (me.role !== 'teacher' || t.submittedById === me.id || t.studentIds.some(id => vis.has(id)))).map(t => {
+      const full = allV || (me.role === 'interventionist' && WS[t.where] && lastName(me.name) === WS[t.where]);
+      const stu = t.studentIds.map(id => demo.students.find(s => s.id === id)).filter(s => s && !s.archived && (full || vis.has(s.id))).map(s => ({ id:s.id, name:s.name, grade:s.grade, scheduleId:s.scheduleId || '', teacherIds:s.teacherIds, accs:s.accommodations.map(a => ({ name:a.name, appliesTo:a.appliesTo })) }));
+      return Object.assign({}, t, { students:stu, studentCount:t.studentIds.length, studentIds:stu.map(s => s.id) }); });
+    const records = { tests: dtests, windows: demo.records.windows.filter(w => !w.archived), progress: demo.records.progress.filter(x => !x.voided && vis.has(x.studentId)), notes: demo.records.notes.filter(x => !x.voided && vis.has(x.studentId)), grades: demo.records.grades.filter(x => vis.has(x.studentId)) };
     const out = { user:me, records, students:shaped, groups, schedules: demo.schedules.filter(x => !x.archived && (me.role !== 'teacher' || need.has(x.id))), sessions: me.role === 'teacher' ? [] : demo.sessions.filter(x => !x.voided), teachers: demo.users.filter(u => u.role === 'teacher' && u.active && (me.role !== 'teacher' || tids.has(u.id))).map(u => ({ id:u.id, name:u.name, email:u.email })) };
     if (me.role === 'admin') out.users = demo.users;
     if (me.role !== 'teacher') out.staff = demo.users.filter(u => u.role === 'interventionist' && u.active).map(u => ({ name:u.name, scope:u.scope }));
@@ -1241,6 +1603,34 @@ function demoApi(action, b) {
     return ok();
   }
   const staffRole = me.role === 'admin' || me.role === 'interventionist';
+  const apvD = me.role === 'admin' || !!me.canApprove;
+  if (action === 'saveTest') {
+    if (me.role === 'principal') return err('Not allowed');
+    const inp = b.test; const old = inp.id ? demo.records.tests.find(x => x.id === inp.id && !x.voided) : null;
+    if (inp.id && !old) return err('Test not found'); if (old && !apvD && old.submittedById !== me.id) return err('Not allowed');
+    if (!String(inp.title || '').trim()) return err('Enter the test name'); if (!TEST_TYPES.includes(inp.type)) return err('Choose test or quiz');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(inp.date || '')) return err('Choose a date'); if (!dayKeyOf(inp.date)) return err('Choose a weekday');
+    if (!inp.start || !inp.end) return err('Enter start and end times'); if (inp.start >= inp.end) return err('End time must be after the start time');
+    const vset = new Set(visible.map(s => s.id)); const ids = (inp.studentIds || []).filter(id => vset.has(id));
+    if (old) old.studentIds.forEach(id => { if (!vset.has(id) && !ids.includes(id)) ids.push(id); });
+    if (!ids.length) return err('Choose at least one student');
+    const rec = Object.assign(old || { id:'tt' + Date.now(), submittedById:me.id, submittedByName:me.name, createdAt:new Date().toISOString() },
+      { title:String(inp.title).trim(), type:inp.type, date:inp.date, start:inp.start, end:inp.end, where:['hub','wendy','abby','tbd'].includes(inp.where) ? inp.where : 'tbd', teacherId: me.role === 'teacher' ? me.id : (inp.teacherId || ''), studentIds:ids, notes:inp.notes || '', status: apvD ? 'approved' : 'pending', decisionNote:'', decidedByName: apvD ? me.name : '' });
+    const reset = !!(old && old.status === 'approved' && !apvD); if (!old) demo.records.tests.push(rec);
+    return ok({ id:rec.id, status:rec.status, reset });
+  }
+  if (action === 'syncCalendar') { if (!apvD) return err('Not allowed'); return ok({ added:0, updated:0, removed:0, events:0 }); }
+  if (action === 'decideTest') {
+    if (!apvD) return err('Not allowed'); const t = demo.records.tests.find(x => x.id === b.id && !x.voided); if (!t) return err('Test not found');
+    if (b.decision === 'decline' && !String(b.note || '').trim()) return err('Add a short note so the teacher knows why');
+    if (b.decision === 'approve' && ['hub','wendy','abby','tbd'].includes(b.where)) t.where = b.where;
+    if (b.start && b.end && b.start < b.end) { t.start = b.start; t.end = b.end; t.allDay = false; }
+    t.status = b.decision === 'approve' ? 'approved' : 'declined'; t.decisionNote = b.note || ''; t.decidedByName = me.name; return ok();
+  }
+  if (action === 'cancelTest') {
+    if (me.role === 'principal') return err('Not allowed'); const t = demo.records.tests.find(x => x.id === b.id && !x.voided); if (!t) return err('Test not found');
+    if (!apvD && t.submittedById !== me.id) return err('Not allowed'); t.voided = true; return ok();
+  }
   if (action === 'saveGroup') {
     if (!staffRole) return err('Not allowed');
     const g0 = b.group.id ? demo.groups.find(g => g.id === b.group.id) : null;
@@ -1292,6 +1682,13 @@ function demoApi(action, b) {
     if (!saved) return err('None of those rows had usable grades'); return ok({ saved, skipped });
   }
   if (action === 'deleteGradeMonth') { const n = demo.records.grades.length; demo.records.grades = demo.records.grades.filter(g => g.month !== b.month); return ok({ removed: n - demo.records.grades.length }); }
+  if (action === 'saveWindow') {
+    const w = b.window; if (!['NWEA','DRA'].includes(w.measure)) return err('Choose NWEA or DRA'); if (!w.start || !w.end) return err('Choose start and end dates'); if (w.end < w.start) return err('The end date is before the start date');
+    const old = w.id ? demo.records.windows.find(x => x.id === w.id) : null;
+    const rec = Object.assign(old || { id:'w' + Date.now(), archived:false }, { measure:w.measure, name:w.name || (w.measure + ' window'), start:w.start, end:w.end, grades:(w.grades || []).filter(g => GRADES.includes(g)) });
+    if (!old) demo.records.windows.push(rec); return ok({ window:rec });
+  }
+  if (action === 'archiveWindow') { const w = demo.records.windows.find(x => x.id === b.id); if (w) w.archived = true; return ok(); }
   if (action === 'saveStudent') {
     const i = demo.students.findIndex(s => s.id === b.student.id); const s = Object.assign({ id:'s' + Date.now(), accommodationLog:[], accommodations:[], archived:false }, i >= 0 ? demo.students[i] : {}, b.student);
     if (!s.name) return err('Student name is required'); if (i >= 0) demo.students[i] = s; else demo.students.push(s); return ok({ student:s });
@@ -1310,7 +1707,7 @@ function demoApi(action, b) {
   if (action === 'saveUser') {
     const u = b.user; if (!u.name) return err('Name is required');
     const code = u.code || (lastName(u.name) + '2627'); const i = demo.users.findIndex(x => x.id === u.id);
-    const rec = Object.assign({ id:'u' + Date.now(), active:true }, i >= 0 ? demo.users[i] : {}, { name:u.name, email:u.email, role:u.role, scope:u.role === 'interventionist' ? u.scope : '' });
+    const rec = Object.assign({ id:'u' + Date.now(), active:true }, i >= 0 ? demo.users[i] : {}, { name:u.name, email:u.email, role:u.role, scope:u.role === 'interventionist' ? u.scope : '' }, u.role === 'interventionist' && u.canApprove !== undefined ? { canApprove:!!u.canApprove } : {});
     if (i >= 0) demo.users[i] = rec; else demo.users.push(rec);
     return ok({ user:rec, code: (!u.id || u.code) ? code : null });
   }
