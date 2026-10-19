@@ -449,7 +449,8 @@ function overviewTab(s) {
   const kd = s.keyDates || {}; const parents = s.parents || [];
   const acc = (s.accommodations || []).map(a => `<span class="chip grp">${esc(a.name)}</span>`).join('') || '<p class="empty">No accommodations recorded yet.</p>';
   const accCard = `<section class="card"><h2>Accommodations</h2><div>${acc}</div><div class="small" style="margin-top:8px">Full list and the in-class usage log are on the Accommodations tab.</div></section>`;
-  if (isTeacher()) return `<div class="row">${accCard}</div>${snapshotCards(s)}`;
+  const dxCard = `<section class="card"><h2>Diagnosis</h2><div>${(s.diagnoses || []).map(d => `<span class="chip grp">${esc(d)}</span>`).join('') || '<p class="empty">None recorded.</p>'}</div></section>`;
+  if (isTeacher()) return `<div class="row">${dxCard}${accCard}</div>${snapshotCards(s)}`;
   const kv = (k, v) => `<div class="kv"><span>${k}</span><span>${v ? esc(v) : '<span style="font-weight:400;color:#5A6B7B">Not recorded</span>'}</span></div>`;
   return `<div class="row">
     ${servicesCard(s)}
@@ -2720,7 +2721,7 @@ function demoApi(action, b) {
   const activeGroups = () => demo.groups.filter(g => !g.archived);
   if (action === 'logout') return ok();
   if (action === 'getAll') {
-    const shaped = visible.map(s => me.role === 'teacher' ? { id:s.id, name:s.name, grade:s.grade, teacherIds:s.teacherIds, scheduleId:s.scheduleId, tier:s.tier, dyslexia:s.dyslexia, speech:s.speech, accommodations:s.accommodations, accommodationLog:s.accommodationLog } : s);
+    const shaped = visible.map(s => me.role === 'teacher' ? { id:s.id, name:s.name, grade:s.grade, teacherIds:s.teacherIds, scheduleId:s.scheduleId, diagnoses:s.diagnoses || [], tier:s.tier, dyslexia:s.dyslexia, speech:s.speech, accommodations:s.accommodations, accommodationLog:s.accommodationLog } : s);
     const tids = new Set(); visible.forEach(s => s.teacherIds.forEach(t => tids.add(t)));
     const need = new Set(visible.map(s => s.scheduleId).filter(Boolean));
     const groups = me.role === 'teacher' ? [] : activeGroups().map(g => Object.assign({}, g, { mine: mine(g) }, mine(g) ? { members: demo.students.filter(s => !s.archived && s.groupIds.includes(g.id)).map(s => ({ id:s.id, name:s.name, grade:s.grade })) } : {}));
