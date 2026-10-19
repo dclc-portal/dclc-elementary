@@ -47,6 +47,8 @@ textarea.field{padding:10px;min-height:72px}
 .t1{background:#DDF1EE;color:#0E5C52}.t2{background:#DCE9F8;color:#123F73}.mon{background:#FBEBCB;color:#6B4300}
 .dys{background:#E9E3F6;color:#3F2A78}.sp{background:#FBE2E8;color:#7A1F3D}.none{background:#ECEFF2;color:#3E4C59}
 .grp{border:1px solid #9FB3C8;color:#1F3A5F;background:#fff;font-weight:600}
+.duePast{background:#FBE3E4;color:#7A1A1F;border:1px solid #E8B4B7}.dueSoon{background:#FFF1D6;color:#6B4300;border:1px solid #EBCB8B}
+.impTbl{width:100%;border-collapse:collapse;font-size:13px}.impTbl th,.impTbl td{padding:6px 8px;border-bottom:1px solid #E3E8EE;text-align:left;vertical-align:top}.impTbl th{position:sticky;top:0;background:#F4F7FA}.impBox{max-height:44vh;overflow:auto;border:1px solid #E3E8EE;border-radius:8px}
 .r-admin{background:#2E4057;color:#fff}.r-int{background:#DCE9F8;color:#123F73}.r-prin{background:#FBEBCB;color:#6B4300}.r-teach{background:#DDF1EE;color:#0E5C52}
 .tabs{border-bottom:1px solid #E3E8EE;display:flex;flex-wrap:wrap;gap:2px}
 .tab{background:none;border:0;border-bottom:3px solid transparent;padding:12px 14px;min-height:44px;font-weight:700;color:#3E4C59}
@@ -192,7 +194,7 @@ const PALETTE = [['#E3EEF8','#1F4E87'],['#DFF2EC','#0E5C52'],['#FCEBD7','#7A4A0A
 
 const state = {
   token: null, user: null, data: null, view: 'home', selectedId: null, tab: 'Overview',
-  filters: { q:'', tier:'', dyslexia:false, speech:false, group:'', grade:'' },
+  filters: { q:'', tier:'', dyslexia:false, speech:false, reeval:false, group:'', grade:'' },
   syncedAt: null, notice: null, loginMsg: '', logins: null,
   gu: null, guMonth: '', rep: 'service', rp: {}, noteType: '', pmGroup: '',
   day: ({1:'M',2:'T',3:'W',4:'R',5:'F'})[new Date().getDay()] || 'M'
@@ -252,8 +254,19 @@ function tierSummary(s) {
   }
   return parts.join(' · ');
 }
+function reevalStatus(s) {
+  const d = s && s.keyDates && s.keyDates.nextReeval;
+  if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return '';
+  const t = today();
+  if (d < t) return 'past';
+  const days = Math.round((new Date(d + 'T00:00:00') - new Date(t + 'T00:00:00')) / 86400000);
+  return days <= 60 ? 'soon' : '';
+}
 function flagChips(s) {
   let h = '';
+  const rs = reevalStatus(s);
+  if (rs === 'past') h += '<span class="chip duePast">Re-eval past due</span>';
+  else if (rs === 'soon') h += '<span class="chip dueSoon">Re-eval due soon</span>';
   if (s.tier !== 'none') h += `<span class="chip ${TIER_CLASS[s.tier]}">${TIER_LABEL[s.tier]}</span>`;
   if (s.dyslexia) h += '<span class="chip dys">Dyslexia</span>';
   if (s.speech) h += '<span class="chip sp">Speech</span>';
@@ -348,7 +361,7 @@ function headerHtml() {
       ${r !== 'teacher' ? pill('reports','Reports') : ''}
       ${isAdmin() ? pill('grades','Grade upload') : ''}
       ${isAdmin() ? pill('logins','Login report') : ''}
-      ${isAdmin() ? `<button class="primary" data-act="addStudent">+ Add student</button>` : ''}
+      ${isAdmin() ? `<button class="secondary" data-act="importStudents">Import students</button><button class="primary" data-act="addStudent">+ Add student</button>` : ''}
     </div></header>`;
 }
 
@@ -381,12 +394,12 @@ function filteredStudents() {
   const f = state.filters; const q = f.q.trim().toLowerCase();
   return sortStudents(state.data.students.filter(s =>
     (!q || s.name.toLowerCase().includes(q)) && (!f.grade || s.grade === f.grade) && (!f.tier || s.tier === f.tier) &&
-    (!f.dyslexia || s.dyslexia) && (!f.speech || s.speech) && (!f.group || (s.groupIds || []).includes(f.group))));
+    (!f.dyslexia || s.dyslexia) && (!f.speech || s.speech) && (!f.reeval || reevalStatus(s)) && (!f.group || (s.groupIds || []).includes(f.group))));
 }
 function listHtml() {
   const list = filteredStudents();
   if (!list.length) return '<div class="empty" style="padding:8px 12px">No matching students.</div>';
-  return list.map(s => { const p = palette(s.name); return `<button class="srow ${s.id === state.selectedId ? 'sel' : ''}" data-act="select" data-id="${esc(s.id)}"><span class="av" style="background:${p[0]};color:${p[1]}">${esc(initials(s.name))}</span><span><div class="sn">${esc(s.name)}</div><div class="ss">${esc(tierSummary(s))}</div></span></button>`; }).join('');
+  return list.map(s => { const p = palette(s.name); return `<button class="srow ${s.id === state.selectedId ? 'sel' : ''}" data-act="select" data-id="${esc(s.id)}"><span class="av" style="background:${p[0]};color:${p[1]}">${esc(initials(s.name))}</span><span><div class="sn">${esc(s.name)}</div><div class="ss">${esc(tierSummary(s))}${reevalStatus(s) === 'past' ? ' · ' : ''}${reevalStatus(s) === 'past' ? '<span style="color:#7A1A1F;font-weight:700">Re-eval past due</span>' : ''}</div></span></button>`; }).join('');
 }
 function sideHtml() {
   const f = state.filters;
@@ -396,7 +409,7 @@ function sideHtml() {
     <div><label class="sr" for="q">Search by name</label><input class="field" id="q" type="text" placeholder="Search by name..." value="${esc(f.q)}" autocomplete="off"></div>
     <div><div class="fh">GRADE</div><select class="field" id="gradeSel" aria-label="Grade"><option value="">All grades</option>${GRADES.map(g => `<option ${f.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select></div>
     <div><div class="fh">SERVICE TIER</div>${chip('tier','','All')}${chip('tier','tier1','Tier 1')}${chip('tier','tier2','Tier 2')}${chip('tier','monitor','Monitor')}</div>
-    <div><div class="fh">FLAG</div><button class="fc ${f.dyslexia ? 'on' : ''}" data-act="toggleFlag" data-k="dyslexia">Dyslexia</button><button class="fc ${f.speech ? 'on' : ''}" data-act="toggleFlag" data-k="speech">Speech</button></div>
+    <div><div class="fh">FLAG</div><button class="fc ${f.dyslexia ? 'on' : ''}" data-act="toggleFlag" data-k="dyslexia">Dyslexia</button><button class="fc ${f.speech ? 'on' : ''}" data-act="toggleFlag" data-k="speech">Speech</button>${isTeacher() ? '' : `<button class="fc ${f.reeval ? 'on' : ''}" data-act="toggleFlag" data-k="reeval">Re-eval due</button>`}</div>
     ${isTeacher() ? '' : `<div><div class="fh">SERVICE GROUP</div><select class="field" id="groupSel" aria-label="Service group"><option value="">All groups</option>${groups.map(g => `<option value="${esc(g.id)}" ${f.group === g.id ? 'selected' : ''}>${esc(groupLabel(g))}</option>`).join('')}</select></div>`}
     <div class="fh" style="margin-bottom:0">STUDENTS (<span id="count">${filteredStudents().length}</span>)</div>
     <div id="studentList" style="display:flex;flex-direction:column;gap:2px">${listHtml()}</div></aside>`;
@@ -439,7 +452,7 @@ function overviewTab(s) {
   const kv = (k, v) => `<div class="kv"><span>${k}</span><span>${v ? esc(v) : '<span style="font-weight:400;color:#5A6B7B">Not recorded</span>'}</span></div>`;
   return `<div class="row">
     ${servicesCard(s)}
-    <section class="card"><h2>Key dates</h2>${kv('FIE date', fmtDate(kd.fie))}${kv('Last diagnostic', fmtDate(kd.lastDiagnostic))}${kv('Next re-evaluation', fmtDate(kd.nextReeval))}${kv('Last parent meeting', fmtDate(kd.lastParentMeeting))}</section></div>
+    <section class="card"><h2>Key dates</h2>${kv('FIE date', fmtDate(kd.fie))}${kv('Last diagnostic', fmtDate(kd.lastDiagnostic))}${kv('Next re-evaluation', fmtDate(kd.nextReeval) + (reevalStatus(s) === 'past' ? '  (PAST DUE)' : reevalStatus(s) === 'soon' ? '  (due within 60 days)' : ''))}${kv('Eligibility', s.eligibility)}${kv('Last parent meeting', fmtDate(kd.lastParentMeeting))}</section></div>
     <div class="row">
     <section class="card"><h2>Parent contacts</h2>${parents.length ? parents.map(p => `<div class="note"><b>${esc(p.name || 'Unnamed')}</b>${p.relation ? ' (' + esc(p.relation) + ')' : ''}<div class="small">${esc([p.phone, p.email].filter(Boolean).join(' · ') || 'No contact info')}</div></div>`).join('') : '<p class="empty">No parent contacts recorded yet.</p>'}</section>
     ${accCard}</div>
@@ -881,6 +894,7 @@ function studentModal(s) {
     <div><div class="fh">SERVICE GROUPS</div>${groups.length ? groups.map(g => `<label class="chk"><input type="checkbox" name="fGroup" value="${esc(g.id)}" ${(s.groupIds || []).includes(g.id) ? 'checked' : ''}>${esc(groupLabel(g))}</label>`).join('') : '<p class="empty">No groups yet. Add groups on the Overview screen.</p>'}</div>
     <div class="fh" style="margin-bottom:-6px">PARENT CONTACTS</div>
     ${[0, 1].map(i => `<div class="cols"><label class="fl">Name<input class="field" id="fPn${i}" value="${esc(par(i).name)}"></label><label class="fl">Relationship<input class="field" id="fPr${i}" value="${esc(par(i).relation)}"></label><label class="fl">Phone<input class="field" id="fPp${i}" value="${esc(par(i).phone)}"></label><label class="fl">Email<input class="field" id="fPe${i}" value="${esc(par(i).email)}"></label></div>`).join('')}
+    <label class="fl">Eligibility (from the learning plan)<input class="field" id="fElig" value="${esc(s.eligibility)}" maxlength="300"></label>
     <div class="fh" style="margin-bottom:-6px">KEY DATES</div>
     <div class="cols"><label class="fl">FIE date<input class="field" type="date" id="fKfie" value="${esc(kd.fie)}"></label><label class="fl">Last diagnostic<input class="field" type="date" id="fKld" value="${esc(kd.lastDiagnostic)}"></label><label class="fl">Next re-evaluation<input class="field" type="date" id="fKnr" value="${esc(kd.nextReeval)}"></label><label class="fl">Last parent meeting<input class="field" type="date" id="fKpm" value="${esc(kd.lastParentMeeting)}"></label></div>
     <div class="btns">${isNew ? '' : '<button class="danger" data-act="archiveStudent" style="margin-right:auto">Remove from portal</button>'}<button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveStudent">Save</button></div>`);
@@ -890,6 +904,7 @@ function collectStudent(base) {
   return Object.assign({}, base || {}, {
     name: val('fName'), grade: val('fGrade'), teacherIds: checked('fTeacher'), scheduleId: val('fSchedule'), tier: val('fTier'), dyslexia: chk('fDys'), speech: chk('fSp'), groupIds: checked('fGroup'),
     parents: [0, 1].map(i => ({ name: val('fPn' + i), relation: val('fPr' + i), phone: val('fPp' + i), email: val('fPe' + i) })),
+    eligibility: val('fElig'),
     keyDates: { fie: val('fKfie'), lastDiagnostic: val('fKld'), nextReeval: val('fKnr'), lastParentMeeting: val('fKpm') }
   });
 }
@@ -1317,8 +1332,70 @@ async function afterSave(r, okMsg) {
   if (r.error) { modalErr(r.error); return false; }
   closeModal(); state.notice = okMsg ? { type:'ok', text: okMsg } : null; await loadAll(); return true;
 }
+/* ---------- student import (admin) ---------- */
+const impNorm = n => String(n || '').toLowerCase().replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim();
+function impTeacher(name) {
+  const list = state.data.teachers || []; const k = impNorm(name); if (!k) return null;
+  const exact = list.find(t => impNorm(t.name) === k); if (exact) return exact;
+  const parts = k.split(' '), last = parts[parts.length - 1], fi = parts[0][0];
+  const c = list.filter(t => { const p = impNorm(t.name).split(' '); return p[p.length - 1] === last && p[0][0] === fi; });
+  return c.length === 1 ? c[0] : null;
+}
+function impOpen() {
+  state.imp = { rows: null, error: '' };
+  impRender();
+}
+function impRender() {
+  const im = state.imp; if (!im) return;
+  let body;
+  if (!im.rows) {
+    body = `<p class="small" style="font-size:14px">Choose the import file Claude prepared (a .json file). You will see a preview first. Nothing is saved until you click Import.</p>
+      <input type="file" id="impFile" accept=".json,application/json" aria-label="Import file">`;
+  } else {
+    const rows = im.rows, nNew = rows.filter(r => !r.existing).length, nEx = rows.length - nNew;
+    const missing = [...new Set(rows.filter(r => r.on && !r.teacher && r.homeroomTeacher).map(r => r.homeroomTeacher))];
+    const sel = rows.filter(r => r.on).length;
+    body = `<div class="small" style="font-size:14px;margin-bottom:6px">${rows.length} in the file: <b>${nNew}</b> new, <b>${nEx}</b> already in the portal (only blank teacher, eligibility and re-eval dates get filled in; accommodations are never changed).</div>
+      ${missing.length ? `<div class="banner err">No teacher account yet for: ${missing.map(esc).join(', ')}. Those students are imported without a teacher. Add the teachers on the Access screen, then run this import again and it will fill the teachers in.</div>` : ''}
+      <div class="impBox"><table class="impTbl"><thead><tr><th></th><th>Student</th><th>Grade</th><th>Teacher</th><th>Accom.</th><th>Re-eval</th><th>Notes</th></tr></thead><tbody>
+      ${rows.map((r, i) => `<tr><td><input type="checkbox" data-imp="${i}" ${r.on ? 'checked' : ''} aria-label="Include ${esc(r.name)}"></td><td>${esc(r.name)}${r.folderName && r.folderName !== r.name ? `<div class="small" style="font-size:12px">folder: ${esc(r.folderName)}</div>` : ''}</td><td>${esc(r.grade)}</td>
+        <td>${r.teacher ? esc(r.teacher.name) : `<span style="color:#7A1A1F;font-weight:700">${esc(r.homeroomTeacher || 'none')}${r.homeroomTeacher ? ' (no account)' : ''}</span>`}</td><td>${(r.accommodations || []).length}</td>
+        <td>${r.nextReeval ? esc(fmtDate(r.nextReeval)) : ''}${r.nextReeval && r.nextReeval < today() ? ' <span class="chip duePast" style="margin:0">past due</span>' : ''}</td>
+        <td>${r.existing ? '<span class="chip none" style="margin:0">already in portal</span> ' : ''}${(r.flags || []).map(f => `<div class="small" style="font-size:12px">${esc(f)}</div>`).join('')}</td></tr>`).join('')}
+      </tbody></table></div>`;
+    body += `<div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="impGo" ${sel ? '' : 'disabled'}>Import ${sel} student${sel === 1 ? '' : 's'}</button></div>`;
+  }
+  openModal(`<h2>Import students</h2><div class="banner err ${im.error ? '' : 'hidden'}" id="modalErr" role="alert">${esc(im.error)}</div>${body}${im.rows ? '' : '<div class="btns"><button class="secondary" data-act="closeModal">Cancel</button></div>'}`);
+}
+function impLoad(text) {
+  let rows;
+  try { rows = JSON.parse(text); } catch (e) { rows = null; }
+  if (!Array.isArray(rows) || !rows.length || rows.some(r => !r || typeof r.name !== 'string' || !GRADES.includes(r.grade))) { state.imp.error = 'That file is not a student import file. Choose the file Claude prepared.'; impRender(); return; }
+  if (rows.length > 400) { state.imp.error = 'Import up to 400 students at a time.'; impRender(); return; }
+  const live = (state.data.students || []);
+  state.imp.error = '';
+  state.imp.rows = rows.map(r => ({ ...r, teacher: impTeacher(r.homeroomTeacher), existing: live.find(s => impNorm(s.name) === impNorm(r.name)) || null, on: true }));
+  impRender();
+}
+document.addEventListener('change', e => {
+  if (e.target.id === 'impFile' && e.target.files && e.target.files[0]) { const rd = new FileReader(); rd.onload = () => impLoad(String(rd.result || '')); rd.readAsText(e.target.files[0]); }
+  if (e.target.dataset && e.target.dataset.imp !== undefined && state.imp && state.imp.rows) { state.imp.rows[+e.target.dataset.imp].on = e.target.checked; impRender(); }
+});
 const actions = {
   login: doLogin,
+  importStudents: impOpen,
+  impGo: async () => {
+    const im = state.imp; if (!im || !im.rows) return;
+    const rows = im.rows.filter(r => r.on).map(r => ({ name: r.name, grade: r.grade, teacherId: r.teacher ? r.teacher.id : '', eligibility: r.eligibility || '', nextReeval: r.nextReeval || '', accommodations: (r.accommodations || []).filter(a => ELEM_ACCS.includes(a)) }));
+    if (!rows.length) return;
+    const r = await api('importStudents', { rows });
+    if (handleAuthError(r)) return;
+    if (r.error) { im.error = r.error; impRender(); return; }
+    state.imp = null; closeModal();
+    const sk = (r.skipped || []).length;
+    state.notice = { type: 'ok', text: `Imported ${r.created.length} new student${r.created.length === 1 ? '' : 's'}` + (r.filled.length ? `, filled in details for ${r.filled.length}` : '') + (sk ? `, skipped ${sk} already in the portal` : '') + '.' };
+    await loadAll();
+  },
   signout: signOut,
   refresh: async () => { state.notice = null; await loadAll(); },
   view: el => { state.view = el.dataset.v; state.notice = null; if (state.view === 'logins') state.logins = null; if (state.view === 'hub') { hub.tests = null; hub.builder = hub.results = hub.finish = null; hub.msg = null; hubPollStart(); } render(); },
@@ -2757,6 +2834,16 @@ function demoApi(action, b) {
     if (!s.name) return err('Student name is required'); if (i >= 0) demo.students[i] = s; else demo.students.push(s); return ok({ student:s });
   }
   if (action === 'archiveStudent') { const s = demo.students.find(x => x.id === b.id); if (s) s.archived = true; return ok(); }
+  if (action === 'importStudents') {
+    const created = [], filled = [], skipped = [];
+    (b.rows || []).forEach(r => {
+      const ex = demo.students.find(s => !s.archived && impNorm(s.name) === impNorm(r.name));
+      if (ex) { skipped.push({ name: r.name, reason: 'Already in the portal' }); return; }
+      demo.students.push({ id:'s' + Date.now() + created.length, name:r.name, grade:r.grade, teacherIds:r.teacherId ? [r.teacherId] : [], tier:'none', dyslexia:false, speech:false, groupIds:[], parents:[], keyDates:{ nextReeval:r.nextReeval }, eligibility:r.eligibility, accommodations:(r.accommodations || []).map((n, i) => ({ id:'a' + i, name:n, appliesTo:'', source:'Learning plan' })), accommodationLog:[], archived:false });
+      created.push(r.name);
+    });
+    return ok({ created, filled, skipped });
+  }
   if (action === 'archiveGroup') { demo.groups = demo.groups.filter(g => g.id !== b.id); demo.students.forEach(s => { s.groupIds = s.groupIds.filter(x => x !== b.id); }); return ok(); }
   if (action === 'voidSession') { const x = demo.sessions.find(r => r.id === b.id); if (x) x.voided = true; return ok(); }
   if (action === 'saveSchedule') {
