@@ -184,6 +184,7 @@ const COMING = {};
 const VIEW_COMING = {};
 const PROGRESS_MEASURES = ['NWEA Reading','NWEA Math','DRA','BUILD','Take Flight','Other'];
 const NOTE_TYPES = ['Reminder','Observation','Parent phone call','Email','Fall conference','Spring conference','Intervention team meeting','Other'];
+const DIAGNOSES = ['Dyslexia', 'Dysgraphia', 'Dyscalculia', 'SLD', 'SLD – Reading', 'SLD – Written Expression', 'SLD – Math', 'ADHD – Inattentive', 'ADHD – Combined', 'Anxiety', 'Processing Disorder', 'Intellectual Disability', 'OHI', 'ED', 'Listening Comprehension', 'Language Processing Disorder', 'Autism', 'Other'];
 const ELEM_ACCS = ["Preferential seating", "Clear classroom routines and expectations", "Reduce visual/auditory distractions", "Gain attention before directions; student repeats information", "Small amounts of information at one time / directions in small steps", "Ask student to repeat directions", "Accompany oral directions with visual cues", "Scribe work to teacher, parent or tutor (answer orally)", "Read written information/text to student", "More time to think/process", "No work flipped front to back", "Guided/partially completed notes", "Not required to read aloud unless volunteers", "Encourage student to ask questions", "Do not penalize for spelling (except spelling tests, final drafts, research, computer work)", "Larger assignments in smaller parts with teacher check-ins", "Allow breaks when needed (sensory/movement)", "MATH: Read all word problems; clarify directions and vocabulary", "Visual reminders / visual timers", "Time and a half on classroom assignments and assessments", "Allow student to type responses", "Allow audio books", "Redo failed assignments at teacher discretion (up to 70)", "Weigh content over spelling in written expression", "Teach organization/planning/study skills", "Allow use of multiplication chart / number line / writing organizers / calculator", "Allow test to be read to student", "AR test and book can be administered on audio", "NWEA test in small group with breaks", "NWEA test read aloud", "Allow student to respond orally", "Allow tests in small group testing environment", "One-sided tests (no flipping front to back)", "Allow frequent breaks", "Academic support (push-in and/or pull-out)", "Dyslexia therapy (MTA)", "Counselor support/check-ins"];
 const GRADE_LABELS = ['Meets','Approaching','Needs Improvement'];
 const LABEL_RANK = { 'Meets':3, 'Approaching':2, 'Needs Improvement':1 };
@@ -452,7 +453,7 @@ function overviewTab(s) {
   const kv = (k, v) => `<div class="kv"><span>${k}</span><span>${v ? esc(v) : '<span style="font-weight:400;color:#5A6B7B">Not recorded</span>'}</span></div>`;
   return `<div class="row">
     ${servicesCard(s)}
-    <section class="card"><h2>Key dates</h2>${kv('FIE date', fmtDate(kd.fie))}${kv('Last diagnostic', fmtDate(kd.lastDiagnostic))}${kv('Next re-evaluation', fmtDate(kd.nextReeval) + (reevalStatus(s) === 'past' ? '  (PAST DUE)' : reevalStatus(s) === 'soon' ? '  (due within 60 days)' : ''))}${kv('Eligibility', s.eligibility)}${kv('Last parent meeting', fmtDate(kd.lastParentMeeting))}</section></div>
+    <section class="card"><h2>Key dates</h2>${kv('FIE date', fmtDate(kd.fie))}${kv('Last diagnostic', fmtDate(kd.lastDiagnostic))}${kv('Next re-evaluation', fmtDate(kd.nextReeval) + (reevalStatus(s) === 'past' ? '  (PAST DUE)' : reevalStatus(s) === 'soon' ? '  (due within 60 days)' : ''))}${kv('Diagnosis', (s.diagnoses || []).join(', '))}${s.eligibility ? `<div class="small" style="font-size:12px;color:#5A6B7B;margin:-4px 0 6px">Plan wording: ${esc(s.eligibility)}</div>` : ''}${kv('Last parent meeting', fmtDate(kd.lastParentMeeting))}</section></div>
     <div class="row">
     <section class="card"><h2>Parent contacts</h2>${parents.length ? parents.map(p => `<div class="note"><b>${esc(p.name || 'Unnamed')}</b>${p.relation ? ' (' + esc(p.relation) + ')' : ''}<div class="small">${esc([p.phone, p.email].filter(Boolean).join(' · ') || 'No contact info')}</div></div>`).join('') : '<p class="empty">No parent contacts recorded yet.</p>'}</section>
     ${accCard}</div>
@@ -894,7 +895,7 @@ function studentModal(s) {
     <div><div class="fh">SERVICE GROUPS</div>${groups.length ? groups.map(g => `<label class="chk"><input type="checkbox" name="fGroup" value="${esc(g.id)}" ${(s.groupIds || []).includes(g.id) ? 'checked' : ''}>${esc(groupLabel(g))}</label>`).join('') : '<p class="empty">No groups yet. Add groups on the Overview screen.</p>'}</div>
     <div class="fh" style="margin-bottom:-6px">PARENT CONTACTS</div>
     ${[0, 1].map(i => `<div class="cols"><label class="fl">Name<input class="field" id="fPn${i}" value="${esc(par(i).name)}"></label><label class="fl">Relationship<input class="field" id="fPr${i}" value="${esc(par(i).relation)}"></label><label class="fl">Phone<input class="field" id="fPp${i}" value="${esc(par(i).phone)}"></label><label class="fl">Email<input class="field" id="fPe${i}" value="${esc(par(i).email)}"></label></div>`).join('')}
-    <label class="fl">Eligibility (from the learning plan)<input class="field" id="fElig" value="${esc(s.eligibility)}" maxlength="300"></label>
+    <div><div class="fh">DIAGNOSIS</div>${DIAGNOSES.map(d => `<label class="chk"><input type="checkbox" name="fDiag" value="${esc(d)}" ${(s.diagnoses || []).includes(d) ? 'checked' : ''}> ${esc(d)}</label>`).join('')}${s.eligibility ? `<div class="small" style="font-size:12px;margin-top:4px">Plan wording: ${esc(s.eligibility)}</div>` : ''}</div>
     <div class="fh" style="margin-bottom:-6px">KEY DATES</div>
     <div class="cols"><label class="fl">FIE date<input class="field" type="date" id="fKfie" value="${esc(kd.fie)}"></label><label class="fl">Last diagnostic<input class="field" type="date" id="fKld" value="${esc(kd.lastDiagnostic)}"></label><label class="fl">Next re-evaluation<input class="field" type="date" id="fKnr" value="${esc(kd.nextReeval)}"></label><label class="fl">Last parent meeting<input class="field" type="date" id="fKpm" value="${esc(kd.lastParentMeeting)}"></label></div>
     <div class="btns">${isNew ? '' : '<button class="danger" data-act="archiveStudent" style="margin-right:auto">Remove from portal</button>'}<button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveStudent">Save</button></div>`);
@@ -904,7 +905,7 @@ function collectStudent(base) {
   return Object.assign({}, base || {}, {
     name: val('fName'), grade: val('fGrade'), teacherIds: checked('fTeacher'), scheduleId: val('fSchedule'), tier: val('fTier'), dyslexia: chk('fDys'), speech: chk('fSp'), groupIds: checked('fGroup'),
     parents: [0, 1].map(i => ({ name: val('fPn' + i), relation: val('fPr' + i), phone: val('fPp' + i), email: val('fPe' + i) })),
-    eligibility: val('fElig'),
+    diagnoses: checked('fDiag'),
     keyDates: { fie: val('fKfie'), lastDiagnostic: val('fKld'), nextReeval: val('fKnr'), lastParentMeeting: val('fKpm') }
   });
 }
@@ -1355,7 +1356,7 @@ function impRender() {
     const rows = im.rows, nNew = rows.filter(r => !r.existing).length, nEx = rows.length - nNew;
     const missing = [...new Set(rows.filter(r => r.on && !r.teacher && r.homeroomTeacher).map(r => r.homeroomTeacher))];
     const sel = rows.filter(r => r.on).length;
-    body = `<div class="small" style="font-size:14px;margin-bottom:6px">${rows.length} in the file: <b>${nNew}</b> new, <b>${nEx}</b> already in the portal (only blank teacher, eligibility and re-eval dates get filled in; accommodations are never changed).</div>
+    body = `<div class="small" style="font-size:14px;margin-bottom:6px">${rows.length} in the file: <b>${nNew}</b> new, <b>${nEx}</b> already in the portal (only blank teacher, diagnosis, FIE date and re-eval date get filled in; accommodations are never changed).</div>
       ${missing.length ? `<div class="banner err">No teacher account yet for: ${missing.map(esc).join(', ')}. Those students are imported without a teacher. Add the teachers on the Access screen, then run this import again and it will fill the teachers in.</div>` : ''}
       <div class="impBox"><table class="impTbl"><thead><tr><th></th><th>Student</th><th>Grade</th><th>Teacher</th><th>Accom.</th><th>Re-eval</th><th>Notes</th></tr></thead><tbody>
       ${rows.map((r, i) => `<tr><td><input type="checkbox" data-imp="${i}" ${r.on ? 'checked' : ''} aria-label="Include ${esc(r.name)}"></td><td>${esc(r.name)}${r.folderName && r.folderName !== r.name ? `<div class="small" style="font-size:12px">folder: ${esc(r.folderName)}</div>` : ''}</td><td>${esc(r.grade)}</td>
@@ -1386,7 +1387,7 @@ const actions = {
   importStudents: impOpen,
   impGo: async () => {
     const im = state.imp; if (!im || !im.rows) return;
-    const rows = im.rows.filter(r => r.on).map(r => ({ name: r.name, grade: r.grade, teacherId: r.teacher ? r.teacher.id : '', eligibility: r.eligibility || '', nextReeval: r.nextReeval || '', accommodations: (r.accommodations || []).filter(a => ELEM_ACCS.includes(a)) }));
+    const rows = im.rows.filter(r => r.on).map(r => ({ name: r.name, grade: r.grade, teacherId: r.teacher ? r.teacher.id : '', eligibility: r.eligibility || '', diagnoses: (r.diagnoses || []).filter(d => DIAGNOSES.includes(d)), fie: r.fie || '', nextReeval: r.nextReeval || '', accommodations: (r.accommodations || []).filter(a => ELEM_ACCS.includes(a)) }));
     if (!rows.length) return;
     const r = await api('importStudents', { rows });
     if (handleAuthError(r)) return;
@@ -2839,7 +2840,7 @@ function demoApi(action, b) {
     (b.rows || []).forEach(r => {
       const ex = demo.students.find(s => !s.archived && impNorm(s.name) === impNorm(r.name));
       if (ex) { skipped.push({ name: r.name, reason: 'Already in the portal' }); return; }
-      demo.students.push({ id:'s' + Date.now() + created.length, name:r.name, grade:r.grade, teacherIds:r.teacherId ? [r.teacherId] : [], tier:'none', dyslexia:false, speech:false, groupIds:[], parents:[], keyDates:{ nextReeval:r.nextReeval }, eligibility:r.eligibility, accommodations:(r.accommodations || []).map((n, i) => ({ id:'a' + i, name:n, appliesTo:'', source:'Learning plan' })), accommodationLog:[], archived:false });
+      demo.students.push({ id:'s' + Date.now() + created.length, name:r.name, grade:r.grade, teacherIds:r.teacherId ? [r.teacherId] : [], tier:'none', dyslexia:false, speech:false, groupIds:[], parents:[], keyDates:{ fie:r.fie || '', nextReeval:r.nextReeval }, eligibility:r.eligibility, diagnoses:r.diagnoses || [], accommodations:(r.accommodations || []).map((n, i) => ({ id:'a' + i, name:n, appliesTo:'', source:'Learning plan' })), accommodationLog:[], archived:false });
       created.push(r.name);
     });
     return ok({ created, filled, skipped });
