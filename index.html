@@ -47,6 +47,7 @@ textarea.field{padding:10px;min-height:72px}
 .t1{background:#DDF1EE;color:#0E5C52}.t2{background:#DCE9F8;color:#123F73}.mon{background:#FBEBCB;color:#6B4300}
 .dys{background:#E9E3F6;color:#3F2A78}.sp{background:#FBE2E8;color:#7A1F3D}.none{background:#ECEFF2;color:#3E4C59}
 .grp{border:1px solid #9FB3C8;color:#1F3A5F;background:#fff;font-weight:600}
+.docRow{display:flex;align-items:center;gap:10px;background:#F6F5F1;border-radius:8px;padding:8px 10px;margin-top:8px;flex-wrap:wrap}.docIc{font-size:11px;font-weight:800;color:#B3261E}.docName{flex:1 1 160px;font-weight:700;color:#1B2733;overflow-wrap:anywhere}a.docName{color:#1F4E79}.docX{border:0;background:none;font-size:20px;color:#5A6B7B;min-height:36px;min-width:36px;cursor:pointer}
 .duePast{background:#FBE3E4;color:#7A1A1F;border:1px solid #E8B4B7}.dueSoon{background:#FFF1D6;color:#6B4300;border:1px solid #EBCB8B}
 .impTbl{width:100%;border-collapse:collapse;font-size:13px}.impTbl th,.impTbl td{padding:6px 8px;border-bottom:1px solid #E3E8EE;text-align:left;vertical-align:top}.impTbl th{position:sticky;top:0;background:#F4F7FA}.impBox{max-height:44vh;overflow:auto;border:1px solid #E3E8EE;border-radius:8px}
 .r-admin{background:#2E4057;color:#fff}.r-int{background:#DCE9F8;color:#123F73}.r-prin{background:#FBEBCB;color:#6B4300}.r-teach{background:#DDF1EE;color:#0E5C52}
@@ -300,7 +301,7 @@ function handleAuthError(r) {
 /* ---------- session ---------- */
 function saveSession() { try { sessionStorage.setItem('elem_session', JSON.stringify({ token: state.token, user: state.user })); } catch (e) {} }
 function signOutLocal(msg) {
-  state.token = null; state.user = null; state.data = null; state.selectedId = null; state.view = 'home'; if (state.hub) { clearInterval(state.hub.poll); state.hub.tests = null; state.hub.builder = state.hub.results = state.hub.finish = null; }
+  state.token = null; state.user = null; state.data = null; state.selectedId = null; state.docs = null; state.view = 'home'; if (state.hub) { clearInterval(state.hub.poll); state.hub.tests = null; state.hub.builder = state.hub.results = state.hub.finish = null; }
   state.loginMsg = msg || '';
   try { sessionStorage.removeItem('elem_session'); } catch (e) {}
   closeModal(); render();
@@ -445,6 +446,33 @@ function tabHtml(s) {
     default: return `<div class="card muted"><h2>${esc(state.tab)}</h2><p class="empty">${esc(COMING[state.tab])}</p></div>`;
   }
 }
+/* ---------- FIE and other documents (Drive links; admin and interventionist manage, principal views) ---------- */
+const canDocs = () => isAdmin() || role() === 'interventionist';
+const DOC_LBLS = ['Full FIE', 'Addendum', 'ARD'];
+const safeUrl = u => /^https:\/\/(drive|docs)\.google\.com\//.test(String(u || '')) ? u : '#';
+function docRow(d, s) {
+  return `<div class="docRow"><span class="docIc" aria-hidden="true">${/pdf/i.test(d.name) ? 'PDF' : 'DOC'}</span><a class="docName" href="${esc(safeUrl(d.url))}" target="_blank" rel="noopener">${esc(d.name)}</a><span style="font-size:12px;background:#FBEBD0;border:1px solid #E5C48A;border-radius:10px;padding:2px 8px">${esc(d.label || '')}</span>${canDocs() ? `<button class="docX" data-act="docUnlink" data-id="${esc(d.id)}" aria-label="Unlink ${esc(d.name)}">&times;</button>` : ''}</div>`;
+}
+function docResults(s, mode) {
+  const q = state.docs;
+  if (!q || q.sid !== s.id || q.mode !== mode) return '';
+  if (q.busy) return '<p class="small" style="margin-top:8px">Searching...</p>';
+  if (q.err) return `<div class="banner err" style="margin-top:8px">${esc(q.err)}</div>`;
+  if (!q.files) return '';
+  if (!q.files.length) return `<p class="small" style="margin-top:8px">${mode === 'fie' ? 'No FIE, Evaluation, ARD or Addendum files in the "' + esc(q.folder) + '" folder.' : 'No matching files in the "' + esc(q.folder) + '" folder.'}</p>`;
+  return `<div class="small" style="margin:8px 0 4px">Found in the "${esc(q.folder)}" folder:</div>` + q.files.map(f => `<div class="docRow"><span class="docIc" aria-hidden="true">${/pdf/i.test(f.name) ? 'PDF' : 'DOC'}</span><span class="docName">${esc(f.name)}</span>${f.linked ? '<span style="font-size:12px;background:#E3F0E3;border:1px solid #A9CCA9;border-radius:10px;padding:2px 8px">Linked</span>' : `${mode === 'fie' ? `<select class="field" style="width:auto;min-height:36px" id="dl_${esc(f.id)}" aria-label="Type of document">${DOC_LBLS.map(l => `<option ${l === f.guess ? 'selected' : ''}>${l}</option>`).join('')}</select>` : ''}<button class="primary" data-act="docLink" data-id="${esc(f.id)}" data-kind="${mode}">Link</button>`}</div>`).join('');
+}
+function docsCard(s) {
+  const docs = s.documents || [];
+  const fie = docs.filter(d => d.kind === 'fie'), other = docs.filter(d => d.kind !== 'fie');
+  const q = state.docs, open = q && q.sid === s.id;
+  const fieCard = `<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0;border:0;padding:0">FIE documents</h2>${canDocs() ? `<button class="secondary" data-act="docFind">${open && q.mode === 'fie' ? 'Search again' : 'Find in Drive'}</button>` : ''}</div>
+    ${fie.length ? fie.map(d => docRow(d, s)).join('') : `<p class="small" style="margin-top:8px">${canDocs() ? 'No FIE linked yet. Click Find in Drive.' : 'No FIE linked.'}</p>`}${docResults(s, 'fie')}</section>`;
+  const otherCard = `<section class="card"><h2>Additional documentation</h2><p class="small" style="margin:-4px 0 8px">Other documents in the student's folder (ARD, 504, private testing, consent, reports, etc.).</p>
+    ${canDocs() ? `<div style="display:flex;gap:8px"><input class="field" id="docQ" placeholder="e.g. ARD, 504 Plan, Private Testing" value="${open && q.mode === 'other' ? esc(q.term || '') : ''}" maxlength="60" aria-label="Document type to search for"><button class="secondary" data-act="docSearch">Search</button></div>` : ''}
+    ${other.length ? other.map(d => docRow(d, s)).join('') : '<p class="small" style="margin-top:8px">No additional documents linked yet.</p>'}${docResults(s, 'other')}</section>`;
+  return `<div class="row">${fieCard}${otherCard}</div>`;
+}
 function overviewTab(s) {
   const kd = s.keyDates || {}; const parents = s.parents || [];
   const acc = (s.accommodations || []).map(a => `<span class="chip grp">${esc(a.name)}</span>`).join('') || '<p class="empty">No accommodations recorded yet.</p>';
@@ -458,6 +486,7 @@ function overviewTab(s) {
     <div class="row">
     <section class="card"><h2>Parent contacts</h2>${parents.length ? parents.map(p => `<div class="note"><b>${esc(p.name || 'Unnamed')}</b>${p.relation ? ' (' + esc(p.relation) + ')' : ''}<div class="small">${esc([p.phone, p.email].filter(Boolean).join(' · ') || 'No contact info')}</div></div>`).join('') : '<p class="empty">No parent contacts recorded yet.</p>'}</section>
     ${accCard}</div>
+    ${docsCard(s)}
     ${snapshotCards(s)}`;
 }
 function teacherTab(s) {
@@ -896,6 +925,7 @@ function studentModal(s) {
     <div><div class="fh">SERVICE GROUPS</div>${groups.length ? groups.map(g => `<label class="chk"><input type="checkbox" name="fGroup" value="${esc(g.id)}" ${(s.groupIds || []).includes(g.id) ? 'checked' : ''}>${esc(groupLabel(g))}</label>`).join('') : '<p class="empty">No groups yet. Add groups on the Overview screen.</p>'}</div>
     <div class="fh" style="margin-bottom:-6px">PARENT CONTACTS</div>
     ${[0, 1].map(i => `<div class="cols"><label class="fl">Name<input class="field" id="fPn${i}" value="${esc(par(i).name)}"></label><label class="fl">Relationship<input class="field" id="fPr${i}" value="${esc(par(i).relation)}"></label><label class="fl">Phone<input class="field" id="fPp${i}" value="${esc(par(i).phone)}"></label><label class="fl">Email<input class="field" id="fPe${i}" value="${esc(par(i).email)}"></label></div>`).join('')}
+    <label class="fl">Drive folder name (in Learning Support)<input class="field" id="fFolder" value="${esc(s.folderName || '')}" maxlength="80" placeholder="${esc(s.name || 'Same as the student name')}"></label>
     <div><div class="fh">DIAGNOSIS</div>${DIAGNOSES.map(d => `<label class="chk"><input type="checkbox" name="fDiag" value="${esc(d)}" ${(s.diagnoses || []).includes(d) ? 'checked' : ''}> ${esc(d)}</label>`).join('')}${s.eligibility ? `<div class="small" style="font-size:12px;margin-top:4px">Plan wording: ${esc(s.eligibility)}</div>` : ''}</div>
     <div class="fh" style="margin-bottom:-6px">KEY DATES</div>
     <div class="cols"><label class="fl">FIE date<input class="field" type="date" id="fKfie" value="${esc(kd.fie)}"></label><label class="fl">Last diagnostic<input class="field" type="date" id="fKld" value="${esc(kd.lastDiagnostic)}"></label><label class="fl">Next re-evaluation<input class="field" type="date" id="fKnr" value="${esc(kd.nextReeval)}"></label><label class="fl">Last parent meeting<input class="field" type="date" id="fKpm" value="${esc(kd.lastParentMeeting)}"></label></div>
@@ -907,6 +937,7 @@ function collectStudent(base) {
     name: val('fName'), grade: val('fGrade'), teacherIds: checked('fTeacher'), scheduleId: val('fSchedule'), tier: val('fTier'), dyslexia: chk('fDys'), speech: chk('fSp'), groupIds: checked('fGroup'),
     parents: [0, 1].map(i => ({ name: val('fPn' + i), relation: val('fPr' + i), phone: val('fPp' + i), email: val('fPe' + i) })),
     diagnoses: checked('fDiag'),
+    folderName: val('fFolder'),
     keyDates: { fie: val('fKfie'), lastDiagnostic: val('fKld'), nextReeval: val('fKnr'), lastParentMeeting: val('fKpm') }
   });
 }
@@ -1334,6 +1365,15 @@ async function afterSave(r, okMsg) {
   if (r.error) { modalErr(r.error); return false; }
   closeModal(); state.notice = okMsg ? { type:'ok', text: okMsg } : null; await loadAll(); return true;
 }
+async function docRun(mode, term) {
+  const sid = state.selectedId; if (!sid) return;
+  state.docs = { sid, mode, term, busy: true }; render();
+  const r = await api('findDocs', { studentId: sid, mode, query: term });
+  if (handleAuthError(r)) return;
+  state.docs = r.error ? { sid, mode, term, err: r.error } : { sid, mode, term, files: r.files, folder: r.folder };
+  render();
+  if (mode === 'other') { const el = document.getElementById('docQ'); if (el) el.value = term; }
+}
 /* ---------- student import (admin) ---------- */
 const impNorm = n => String(n || '').toLowerCase().replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim();
 function impTeacher(name) {
@@ -1388,7 +1428,7 @@ const actions = {
   importStudents: impOpen,
   impGo: async () => {
     const im = state.imp; if (!im || !im.rows) return;
-    const rows = im.rows.filter(r => r.on).map(r => ({ name: r.name, grade: r.grade, teacherIds: [r.teacher, r.teacher2].filter(Boolean).map(t => t.id), eligibility: r.eligibility || '', diagnoses: (r.diagnoses || []).filter(d => DIAGNOSES.includes(d)), fie: r.fie || '', nextReeval: r.nextReeval || '', accommodations: (r.accommodations || []).filter(a => ELEM_ACCS.includes(a)) }));
+    const rows = im.rows.filter(r => r.on).map(r => ({ name: r.name, grade: r.grade, teacherIds: [r.teacher, r.teacher2].filter(Boolean).map(t => t.id), eligibility: r.eligibility || '', diagnoses: (r.diagnoses || []).filter(d => DIAGNOSES.includes(d)), fie: r.fie || '', folderName: r.folderName || '', nextReeval: r.nextReeval || '', accommodations: (r.accommodations || []).filter(a => ELEM_ACCS.includes(a)) }));
     if (!rows.length) return;
     const r = await api('importStudents', { rows });
     if (handleAuthError(r)) return;
@@ -1396,6 +1436,24 @@ const actions = {
     state.imp = null; closeModal();
     const sk = (r.skipped || []).length;
     state.notice = { type: 'ok', text: `Imported ${r.created.length} new student${r.created.length === 1 ? '' : 's'}` + (r.filled.length ? `, filled in details for ${r.filled.length}` : '') + (r.scheduled ? `, matched ${r.scheduled} to a class schedule` : '') + (sk ? `, skipped ${sk} already in the portal` : '') + '.' };
+    await loadAll();
+  },
+  docFind: async () => { await docRun('fie', ''); },
+  docSearch: async () => { const t = (document.getElementById('docQ') || {}).value || ''; await docRun('other', t.trim()); },
+  docLink: async el => {
+    const sid = state.selectedId, id = el.dataset.id, kind = el.dataset.kind, q = state.docs;
+    const label = kind === 'fie' ? ((document.getElementById('dl_' + id) || {}).value || 'Full FIE') : (q && q.term) || 'Other';
+    const r = await api('linkDoc', { studentId: sid, fileId: id, kind, label });
+    if (handleAuthError(r)) return;
+    if (r.error) { state.docs = { ...q, err: r.error }; render(); return; }
+    if (q) q.files = (q.files || []).map(f => f.id === id ? { ...f, linked: true } : f);
+    state.docs = q; await loadAll();
+  },
+  docUnlink: async el => {
+    const r = await api('unlinkDoc', { studentId: state.selectedId, docId: el.dataset.id });
+    if (handleAuthError(r)) return;
+    if (r.error) { state.notice = { type: 'err', text: r.error }; render(); return; }
+    const q = state.docs; if (q && q.files) q.files = q.files.map(f => f.id === el.dataset.id ? { ...f, linked: false } : f);
     await loadAll();
   },
   signout: signOut,
@@ -2836,6 +2894,15 @@ function demoApi(action, b) {
     if (!s.name) return err('Student name is required'); if (i >= 0) demo.students[i] = s; else demo.students.push(s); return ok({ student:s });
   }
   if (action === 'archiveStudent') { const s = demo.students.find(x => x.id === b.id); if (s) s.archived = true; return ok(); }
+  if (action === 'findDocs' || action === 'linkDoc' || action === 'unlinkDoc') {
+    if (!staffRole) return err('Not allowed');
+    const st = demo.students.find(x => x.id === b.studentId); if (!st) return err('Student not found');
+    st.documents = st.documents || [];
+    const files = [{ id:'f1', name:st.name + ' Evaluation.pdf', guess:'Full FIE' }, { id:'f2', name:st.name + ' FIE Addendum.pdf', guess:'Addendum' }, { id:'f3', name:st.name + ' Consent.pdf', guess:'Full FIE' }];
+    if (action === 'findDocs') { const q = (b.query || '').toLowerCase(); return ok({ folder:st.name, files:files.filter(f => b.mode === 'fie' ? /evaluation|fie/i.test(f.name) : (!q || f.name.toLowerCase().includes(q))).map(f => ({ ...f, url:'https://drive.google.com/file/d/' + f.id, mime:'application/pdf', linked:st.documents.some(d => d.id === f.id) })) }); }
+    if (action === 'linkDoc') { const f = files.find(x => x.id === b.fileId); if (!f) return err('File not found'); if (st.documents.some(d => d.id === f.id)) return err('Already linked'); st.documents.push({ id:f.id, name:f.name, url:'https://drive.google.com/file/d/' + f.id, kind:b.kind === 'fie' ? 'fie' : 'other', label:b.label || 'Other' }); return ok({ documents:st.documents }); }
+    st.documents = st.documents.filter(d => d.id !== b.docId); return ok({ documents:st.documents });
+  }
   if (action === 'importStudents') {
     const created = [], filled = [], skipped = [];
     (b.rows || []).forEach(r => {
