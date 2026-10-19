@@ -198,7 +198,7 @@ const PALETTE = [['#E3EEF8','#1F4E87'],['#DFF2EC','#0E5C52'],['#FCEBD7','#7A4A0A
 
 const state = {
   token: null, user: null, data: null, view: 'home', selectedId: null, tab: 'Overview',
-  filters: { q:'', tier:'', dyslexia:false, speech:false, reeval:false, group:'', grade:'' },
+  filters: { q:'', tier:'', dyslexia:false, speech:false, build:false, reeval:false, group:'', grade:'' },
   syncedAt: null, notice: null, loginMsg: '', logins: null,
   gu: null, guMonth: '', rep: 'service', rp: {}, noteType: '', pmGroup: '',
   day: ({1:'M',2:'T',3:'W',4:'R',5:'F'})[new Date().getDay()] || 'M'
@@ -250,11 +250,12 @@ function groupConflicts(s, g) {
 
 function tierSummary(s) {
   const parts = [s.grade];
-  if (s.tier === 'none' && s.dyslexia && !s.speech) parts.push('Dyslexia only');
+  if (s.tier === 'none' && s.dyslexia && !s.speech && !s.build) parts.push('Dyslexia only');
   else {
     parts.push(TIER_LABEL[s.tier]);
     if (s.dyslexia) parts.push('Dyslexia');
     if (s.speech) parts.push('Speech');
+    if (s.build) parts.push('BUILD');
   }
   return parts.join(' · ');
 }
@@ -274,7 +275,8 @@ function flagChips(s) {
   if (s.tier !== 'none') h += `<span class="chip ${TIER_CLASS[s.tier]}">${TIER_LABEL[s.tier]}</span>`;
   if (s.dyslexia) h += '<span class="chip dys">Dyslexia</span>';
   if (s.speech) h += '<span class="chip sp">Speech</span>';
-  if (s.tier === 'none' && !s.dyslexia && !s.speech) h += '<span class="chip none">No tier</span>';
+  if (s.build) h += '<span class="chip sp">BUILD</span>';
+  if (s.tier === 'none' && !s.dyslexia && !s.speech && !s.build) h += '<span class="chip none">No tier</span>';
   return h;
 }
 function seenBy(s) {
@@ -398,7 +400,7 @@ function filteredStudents() {
   const f = state.filters; const q = f.q.trim().toLowerCase();
   return sortStudents(state.data.students.filter(s =>
     (!q || s.name.toLowerCase().includes(q)) && (!f.grade || s.grade === f.grade) && (!f.tier || s.tier === f.tier) &&
-    (!f.dyslexia || s.dyslexia) && (!f.speech || s.speech) && (!f.reeval || reevalStatus(s)) && (!f.group || (s.groupIds || []).includes(f.group))));
+    (!f.dyslexia || s.dyslexia) && (!f.speech || s.speech) && (!f.build || s.build) && (!f.reeval || reevalStatus(s)) && (!f.group || (s.groupIds || []).includes(f.group))));
 }
 function listHtml() {
   const list = filteredStudents();
@@ -413,7 +415,7 @@ function sideHtml() {
     <div><label class="sr" for="q">Search by name</label><input class="field" id="q" type="text" placeholder="Search by name..." value="${esc(f.q)}" autocomplete="off"></div>
     <div><div class="fh">GRADE</div><select class="field" id="gradeSel" aria-label="Grade"><option value="">All grades</option>${GRADES.map(g => `<option ${f.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select></div>
     <div><div class="fh">SERVICE TIER</div>${chip('tier','','All')}${chip('tier','tier1','Tier 1')}${chip('tier','tier2','Tier 2')}${chip('tier','monitor','Monitor')}</div>
-    <div><div class="fh">FLAG</div><button class="fc ${f.dyslexia ? 'on' : ''}" data-act="toggleFlag" data-k="dyslexia">Dyslexia</button><button class="fc ${f.speech ? 'on' : ''}" data-act="toggleFlag" data-k="speech">Speech</button>${isTeacher() ? '' : `<button class="fc ${f.reeval ? 'on' : ''}" data-act="toggleFlag" data-k="reeval">Re-eval due</button>`}</div>
+    <div><div class="fh">FLAG</div><button class="fc ${f.dyslexia ? 'on' : ''}" data-act="toggleFlag" data-k="dyslexia">Dyslexia</button><button class="fc ${f.speech ? 'on' : ''}" data-act="toggleFlag" data-k="speech">Speech</button><button class="fc ${f.build ? 'on' : ''}" data-act="toggleFlag" data-k="build">BUILD</button>${isTeacher() ? '' : `<button class="fc ${f.reeval ? 'on' : ''}" data-act="toggleFlag" data-k="reeval">Re-eval due</button>`}</div>
     ${isTeacher() ? '' : `<div><div class="fh">SERVICE GROUP</div><select class="field" id="groupSel" aria-label="Service group"><option value="">All groups</option>${groups.map(g => `<option value="${esc(g.id)}" ${f.group === g.id ? 'selected' : ''}>${esc(groupLabel(g))}</option>`).join('')}</select></div>`}
     <div class="fh" style="margin-bottom:0">STUDENTS (<span id="count">${filteredStudents().length}</span>)</div>
     <div id="studentList" style="display:flex;flex-direction:column;gap:2px">${listHtml()}</div></aside>`;
@@ -566,7 +568,7 @@ function accTab(s) {
 const cardHead = (title, btn) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">${title}</h2><div>${btn || ''}</div></div>`;
 function overviewHtml() {
   const list = state.data.students; const count = fn => list.filter(fn).length;
-  const tiles = [['Students in portal', list.length], ['Tier 1', count(s => s.tier === 'tier1')], ['Tier 2', count(s => s.tier === 'tier2')], ['Monitor', count(s => s.tier === 'monitor')], ['Dyslexia flag', count(s => s.dyslexia)], ['Speech flag', count(s => s.speech)]];
+  const tiles = [['Students in portal', list.length], ['Tier 1', count(s => s.tier === 'tier1')], ['Tier 2', count(s => s.tier === 'tier2')], ['Monitor', count(s => s.tier === 'monitor')], ['Dyslexia flag', count(s => s.dyslexia)], ['Speech flag', count(s => s.speech)], ['BUILD flag', count(s => s.build)]];
   const showGroups = !isTeacher();
   const groups = state.data.groups || [];
   const canAddGroup = isAdmin() || role() === 'interventionist';
@@ -912,7 +914,7 @@ const chk = id => { const e = $(id); return !!(e && e.checked); };
 
 function studentModal(s) {
   const isNew = !s;
-  s = s || { name:'', grade:'K3', teacherIds:[], tier:'none', dyslexia:false, speech:false, groupIds:[], parents:[], keyDates:{}, accommodations:[] };
+  s = s || { name:'', grade:'K3', teacherIds:[], tier:'none', dyslexia:false, speech:false, build:false, groupIds:[], parents:[], keyDates:{}, accommodations:[] };
   const par = i => (s.parents || [])[i] || {};
   const kd = s.keyDates || {};
   const teachers = state.data.teachers || []; const groups = state.data.groups || [];
@@ -922,7 +924,7 @@ function studentModal(s) {
     <label class="fl">Grade<select class="field" id="fGrade">${GRADES.map(g => `<option ${s.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select></label></div>
     <div><div class="fh">TEACHERS (K3 to 3rd: homeroom teacher. 4th and 5th: both teachers)</div>${teachers.length ? teachers.map(t => `<label class="chk"><input type="checkbox" name="fTeacher" value="${esc(t.id)}" ${(s.teacherIds || []).includes(t.id) ? 'checked' : ''}>${esc(t.name)}</label>`).join('') : '<p class="empty">No teachers yet. Add teachers on the Access screen first.</p>'}</div>
     <div class="cols"><label class="fl">Service tier<select class="field" id="fTier">${['none','tier1','tier2','monitor'].map(t => `<option value="${t}" ${s.tier === t ? 'selected' : ''}>${TIER_LABEL[t]}</option>`).join('')}</select></label>
-    <div><div class="fh">FLAGS</div><label class="chk"><input type="checkbox" id="fDys" ${s.dyslexia ? 'checked' : ''}>Dyslexia</label><label class="chk"><input type="checkbox" id="fSp" ${s.speech ? 'checked' : ''}>Speech</label></div></div>
+    <div><div class="fh">FLAGS</div><label class="chk"><input type="checkbox" id="fDys" ${s.dyslexia ? 'checked' : ''}>Dyslexia</label><label class="chk"><input type="checkbox" id="fSp" ${s.speech ? 'checked' : ''}>Speech</label><label class="chk"><input type="checkbox" id="fBuild" ${s.build ? 'checked' : ''}>BUILD</label></div></div>
     <label class="fl">Class schedule<select class="field" id="fSchedule"><option value="">(none)</option>${(state.data.schedules || []).map(x => `<option value="${esc(x.id)}" ${s.scheduleId === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
     <div><div class="fh">SERVICE GROUPS</div>${groups.length ? groups.map(g => `<label class="chk"><input type="checkbox" name="fGroup" value="${esc(g.id)}" ${(s.groupIds || []).includes(g.id) ? 'checked' : ''}>${esc(groupLabel(g))}</label>`).join('') : '<p class="empty">No groups yet. Add groups on the Overview screen.</p>'}</div>
     <div class="fh" style="margin-bottom:-6px">PARENT CONTACTS</div>
@@ -936,7 +938,7 @@ function studentModal(s) {
 function collectStudent(base) {
   const checked = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value);
   return Object.assign({}, base || {}, {
-    name: val('fName'), grade: val('fGrade'), teacherIds: checked('fTeacher'), scheduleId: val('fSchedule'), tier: val('fTier'), dyslexia: chk('fDys'), speech: chk('fSp'), groupIds: checked('fGroup'),
+    name: val('fName'), grade: val('fGrade'), teacherIds: checked('fTeacher'), scheduleId: val('fSchedule'), tier: val('fTier'), dyslexia: chk('fDys'), speech: chk('fSp'), build: chk('fBuild'), groupIds: checked('fGroup'),
     parents: [0, 1].map(i => ({ name: val('fPn' + i), relation: val('fPr' + i), phone: val('fPp' + i), email: val('fPe' + i) })),
     diagnoses: checked('fDiag'),
     folderName: val('fFolder'),
@@ -1430,7 +1432,7 @@ const actions = {
   importStudents: impOpen,
   impGo: async () => {
     const im = state.imp; if (!im || !im.rows) return;
-    const rows = im.rows.filter(r => r.on).map(r => ({ name: r.name, grade: r.grade, teacherIds: [r.teacher, r.teacher2].filter(Boolean).map(t => t.id), eligibility: r.eligibility || '', diagnoses: (r.diagnoses || []).filter(d => DIAGNOSES.includes(d)), fie: r.fie || '', folderName: r.folderName || '', dyslexia: r.dyslexia === true, documents: (r.documents || []).filter(d => d && d.id).slice(0, 10), nextReeval: r.nextReeval || '', accommodations: (r.accommodations || []).filter(a => ELEM_ACCS.includes(a)) }));
+    const rows = im.rows.filter(r => r.on).map(r => ({ name: r.name, grade: r.grade, teacherIds: [r.teacher, r.teacher2].filter(Boolean).map(t => t.id), eligibility: r.eligibility || '', diagnoses: (r.diagnoses || []).filter(d => DIAGNOSES.includes(d)), fie: r.fie || '', folderName: r.folderName || '', dyslexia: r.dyslexia === true, build: r.build === true, documents: (r.documents || []).filter(d => d && d.id).slice(0, 10), nextReeval: r.nextReeval || '', accommodations: (r.accommodations || []).filter(a => ELEM_ACCS.includes(a)) }));
     if (!rows.length) return;
     const r = await api('importStudents', { rows });
     if (handleAuthError(r)) return;
@@ -2781,7 +2783,7 @@ function demoApi(action, b) {
   const activeGroups = () => demo.groups.filter(g => !g.archived);
   if (action === 'logout') return ok();
   if (action === 'getAll') {
-    const shaped = visible.map(s => me.role === 'teacher' ? { id:s.id, name:s.name, grade:s.grade, teacherIds:s.teacherIds, scheduleId:s.scheduleId, diagnoses:s.diagnoses || [], tier:s.tier, dyslexia:s.dyslexia, speech:s.speech, accommodations:s.accommodations, accommodationLog:s.accommodationLog } : s);
+    const shaped = visible.map(s => me.role === 'teacher' ? { id:s.id, name:s.name, grade:s.grade, teacherIds:s.teacherIds, scheduleId:s.scheduleId, diagnoses:s.diagnoses || [], tier:s.tier, dyslexia:s.dyslexia, speech:s.speech, build:s.build, accommodations:s.accommodations, accommodationLog:s.accommodationLog } : s);
     const tids = new Set(); visible.forEach(s => s.teacherIds.forEach(t => tids.add(t)));
     const need = new Set(visible.map(s => s.scheduleId).filter(Boolean));
     const groups = me.role === 'teacher' ? [] : activeGroups().map(g => Object.assign({}, g, { mine: mine(g) }, mine(g) ? { members: demo.students.filter(s => !s.archived && s.groupIds.includes(g.id)).map(s => ({ id:s.id, name:s.name, grade:s.grade })) } : {}));
@@ -2910,7 +2912,7 @@ function demoApi(action, b) {
     (b.rows || []).forEach(r => {
       const ex = demo.students.find(s => !s.archived && impNorm(s.name) === impNorm(r.name));
       if (ex) { skipped.push({ name: r.name, reason: 'Already in the portal' }); return; }
-      demo.students.push({ id:'s' + Date.now() + created.length, name:r.name, grade:r.grade, teacherIds:r.teacherIds || (r.teacherId ? [r.teacherId] : []), tier:'none', dyslexia:r.dyslexia === true, speech:false, groupIds:[], parents:[], keyDates:{ fie:r.fie || '', nextReeval:r.nextReeval }, eligibility:r.eligibility, diagnoses:r.diagnoses || [], accommodations:(r.accommodations || []).map((n, i) => ({ id:'a' + i, name:n, appliesTo:'', source:'Learning plan' })), accommodationLog:[], archived:false });
+      demo.students.push({ id:'s' + Date.now() + created.length, name:r.name, grade:r.grade, teacherIds:r.teacherIds || (r.teacherId ? [r.teacherId] : []), tier:'none', dyslexia:r.dyslexia === true, speech:false, build:r.build === true, groupIds:[], parents:[], keyDates:{ fie:r.fie || '', nextReeval:r.nextReeval }, eligibility:r.eligibility, diagnoses:r.diagnoses || [], accommodations:(r.accommodations || []).map((n, i) => ({ id:'a' + i, name:n, appliesTo:'', source:'Learning plan' })), accommodationLog:[], archived:false });
       created.push(r.name);
     });
     return ok({ created, filled, skipped });
