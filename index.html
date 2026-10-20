@@ -418,6 +418,7 @@ function listHtml() {
   if (!list.length) return '<div class="empty" style="padding:8px 12px">No matching students.</div>';
   return list.map(s => { const p = palette(s.name); return `<button class="srow ${s.id === state.selectedId ? 'sel' : ''}" data-act="select" data-id="${esc(s.id)}"><span class="av" style="background:${p[0]};color:${p[1]}">${esc(initials(s.name))}</span><span><div class="sn">${esc(s.name)}</div><div class="ss">${esc(tierSummary(s))}${reevalStatus(s) === 'past' ? ' · ' : ''}${reevalStatus(s) === 'past' ? '<span style="color:#7A1A1F;font-weight:700">Re-eval past due</span>' : ''}</div></span></button>`; }).join('');
 }
+function gradeCountsText() { const c = {}; state.data.students.forEach(s => { c[s.grade] = (c[s.grade] || 0) + 1; }); return GRADES.filter(g => c[g]).map(g => g + ': ' + c[g]).join(' · '); }
 function sideHtml() {
   const f = state.filters;
   const chip = (key, val, label) => `<button class="fc ${f[key] === val ? 'on' : ''}" data-act="filter" data-k="${key}" data-v="${val}">${label}</button>`;
@@ -428,7 +429,7 @@ function sideHtml() {
     <div><div class="fh">SERVICE TIER</div>${chip('tier','','All')}${chip('tier','tier1','Tier 1')}${chip('tier','tier2','Tier 2')}${chip('tier','monitor','Monitor')}</div>
     <div><div class="fh">FLAG</div><button class="fc ${f.dyslexia ? 'on' : ''}" data-act="toggleFlag" data-k="dyslexia">Dyslexia</button><button class="fc ${f.speech ? 'on' : ''}" data-act="toggleFlag" data-k="speech">Speech</button><button class="fc ${f.build ? 'on' : ''}" data-act="toggleFlag" data-k="build">BUILD</button>${isTeacher() ? '' : `<button class="fc ${f.reeval ? 'on' : ''}" data-act="toggleFlag" data-k="reeval">Re-eval due</button>`}</div>
     ${isTeacher() ? '' : `<div><div class="fh">SERVICE GROUP</div><select class="field" id="groupSel" aria-label="Service group"><option value="">All groups</option>${groups.map(g => `<option value="${esc(g.id)}" ${f.group === g.id ? 'selected' : ''}>${esc(groupLabel(g))}</option>`).join('')}</select></div>`}
-    <div class="fh" style="margin-bottom:0">STUDENTS (<span id="count">${filteredStudents().length}</span>)</div>
+    <div class="fh" style="margin-bottom:0">STUDENTS (<span id="count">${filteredStudents().length}</span> of ${state.data.students.length})</div><div class="small" id="gradeCounts" style="margin:0 0 4px">${gradeCountsText()}</div>
     <div id="studentList" style="display:flex;flex-direction:column;gap:2px">${listHtml()}</div></aside>`;
 }
 function refreshList() { const l = $('studentList'); if (l) { l.innerHTML = listHtml(); $('count').textContent = filteredStudents().length; } }
