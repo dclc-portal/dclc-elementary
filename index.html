@@ -37,6 +37,14 @@ button{cursor:pointer}
 textarea.field{padding:10px;min-height:72px}
 .fc{display:inline-flex;align-items:center;border:1px solid #CBD5DF;background:#fff;color:#1B2733;border-radius:999px;padding:6px 12px;min-height:36px;font-size:13px;font-weight:600;margin:0 6px 6px 0}
 .fc.on{background:#2E4057;color:#fff;border-color:#2E4057}
+.evh{display:flex;justify-content:space-between;align-items:center}.cnt{margin-left:auto;font-size:12px;background:#E3F0E3;border-radius:10px;padding:1px 9px;font-weight:700}
+.evr{border:1px solid #E3E8EE;border-radius:10px;padding:9px 12px;margin-top:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.evr-r{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.pl-hub{background:#E3F0E3;color:#1E6B3A}.pl-wendy{background:#FBEBD0;color:#8A5A00}.pl-abby{background:#EBE3F5;color:#5B3A8A}.pl-tbd{background:#EEF1F4;color:#5A6B7B}
+.pday{margin-top:14px}.pdh{font-weight:800;font-size:14px;color:#2E4057;border-bottom:2px solid #E3E8EE;padding:4px 0 6px}.pday.tod .pdh{color:#A3282B;border-color:#A3282B}
+.pbh{font-size:17px;font-weight:800;margin:12px 0 2px}.ptest{border:1px solid #E3E8EE;border-radius:10px;padding:10px 14px;margin-top:6px}.ph{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.pn{margin-left:auto;font-size:20px;font-weight:800}
+.pg{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-top:6px}.pst{display:flex;gap:8px;align-items:center;padding:2px 0}.pac{display:flex;gap:10px;font-size:12.5px;padding:1px 0}.pac b{width:16px;text-align:right}
+.chip.dg{background:#E3F0E3;color:#1E6B3A}.chip.pp{background:#E8EEF5;color:#2E4057}
+@media(max-width:700px){.pg{grid-template-columns:1fr}}
 .fc.tl{text-align:left;font-weight:500;font-size:12.5px;min-height:30px;padding:4px 11px;line-height:1.25}
 .fc.tl.on{font-weight:600}
 .srow{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:10px;color:#1B2733;background:none;border:0;width:100%;text-align:left}
@@ -1099,8 +1107,8 @@ function userModal(u) {
 }
 
 /* ---------- Phase 4: testing calendar, approval, prep summary, testing history ---------- */
-const WHERE_LABEL = { hub:'Testing Hub (in class)', wendy:'With Mrs. Blasingame', abby:'With Mrs. Danielson', tbd:'Not sure yet' };
-const WHERE_SHORT = { hub:'Hub', wendy:'Blasingame', abby:'Danielson', tbd:'Not set' };
+const WHERE_LABEL = { hub:'In class', wendy:'With Mrs. Blasingame', abby:'With Mrs. Danielson', tbd:'Place not set' };
+const WHERE_SHORT = { hub:'In class', wendy:'Blasingame', abby:'Danielson', tbd:'Place not set' };
 const WHERE_STAFF = { wendy:'blasingame', abby:'danielson' };
 const TEST_TYPES = ['Classroom test','Quiz'];
 const STATUS_LABEL = { approved:'Approved', pending:'Waiting for approval', declined:'Declined' };
@@ -1134,7 +1142,7 @@ const studentById = id => (state.data.students || []).find(s => s.id === id);
 const accChips = s => (s.accs || s.accommodations || []).map(a => `<span class="chip grp">${esc(a.name)}</span>`).join('');
 
 function tcState() {
-  if (!state.tc) state.tc = { view:'month', date:today(), grade:'', where:'', status:'active', past:false };
+  if (!state.tc) state.tc = { view:'list', date:today(), grade:'', where:'', status:'active', past:false, q:'' };
   if (state.tc.view === 'day' && !dayKeyOf(state.tc.date)) state.tc.date = nextSchoolDay(state.tc.date, 1);
   return state.tc;
 }
@@ -1215,28 +1223,42 @@ function calTitle(c) {
   if (c.view === 'day') return longDate(c.date);
   return 'Upcoming tests';
 }
+const PL_CLASS = { hub:'pl-hub', wendy:'pl-wendy', abby:'pl-abby', tbd:'pl-tbd' };
+const placeChip = t => `<span class="chip ${PL_CLASS[t.where] || 'pl-tbd'}">${esc(WHERE_LABEL[t.where] || WHERE_LABEL.tbd)}</span>`;
+const testGrades = t => [...new Set((t.students || []).map(x => x.grade))].sort((a, b) => GRADES.indexOf(a) - GRADES.indexOf(b)).join(', ');
+function evRow(t, pending) {
+  const tch = teacherById(t.teacherId); const n = (t.students || []).length || t.studentCount || 0;
+  const meta = [longDate(t.date), tRange(t), testGrades(t), n + ' student' + (n === 1 ? '' : 's'), tch ? tch.name : ''].filter(Boolean).join(' · ');
+  const acts = pending && isApprover() ? `<button class="primary" data-act="tcApprove" data-id="${esc(t.id)}">Approve</button><button class="danger" data-act="openTest" data-id="${esc(t.id)}">Decline</button>`
+    : (canEditTest(t) ? `<button class="secondary" data-act="editTest" data-id="${esc(t.id)}">Edit</button>${isApprover() ? `<button class="danger" data-act="cancelTest" data-id="${esc(t.id)}">Delete</button>` : ''}` : '');
+  return `<div class="evr ${EV_CLASS[t.status]}"><div style="min-width:0;flex:1"><button class="link" style="font-weight:800;font-size:14px;text-align:left;padding:0;min-height:0" data-act="openTest" data-id="${esc(t.id)}">${esc(t.title)}</button><div class="small" style="margin:2px 0 0">${esc(meta)}</div>${t.decisionNote && t.status === 'declined' ? `<div class="small">Note: ${esc(t.decisionNote)}</div>` : ''}</div>
+    <div class="evr-r">${placeChip(t)}<span class="small" style="margin:0">${esc(t.type)}</span>${t.status === 'approved' ? '' : statusChip(t)}${acts}</div></div>`;
+}
 function calendarHtml() {
-  const c = tcState(); const pend = tests().filter(t => t.status === 'pending');
-  const head = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">Testing calendar</h2>${canAddHere() ? '<button class="primary" data-act="addTest">+ Add a test</button>' : ''}${isApprover() ? '<button class="secondary" data-act="syncCal">Refresh from Google Calendar</button>' : ''}</div>`;
-  let queue = '';
-  if (isApprover() && pend.length) queue = `<div class="banner warn" style="margin-bottom:10px"><b>${pend.length} test${pend.length === 1 ? '' : 's'} waiting for approval.</b> ${pend.slice(0, 6).map(t => `<button class="link" data-act="openTest" data-id="${esc(t.id)}">Review: ${esc(t.title)} (${esc(mdShort(t.date))})</button>`).join(' ')}${pend.length > 6 ? ' and more in List view.' : ''}</div>`;
-  else if (!isApprover()) { const mine = pend.filter(t => t.submittedById === state.user.id).length; if (mine) queue = `<div class="banner warn" style="margin-bottom:10px">${mine} of your test${mine === 1 ? ' is' : 's are'} waiting for approval.</div>`; }
-  if (isTeacher()) queue += `<div class="banner" style="margin-bottom:10px"><b>To add a test,</b> put it on the elementary testing Google Calendar with the grade level and the test name in the title (for example, "3rd Math Unit 4 Test"). It shows up here for approval within a few minutes.</div>`;
-  if (isApprover() && state.data.calendar && state.data.calendar.error) queue += `<div class="banner err" style="margin-bottom:10px"><b>Google Calendar is not connected:</b> ${esc(state.data.calendar.error)}</div>`;
-  const t0 = today(); const wins = calWindows().filter(w => w.end >= t0).sort((a, b) => a.start.localeCompare(b.start));
-  const winBanner = wins.length ? `<div class="banner" style="margin-bottom:10px">${wins.map(w => `<div><b>${esc(w.name)}</b> (${esc(w.measure)}): ${esc(winRange(w))} · ${esc(winGrades(w))}</div>`).join('')}</div>` : '';
-  const vbtn = (v, l) => `<button class="fc ${c.view === v ? 'on' : ''}" data-act="tcView" data-v="${v}">${l}</button>`;
-  const sbtn = (v, l) => `<button class="fc ${c.status === v ? 'on' : ''}" data-act="tcStatus" data-v="${v}">${l}</button>`;
-  const nav = c.view === 'list' ? '' : `<button class="secondary" data-act="tcNav" data-n="-1" aria-label="Previous">&lsaquo; Prev</button><button class="secondary" data-act="tcToday">Today</button><button class="secondary" data-act="tcNav" data-n="1" aria-label="Next">Next &rsaquo;</button>`;
-  const bodyV = c.view === 'month' ? monthGrid(c) : c.view === 'week' ? weekGrid(c) : c.view === 'day' ? dayView(c) : listView(c);
+  const c = tcState(); const t0 = today();
+  const all = tests();
+  const pend = all.filter(t => t.status === 'pending').sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+  const q = (c.q || '').toLowerCase();
+  const okF = t => (!c.grade || (t.students || []).some(s => s.grade === c.grade)) && (!c.where || t.where === c.where) && (!q || (t.title + ' ' + ((teacherById(t.teacherId) || {}).name || '')).toLowerCase().includes(q));
+  const appr = all.filter(t => t.status === 'approved' && (c.past || t.date >= t0) && okF(t)).sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+  const declined = all.filter(t => t.status === 'declined' && (c.past || t.date >= t0));
+  const head = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px"><h2 style="border:0;margin:0;padding:4px 0">Testing calendar</h2></div>
+    <div class="small" style="margin:0 0 10px">${isTeacher() ? 'Review your tests and see what is approved.' : 'Review events from the elementary testing Google Calendar and approve them for teachers and staff to see.'}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${isApprover() ? '<button class="primary" data-act="syncCal">Sync from Google Calendar</button><button class="secondary" style="background:#1E7A5A;color:#fff;border-color:#1E7A5A" data-act="tcBulk" data-op="approveAll">Approve all pending</button>' : ''}${canAddHere() ? '<button class="secondary" data-act="addTest">+ Add event manually</button>' : ''}${isApprover() ? '<button class="danger" data-act="tcBulk" data-op="clearApproved">Clear all approved</button>' : ''}</div>`;
+  let notes = '';
+  if (isTeacher()) notes += `<div class="banner" style="margin-top:10px"><b>To add a test,</b> put it on the elementary testing Google Calendar with the grade level and the test name in the title (for example, "3rd Math Unit 4 Test"). It shows up here for approval within a few minutes.</div>`;
+  if (isApprover() && state.data.calendar && state.data.calendar.error) notes += `<div class="banner err" style="margin-top:10px"><b>Google Calendar is not connected:</b> ${esc(state.data.calendar.error)}</div>`;
+  const wins = calWindows().filter(w => w.end >= t0).sort((a, b) => a.start.localeCompare(b.start));
+  const winBanner = wins.length ? `<div class="banner" style="margin-top:10px">${wins.map(w => `<div><b>${esc(w.name)}</b> (${esc(w.measure)}): ${esc(winRange(w))} · ${esc(winGrades(w))}</div>`).join('')}</div>` : '';
+  const pendCard = `<section class="card"><div class="evh"><h2 style="border:0;margin:0;padding:0;display:flex;gap:8px;align-items:center">Pending review <span class="cnt" style="background:#FBEBD0">${pend.length}</span></h2></div>${pend.length ? pend.map(t => evRow(t, true)).join('') : `<p class="empty" style="margin:8px 0 0">${isApprover() ? 'Click "Sync from Google Calendar" to load pending events.' : 'Nothing is waiting for approval.'}</p>`}</section>`;
+  const filt = `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0"><select class="field" id="tcGrade" aria-label="Grade" style="width:auto"><option value="">All grades</option>${GRADES.map(g => `<option ${c.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select>
+    <select class="field" id="tcWhere" aria-label="Where" style="width:auto"><option value="">Anywhere</option>${Object.keys(WHERE_LABEL).map(k => `<option value="${k}" ${c.where === k ? 'selected' : ''}>${esc(WHERE_LABEL[k])}</option>`).join('')}</select>
+    <input class="field" id="tcSearch" type="search" placeholder="Search events..." value="${esc(c.q || '')}" style="width:200px" aria-label="Search events">
+    <label class="chk" style="margin:0"><input type="checkbox" id="tcPastChk" ${c.past ? 'checked' : ''}>Show past events</label>${isApprover() ? '<button class="danger" data-act="tcBulk" data-op="clearPast">Clear past events</button><button class="secondary" data-act="tcBulk" data-op="recompute">Recompute all matches</button>' : ''}</div>`;
+  const apprCard = `<section class="card"><div class="evh"><h2 style="border:0;margin:0;padding:0;display:flex;gap:8px;align-items:center">Approved events <span class="cnt">${appr.length}</span></h2></div>${filt}${appr.length ? appr.map(t => evRow(t, false)).join('') : '<p class="empty">No approved events to show.</p>'}</section>`;
+  const decCard = declined.length ? `<section class="card"><div class="evh"><h2 style="border:0;margin:0;padding:0;display:flex;gap:8px;align-items:center">Declined <span class="cnt" style="background:#FDE7E5">${declined.length}</span></h2></div>${declined.map(t => evRow(t, false)).join('')}</section>` : '';
   const adminWin = isAdmin() ? windowsCard() : '';
-  return `<section class="card">${head}${queue}${winBanner}
-    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px"><div>${vbtn('month', 'Month')}${vbtn('week', 'Week')}${vbtn('day', 'Day')}${vbtn('list', 'List')}</div>${nav}<b style="font-size:16px;color:#2E4057">${esc(calTitle(c))}</b></div>
-    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px"><select class="field" id="tcGrade" aria-label="Grade" style="width:auto"><option value="">All grades</option>${GRADES.map(g => `<option ${c.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select>
-      <select class="field" id="tcWhere" aria-label="Where" style="width:auto"><option value="">Anywhere</option>${Object.keys(WHERE_LABEL).map(k => `<option value="${k}" ${c.where === k ? 'selected' : ''}>${esc(WHERE_LABEL[k])}</option>`).join('')}</select>
-      <div>${sbtn('active', 'Active')}${sbtn('approved', 'Approved')}${sbtn('pending', 'Waiting')}${sbtn('declined', 'Declined')}</div></div>
-    ${bodyV}
-    <div class="small" style="margin-top:12px"><span class="chip ev-ok" style="border:1px solid #2E7D5B">Approved</span><span class="chip ev-pend" style="border:1px solid #C98A00">Waiting for approval</span><span class="chip ev-no" style="border:1px solid #A4262C">Declined</span> Teachers add tests on the elementary testing Google Calendar. Only the admin and Mrs. Blasingame approve them.${isApprover() ? '' : ' You will see Approved or Declined here once they decide.'}</div></section>${adminWin}`;
+  return `<section class="card">${head}${notes}${winBanner}</section>${pendCard}${apprCard}${decCard}${adminWin}`;
 }
 function windowsCard() {
   const ws = windows().slice().sort((a, b) => a.start.localeCompare(b.start));
@@ -1340,23 +1362,48 @@ function prepCsv(d) {
   return { head: ['Date', 'Time', 'Test', 'Student', 'Grade', 'Where', 'Accommodations', 'Schedule overlaps'],
     rows: d.rows.map(r => [fmtDate(r.t.date), tRange(r.t), r.t.title, r.s.name, r.s.grade, WHERE_LABEL[r.t.where], (r.s.accs || []).map(x => x.name).join('; '), r.c.join('; ')]) };
 }
+const hubKindsOf = n => { n = String(n || '').toLowerCase(); const k = []; if (/nwea|\bar test\b|map test/.test(n)) return k;
+  if (/scribe|verbal|dictat|speech.?to|respond orally|answer orally|oral response|speak/.test(n)) k.push('speak');
+  if (/test to be read|read.?aloud|read to student|read written information|read all word problems|oral admin|reader|text.?to.?speech|read.*questions?/.test(n) && !/oral response|not require/.test(n)) k.push('read');
+  if (/type responses?|type answers?|typed responses?/.test(n)) k.push('type');
+  if (/extend|extra time|additional time|time and a half|1\.5/.test(n)) k.push('time');
+  if (/formatting|one question|one at a time|small amounts of information|chunk|enlarg/.test(n)) k.push('format'); return k; };
+const isDigital = s => (s.accs || s.accommodations || []).some(a => hubKindsOf(a.name).length);
+const minsOf = h => { const m = /^(\d+):(\d+)/.exec(h || ''); return m ? +m[1] * 60 + +m[2] : null; };
+function prepTestCard(t, day) {
+  const sts = t.students || []; const now = new Date(); const nm = now.getHours() * 60 + now.getMinutes();
+  const live = day === today() && !t.allDay && minsOf(t.start) != null && nm >= minsOf(t.start) && nm <= minsOf(t.end);
+  const counts = {}; sts.forEach(s => (s.accs || []).forEach(a => { counts[a.name] = (counts[a.name] || 0) + 1; }));
+  const accs = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
+  const tch = teacherById(t.teacherId);
+  const ticked = state.prep && state.prep[t.id];
+  const nDig = sts.filter(isDigital).length;
+  return `<div class="ptest"><div class="ph"><label class="chk" style="margin:0"><input type="checkbox" data-act="prepTick" data-id="${esc(t.id)}" ${ticked ? 'checked' : ''} aria-label="Prepared"></label><b>${esc(t.title)}</b>${tch ? `<span class="small" style="margin:0">${esc(tch.name)}</span>` : ''}${placeChip(t)}${testGrades(t) ? `<span class="chip">${esc(testGrades(t))}</span>` : ''}${live ? '<span class="chip" style="background:#2E4057;color:#fff">Happening now</span>' : ''}<span class="pn">${sts.length}<span class="small" style="margin:0 0 0 4px;font-weight:500">student${sts.length === 1 ? '' : 's'}</span></span></div>
+    <div class="pg"><div>${sts.map(s => `<div class="pst"><span>${esc(s.name)}</span><span class="chip ${isDigital(s) ? 'dg' : 'pp'}">${isDigital(s) ? 'Digital' : 'Paper'}</span>${tConf(t, s).length ? '<span class="chip" style="background:#FBEBD0;color:#8A5A00" title="' + esc(tConf(t, s).join('; ')) + '">Overlap</span>' : ''}</div>`).join('') || '<div class="small">No students matched.</div>'}${sts.length ? `<div class="small" style="margin-top:4px">Digital ${nDig} · Paper ${sts.length - nDig}</div>` : ''}</div>
+    <div><div class="fh">ACCOMMODATIONS THIS TEST</div>${accs.map(a => `<div class="pac"><b>${counts[a]}</b><span>${esc(a)}</span></div>`).join('') || '<div class="small">None on file.</div>'}</div></div></div>`;
+}
 function summaryHtml() {
-  if (!state.ts) state.ts = { range:'week' };
+  if (!state.ts) state.ts = { range:'week' }; if (!state.prep) state.prep = {};
   const d = prepData(); const label = prepRange()[2];
   const ids = new Set(d.rows.map(r => r.s.id)); const withAcc = new Set(d.rows.filter(r => (r.s.accs || []).length).map(r => r.s.id));
   const tile = (n, l) => `<div class="tile"><div class="tn">${n}</div><div class="tl">${l}</div></div>`;
   const cnt = k => d.ok.filter(t => t.where === k).length;
   const days = []; for (let x = d.a; x <= d.b; x = addDays(x, 1)) if (dayKeyOf(x)) days.push(x);
-  const loadRows = days.map(x => { const e = d.ok.filter(t => t.date === x); const c = k => e.filter(t => t.where === k).length; return `<tr><td>${esc(dayLabel(x))}</td><td>${c('hub')}</td><td>${c('wendy')}</td><td>${c('abby')}</td><td>${c('tbd')}</td></tr>`; }).join('');
-  const rows = d.rows.map(r => `<tr><td style="white-space:nowrap">${esc(shortDate(r.t.date))}<div class="small">${esc(tRange(r.t))}</div></td><td><b>${esc(r.s.name)}</b><div class="small">${esc(r.s.grade)}</div></td><td>${esc(r.t.title)}</td><td>${esc(WHERE_SHORT[r.t.where])}</td><td>${accChips(r.s) || '<span class="small">None</span>'}</td><td>${r.c.map(x => `<div class="small" style="color:#7A1A1F">${esc(x)}</div>`).join('') || '<span class="small">-</span>'}</td></tr>`).join('');
+  const blocks = [['All day', t => t.allDay], ['Morning', t => !t.allDay && (minsOf(t.start) == null || minsOf(t.start) < 720)], ['Afternoon', t => !t.allDay && minsOf(t.start) != null && minsOf(t.start) >= 720]];
+  const dayHtml = days.map(x => { const ev = d.ok.filter(t => t.date === x).sort((a, b) => a.start.localeCompare(b.start)); if (!ev.length) return '';
+    const stu = new Set(); ev.forEach(t => (t.students || []).forEach(s => stu.add(s.id)));
+    const isT = x === today();
+    return `<div class="pday ${isT ? 'tod' : ''}"><div class="pdh">${isT ? 'TODAY · ' : ''}${esc(longDate(x).toUpperCase())} <span class="chip" style="background:#E3F0E3;color:#1E6B3A;margin-left:8px;text-transform:none">${ev.length} test${ev.length === 1 ? '' : 's'} · ${stu.size} student${stu.size === 1 ? '' : 's'}</span></div>`
+      + blocks.map(([bl, f]) => { const e = ev.filter(f); if (!e.length) return ''; const bs = new Set(); e.forEach(t => (t.students || []).forEach(s => bs.add(s.id)));
+        return `<div class="pbh">${bl}<span class="small" style="margin:0 0 0 8px;font-weight:500">${e.length} test${e.length === 1 ? '' : 's'} · ${bs.size} student${bs.size === 1 ? '' : 's'}</span></div>${e.map(t => prepTestCard(t, x)).join('')}`; }).join('') + '</div>'; }).join('');
+  const rows = d.rows.length;
   const rb = (k, l) => `<button class="fc ${state.ts.range === k ? 'on' : ''}" data-act="tsRange" data-r="${k}">${l}</button>`;
   return `<div class="tiles">${tile(d.ok.length, 'Approved tests')}${tile(ids.size, 'Students testing')}${tile(withAcc.size, 'With accommodations')}${tile(cnt('wendy'), 'With Mrs. Blasingame')}${tile(cnt('abby'), 'With Mrs. Danielson')}${tile(d.pending.length, 'Waiting for approval')}</div>
-    <section class="card"><h2>Testing summary: ${esc(label)}</h2><div style="margin-bottom:10px">${rb('week', 'This week')}${rb('next', 'Next week')}${rb('month', 'This month')}</div>
+    <section class="card"><h2>Testing prep: ${esc(label)}</h2><div class="small" style="margin:0 0 8px">Each approved test, how many students are testing, where it happens, and what accommodations to prepare. Tests are grouped by morning and afternoon.</div><div style="margin-bottom:10px">${rb('week', 'This week')}${rb('next', 'Next week')}${rb('month', 'This month')}</div>
       ${d.pending.length ? `<div class="banner warn" style="margin-bottom:10px">${d.pending.length} test${d.pending.length === 1 ? ' is' : 's are'} not approved yet and not counted below.</div>` : ''}
-      <div class="fh">TESTS BY DAY AND PLACE</div><div class="tw"><table style="min-width:420px"><thead><tr><th>Day</th><th>Hub (in class)</th><th>Blasingame</th><th>Danielson</th><th>Not set</th></tr></thead><tbody>${loadRows}</tbody></table></div></section>
-    <section class="card"><h2>What each student needs</h2>${rows ? `<div class="tw"><table style="min-width:720px"><thead><tr><th>When</th><th>Student</th><th>Test</th><th>Where</th><th>Accommodations</th><th>Schedule overlaps</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty">No approved tests in this range.</p>'}
+      ${dayHtml || '<p class="empty">No approved tests in this range.</p>'}
       <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap"><button class="secondary" data-act="downloadPrep" ${rows ? '' : 'disabled'}>Download CSV</button><button class="secondary" data-act="printPage">Print</button></div>
-      <div class="small" style="margin-top:8px">${isTeacher() ? 'Shows your own students.' : role() === 'principal' ? 'View only.' : 'Shows tests you can see.'}</div></section>`;
+      <div class="small" style="margin-top:8px">Digital means the student has an accommodation the Testing Hub can deliver (read aloud, extra time, speak or type answers, one question at a time). ${isTeacher() ? 'Shows your own students.' : role() === 'principal' ? 'View only.' : 'Shows tests you can see.'}</div></section>`;
 }
 
 /* ----- student's Testing History tab ----- */
@@ -1643,6 +1690,13 @@ const actions = {
     if (!confirm('Cancel this test? It will be removed from the calendar.')) return;
     await afterSave(await api('cancelTest', { id: el.dataset.id }), 'Test cancelled.');
   },
+  tcApprove: async el => { const r = await api('decideTest', { id: el.dataset.id, decision: 'approve' }); await afterSave(r, 'Test approved.'); },
+  tcBulk: async el => {
+    const op = el.dataset.op; const msg = { approveAll: 'Approve every test that is waiting?', clearApproved: 'Remove ALL approved tests from the calendar? Students and teachers will no longer see them.', clearPast: 'Remove all past tests from the calendar?', recompute: 'Re-match students to every test on the calendar? Students you picked by hand on a test will be replaced.' }[op];
+    if (!confirm(msg)) return; const r = await api('bulkTests', { op }); if (handleAuthError(r)) return;
+    state.notice = r && r.ok ? { type:'ok', text: (op === 'recompute' ? 'Matches updated on ' : 'Done: ') + r.count + ' test' + (r.count === 1 ? '' : 's') + '.' } : { type:'err', text: (r && r.error) || 'Could not do that.' }; await loadAll();
+  },
+  prepTick: el => { if (!state.prep) state.prep = {}; state.prep[el.dataset.id] = el.checked; },
   tcView: el => { const c = tcState(); c.view = el.dataset.v; if (c.view === 'day') c.date = onOrAfterSchoolDay(c.date); render(); },
   tcStatus: el => { tcState().status = el.dataset.v; render(); },
   tcPast: () => { const c = tcState(); c.past = !c.past; render(); },
@@ -1697,6 +1751,7 @@ document.addEventListener('change', e => {
   if (id === 'rpFrom' || id === 'rpTo' || id === 'rpType') { state.rp = { from: val('rpFrom'), to: val('rpTo'), type: val('rpType') }; render(); }
   if (id === 'tcGrade') { tcState().grade = e.target.value; render(); }
   if (id === 'tcWhere') { tcState().where = e.target.value; render(); }
+  if (id === 'tcPastChk') { tcState().past = e.target.checked; render(); }
   if (id === 'uRole') { const w = $('uApproveWrap'); if (w) w.classList.toggle('hidden', e.target.value !== 'interventionist'); }
   if (id === 'tClassFilter') { const v = e.target.value; document.querySelectorAll('#tStuList .stuRow').forEach(r => { const hide = !!v && !(r.dataset.teachers || '').split(',').includes(v); r.classList.toggle('hidden', hide); if (hide) r.querySelector('input').checked = false; }); tmWarn(); }
   if (e.target.name === 'tStu' || e.target.name === 'tWhere' || id === 'tDate' || id === 'tStart' || id === 'tEnd') tmWarn();
@@ -2845,6 +2900,11 @@ function demoApi(action, b) {
     if (b.decision === 'approve' && ['hub','wendy','abby','tbd'].includes(b.where)) t.where = b.where;
     if (b.start && b.end && b.start < b.end) { t.start = b.start; t.end = b.end; t.allDay = false; }
     t.status = b.decision === 'approve' ? 'approved' : 'declined'; t.decisionNote = b.note || ''; t.decidedByName = me.name; return ok();
+  }
+  if (action === 'bulkTests') {
+    if (!apvD) return err('Not allowed'); const T = demo.records.tests; let n = 0; const t0 = today();
+    T.forEach(t => { if (t.voided) return; if (b.op === 'approveAll' && t.status === 'pending') { t.status = 'approved'; n++; } else if (b.op === 'clearApproved' && t.status === 'approved') { t.voided = true; n++; } else if (b.op === 'clearPast' && t.date < t0) { t.voided = true; n++; } });
+    return ok({ count:n });
   }
   if (action === 'cancelTest') {
     if (me.role === 'principal') return err('Not allowed'); const t = demo.records.tests.find(x => x.id === b.id && !x.voided); if (!t) return err('Test not found');
