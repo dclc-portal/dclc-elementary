@@ -220,6 +220,7 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp
 const $ = id => document.getElementById(id);
 const role = () => state.user ? state.user.role : '';
 const isAdmin = () => role() === 'admin';
+const canEditStudents = () => isAdmin() || !!(state.user && state.user.canEdit);
 const isTeacher = () => role() === 'teacher';
 const lastName = n => String(n).trim().split(/\s+/).pop().toLowerCase();
 const initials = n => { const p = String(n).trim().split(/\s+/); return ((p[0]||'')[0] || '') + ((p.length > 1 ? p[p.length-1] : '')[0] || ''); };
@@ -383,7 +384,7 @@ function headerHtml() {
       ${r !== 'teacher' ? pill('reports','Reports') : ''}
       ${isAdmin() ? pill('grades','Grade upload') : ''}
       ${isAdmin() ? pill('logins','Login report') : ''}
-      ${isAdmin() ? `<button class="secondary" data-act="importStudents">Import students</button><button class="primary" data-act="addStudent">+ Add student</button>` : ''}
+      ${isAdmin() ? `<button class="secondary" data-act="importStudents">Import students</button>` : ''}${canEditStudents() ? `<button class="primary" data-act="addStudent">+ Add student</button>` : ''}
     </div></header>`;
 }
 
@@ -451,7 +452,7 @@ function profileHtml(s) {
     <div class="row" style="align-items:center;gap:14px"><div class="av" style="width:60px;height:60px;font-size:20px;background:${p[0]};color:${p[1]}">${esc(initials(s.name))}</div>
       <div><h2 style="margin:0;font-size:24px">${esc(s.name)}</h2><div class="small" style="font-size:14px;margin:4px 0 8px">${esc(sub)}</div>
       <div>${flagChips(s)}${groups.map(g => `<span class="chip grp">${esc(groupLabel(g))}</span>`).join('')}</div></div></div>
-    ${isAdmin() ? `<div class="row" style="gap:10px"><button class="primary" data-act="editStudent">Edit student</button></div>` : ''}</div>
+    ${canEditStudents() ? `<div class="row" style="gap:10px"><button class="primary" data-act="editStudent">Edit student</button></div>` : ''}</div>
     <nav class="tabs" aria-label="Student sections">${tabs.map(t => `<button class="tab ${t === state.tab ? 'on' : ''}" data-act="tab" data-t="${t}">${t}</button>`).join('')}</nav>
     ${tabHtml(s)}`;
 }
@@ -577,7 +578,7 @@ function accTab(s) {
     <button class="primary" data-act="logUse">Log use</button>` : '<p class="empty">No accommodations to log yet.</p>'}
     <div class="banner">You can see and log accommodations for your own students. You cannot change the accommodations themselves.</div></section>` : '';
   return `<div class="row" style="align-items:flex-start"><div style="flex:2 1 440px;min-width:0;display:flex;flex-direction:column;gap:16px">
-    <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">Accommodations on file</h2>${isAdmin() ? '<button class="secondary" data-act="editAcc">Edit accommodations</button>' : ''}</div>${accTable}</section>
+    <section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">Accommodations on file</h2>${canEditStudents() ? '<button class="secondary" data-act="editAcc">Edit accommodations</button>' : ''}</div>${accTable}</section>
     <section class="card"><h2>In-class usage log</h2>${logTable}</section></div>${form}</div>`;
 }
 
@@ -606,7 +607,7 @@ function overviewHtml() {
 /* access screen (admin) */
 function accessHtml() {
   const users = state.data.users || [];
-  const rows = users.map(u => `<tr><td><b>${esc(u.name)}</b>${u.active ? '' : ' <span class="small">(deactivated)</span>'}<div class="small">${esc(u.email)}</div></td><td><span class="chip ${ROLE_CLASS[u.role]}">${ROLE_LABEL[u.role]}</span></td><td>${esc(u.role === 'interventionist' ? SCOPE_LABEL[u.scope] || '' : u.role === 'teacher' ? 'Their own students' : 'All students, view only')}${u.role === 'interventionist' && u.canApprove ? ' <span class="chip svc">Approves tests</span>' : ''}</td><td>${u.active ? `<button class="link" data-act="editUser" data-id="${esc(u.id)}">Edit</button><button class="link" data-act="removeUser" data-id="${esc(u.id)}">Deactivate</button>` : ''}</td></tr>`).join('');
+  const rows = users.map(u => `<tr><td><b>${esc(u.name)}</b>${u.active ? '' : ' <span class="small">(deactivated)</span>'}<div class="small">${esc(u.email)}</div></td><td><span class="chip ${ROLE_CLASS[u.role]}">${ROLE_LABEL[u.role]}</span></td><td>${esc(u.role === 'interventionist' ? SCOPE_LABEL[u.scope] || '' : u.role === 'teacher' ? 'Their own students' : 'All students, view only')}${u.role === 'interventionist' && u.canApprove ? ' <span class="chip svc">Approves tests</span>' : ''}${u.role === 'interventionist' && u.canEdit ? ' <span class="chip svc">Edits students</span>' : ''}</td><td>${u.active ? `<button class="link" data-act="editUser" data-id="${esc(u.id)}">Edit</button><button class="link" data-act="removeUser" data-id="${esc(u.id)}">Deactivate</button>` : ''}</td></tr>`).join('');
   const m = [['See students','All','Own caseload','All','Own students'],['Add or edit students, tiers, flags','Edit','No access','No access','No access'],['Groups and class schedules','Edit all','Edit own groups','View','View own students\' schedule'],['Service and session log','Edit all','Log and edit own','View','No access'],['Progress monitoring','Edit','Edit own entries','View','View own students'],['Documentation and meeting notes','Edit','Edit own entries','View','View own students'],['Monthly grade reports','Upload','View','View','View own students'],['Accommodations','Edit','View','View','View'],['Log in-class accommodation use','No access','No access','No access','Log'],['Testing calendar: add a test','Add and approve','Add (waits for approval)','View only','Add for own students (waits for approval)'],['Testing calendar: approve or decline','Yes','Only if the admin turns it on (Mrs. Blasingame)','No','No'],['Testing prep summary','All tests','All tests','View','Own students'],['Reports','All','Own caseload','View','No access'],['Access and settings','Edit','No access','No access','No access']];
   return `${state.codeNotice ? `<div class="banner ok" role="status"><b>${esc(state.codeNotice.name)}</b>'s sign-in code is <b style="font-size:16px">${esc(state.codeNotice.code)}</b>. This is the only time it is shown. <button class="link" data-act="dismissCode">Dismiss</button></div>` : ''}
     <div class="banner">Only the admin code (you and Mrs. Barker) opens this screen and can assign access or change controls. The admin code is set in Apps Script, not here.</div>
@@ -954,7 +955,7 @@ function studentModal(s) {
     <div id="accTiles" style="border:1px solid #E3E8EE;border-radius:10px;padding:8px 10px;background:#FAFBFC">${accTilesHtml(s)}</div></div>
     <div class="fh" style="margin-bottom:-6px">KEY DATES</div>
     <div class="cols"><label class="fl">FIE date<input class="field" type="date" id="fKfie" value="${esc(kd.fie)}"></label><label class="fl">Last diagnostic<input class="field" type="date" id="fKld" value="${esc(kd.lastDiagnostic)}"></label><label class="fl">Next re-evaluation<input class="field" type="date" id="fKnr" value="${esc(kd.nextReeval)}"></label><label class="fl">Last parent meeting<input class="field" type="date" id="fKpm" value="${esc(kd.lastParentMeeting)}"></label></div>
-    <div class="btns">${isNew ? '' : '<button class="danger" data-act="archiveStudent" style="margin-right:auto">Remove from portal</button>'}<button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveStudent">Save</button></div>`);
+    <div class="btns">${isNew ? '' : '<button class="danger" data-act="archiveStudent" style="margin-right:auto' + (isAdmin() ? '' : ';display:none') + '">Remove from portal</button>'}<button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveStudent">Save</button></div>`);
 }
 function accTilesHtml(s) {
   const have = new Set((s.accommodations || []).map(a => a.name));
@@ -1110,6 +1111,7 @@ function userModal(u) {
     <div class="cols"><label class="fl">Role<select class="field" id="uRole"><option value="teacher" ${u.role === 'teacher' ? 'selected' : ''}>Teacher</option><option value="interventionist" ${u.role === 'interventionist' ? 'selected' : ''}>Interventionist</option><option value="principal" ${u.role === 'principal' ? 'selected' : ''}>Principal (view only)</option></select></label>
     <label class="fl">Interventionist sees<select class="field" id="uScope"><option value="tiered" ${u.scope === 'tiered' ? 'selected' : ''}>Students with a tier</option><option value="dyslexia" ${u.scope === 'dyslexia' ? 'selected' : ''}>MTA students only</option><option value="all" ${u.scope === 'all' ? 'selected' : ''}>All students</option></select></label></div>
     <label class="chk ${u.role === 'interventionist' ? '' : 'hidden'}" id="uApproveWrap"><input type="checkbox" id="uApprove" ${u.canApprove ? 'checked' : ''}>Can approve tests on the testing calendar</label>
+    <label class="chk ${u.role === 'interventionist' ? '' : 'hidden'}" id="uEditWrap"><input type="checkbox" id="uEdit" ${u.canEdit ? 'checked' : ''}>Can add and edit students</label>
     <label class="fl">${isNew ? 'Sign-in code (leave blank to use lastname2627)' : 'New sign-in code (leave blank to keep the current one)'}<input class="field" id="uCode" maxlength="60" autocomplete="off"></label>
     <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveUser">Save</button></div>`);
 }
@@ -1615,7 +1617,7 @@ const actions = {
   addUser: () => { state.editingUser = null; userModal(null); },
   editUser: el => { state.editingUser = el.dataset.id; userModal((state.data.users || []).find(u => u.id === el.dataset.id)); },
   saveUser: async () => {
-    const r = await api('saveUser', { user: { id: state.editingUser || undefined, name: val('uName'), email: val('uEmail'), role: val('uRole'), scope: val('uScope'), canApprove: val('uRole') === 'interventionist' ? chk('uApprove') : undefined, code: val('uCode') } });
+    const r = await api('saveUser', { user: { id: state.editingUser || undefined, name: val('uName'), email: val('uEmail'), role: val('uRole'), scope: val('uScope'), canApprove: val('uRole') === 'interventionist' ? chk('uApprove') : undefined, canEdit: val('uRole') === 'interventionist' ? chk('uEdit') : undefined, code: val('uCode') } });
     if (r && r.ok && r.code) state.codeNotice = { name: r.user.name, code: r.code };
     await afterSave(r, '');
   },
@@ -1760,7 +1762,7 @@ document.addEventListener('change', e => {
   if (id === 'tcGrade') { tcState().grade = e.target.value; render(); }
   if (id === 'tcWhere') { tcState().where = e.target.value; render(); }
   if (id === 'tcPastChk') { tcState().past = e.target.checked; render(); }
-  if (id === 'uRole') { const w = $('uApproveWrap'); if (w) w.classList.toggle('hidden', e.target.value !== 'interventionist'); }
+  if (id === 'uRole') { const w = $('uApproveWrap'); if (w) w.classList.toggle('hidden', e.target.value !== 'interventionist'); const w2 = $('uEditWrap'); if (w2) w2.classList.toggle('hidden', e.target.value !== 'interventionist'); }
   if (id === 'tClassFilter') { const v = e.target.value; document.querySelectorAll('#tStuList .stuRow').forEach(r => { const hide = !!v && !(r.dataset.teachers || '').split(',').includes(v); r.classList.toggle('hidden', hide); if (hide) r.querySelector('input').checked = false; }); tmWarn(); }
   if (e.target.name === 'tStu' || e.target.name === 'tWhere' || id === 'tDate' || id === 'tStart' || id === 'tEnd') tmWarn();
   if (id === 'gradeSel') { state.filters.grade = e.target.value; render(); }
