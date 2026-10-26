@@ -209,7 +209,7 @@ const PALETTE = [['#E3EEF8','#1F4E87'],['#DFF2EC','#0E5C52'],['#FCEBD7','#7A4A0A
 
 const state = {
   token: null, user: null, data: null, view: 'home', selectedId: null, tab: 'Overview',
-  filters: { q:'', tier:'', dyslexia:false, speech:false, build:false, followUp:false, evalIP:false, reeval:false, group:'', grade:'' },
+  filters: { q:'', tier:'', dyslexia:false, speech:false, kbit:false, build:false, followUp:false, evalIP:false, reeval:false, inactive:false, group:'', grade:'' },
   syncedAt: null, notice: null, loginMsg: '', logins: null,
   gu: null, guMonth: '', rep: 'service', rp: {}, noteType: '', pmGroup: '',
   day: ({1:'M',2:'T',3:'W',4:'R',5:'F'})[new Date().getDay()] || 'M'
@@ -282,12 +282,14 @@ function reevalStatus(s) {
 }
 function flagChips(s) {
   let h = '';
+  if (s.inactive) h += `<span class="chip" style="background:#E6E8EB;color:#4A5560" title="${esc(s.inactiveNote || 'No longer receiving services')}">Inactive${s.inactiveAt ? ' since ' + esc(shortDate(s.inactiveAt)) : ''}</span>`;
   const rs = reevalStatus(s);
   if (rs === 'past') h += '<span class="chip duePast">Re-eval past due</span>';
   else if (rs === 'soon') h += '<span class="chip dueSoon">Re-eval due soon</span>';
   if (s.tier !== 'none') h += `<span class="chip ${TIER_CLASS[s.tier]}">${TIER_LABEL[s.tier]}</span>`;
   if (s.dyslexia) h += '<span class="chip dys" title="Receives MTA (dyslexia) services">MTA</span>';
   if (s.speech) h += '<span class="chip sp">Speech</span>';
+  if (s.kbit && !isTeacher()) h += `<span class="chip" style="background:#E8EEF5;color:#2E4057" title="Tested by Mrs. Barker">KBIT/KTEA</span>`;
   if (s.speechDismissed) h += `<span class="chip" style="background:#E6E8EB;color:#4A5560" title="${esc(s.speechNote || 'Was in speech; dismissed')}">Speech (dismissed)</span>${s.speechNote ? `<span class="small" style="font-size:12px;color:#4A5560;align-self:center">${esc(s.speechNote)}</span>` : ''}`;
   if (s.build) h += '<span class="chip sp">BUILD</span>';
   if (s.dnq) h += '<span class="chip" style="background:#E9E2F4;color:#4A2E80" title="Evaluated, did not qualify">DNQ</span>';
@@ -416,15 +418,15 @@ function emptyHtml() {
 function filteredStudents() {
   const f = state.filters; const q = f.q.trim().toLowerCase();
   return sortStudents(state.data.students.filter(s =>
-    (!q || s.name.toLowerCase().includes(q)) && (!f.grade || s.grade === f.grade) && (!f.tier || s.tier === f.tier) &&
-    (!f.dyslexia || s.dyslexia) && (!f.speech || s.speech) && (!f.speechDismissed || s.speechDismissed) && (!f.build || s.build) && (!f.dnq || s.dnq) && (!f.followUp || s.followUp) && (!f.evalIP || s.evalInProcess) && (!f.reeval || reevalStatus(s)) && (!f.group || (s.groupIds || []).includes(f.group))));
+    (!!f.inactive === !!s.inactive) && (!q || s.name.toLowerCase().includes(q)) && (!f.grade || s.grade === f.grade) && (!f.tier || s.tier === f.tier) &&
+    (!f.dyslexia || s.dyslexia) && (!f.speech || s.speech) && (!f.kbit || s.kbit) && (!f.speechDismissed || s.speechDismissed) && (!f.build || s.build) && (!f.dnq || s.dnq) && (!f.followUp || s.followUp) && (!f.evalIP || s.evalInProcess) && (!f.reeval || reevalStatus(s)) && (!f.group || (s.groupIds || []).includes(f.group))));
 }
 function listHtml() {
   const list = filteredStudents();
   if (!list.length) return '<div class="empty" style="padding:8px 12px">No matching students.</div>';
   return list.map(s => { const p = palette(s.name); return `<button class="srow ${s.id === state.selectedId ? 'sel' : ''}" data-act="select" data-id="${esc(s.id)}"><span class="av" style="background:${p[0]};color:${p[1]}">${esc(initials(s.name))}</span><span><div class="sn">${esc(s.name)}</div><div class="ss">${esc(tierSummary(s))}${reevalStatus(s) === 'past' ? ' · ' : ''}${reevalStatus(s) === 'past' ? '<span style="color:#7A1A1F;font-weight:700">Re-eval past due</span>' : ''}</div></span></button>`; }).join('');
 }
-function gradeCountsText() { const c = {}; state.data.students.forEach(s => { c[s.grade] = (c[s.grade] || 0) + 1; }); return GRADES.filter(g => c[g]).map(g => g + ': ' + c[g]).join(' · '); }
+function gradeCountsText() { const c = {}; state.data.students.filter(s => !s.inactive).forEach(s => { c[s.grade] = (c[s.grade] || 0) + 1; }); return GRADES.filter(g => c[g]).map(g => g + ': ' + c[g]).join(' · '); }
 function sideHtml() {
   const f = state.filters;
   const chip = (key, val, label) => `<button class="fc ${f[key] === val ? 'on' : ''}" data-act="filter" data-k="${key}" data-v="${val}">${label}</button>`;
@@ -433,7 +435,7 @@ function sideHtml() {
     <div><label class="sr" for="q">Search by name</label><input class="field" id="q" type="text" placeholder="Search by name..." value="${esc(f.q)}" autocomplete="off"></div>
     <div><div class="fh">GRADE</div><select class="field" id="gradeSel" aria-label="Grade"><option value="">All grades</option>${GRADES.map(g => `<option ${f.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select></div>
     <div><div class="fh">SERVICE TIER</div>${chip('tier','','All')}${chip('tier','tier1','Tier 1')}${chip('tier','tier2','Tier 2')}${chip('tier','monitor','Monitor')}</div>
-    <div><div class="fh">FLAG</div><button class="fc ${f.dyslexia ? 'on' : ''}" data-act="toggleFlag" data-k="dyslexia">MTA</button><button class="fc ${f.speech ? 'on' : ''}" data-act="toggleFlag" data-k="speech">Speech</button><button class="fc ${f.speechDismissed ? 'on' : ''}" data-act="toggleFlag" data-k="speechDismissed">Speech dismissed</button><button class="fc ${f.build ? 'on' : ''}" data-act="toggleFlag" data-k="build">BUILD</button>${isTeacher() ? '' : `<button class="fc ${f.dnq ? 'on' : ''}" data-act="toggleFlag" data-k="dnq">DNQ</button>`}${isTeacher() ? '' : `<button class="fc ${f.followUp ? 'on' : ''}" data-act="toggleFlag" data-k="followUp">Follow up</button>`}${isTeacher() ? '' : `<button class="fc ${f.evalIP ? 'on' : ''}" data-act="toggleFlag" data-k="evalIP">Eval in process</button>`}${isTeacher() ? '' : `<button class="fc ${f.reeval ? 'on' : ''}" data-act="toggleFlag" data-k="reeval">Re-eval due</button>`}</div>
+    <div><div class="fh">FLAG</div><button class="fc ${f.dyslexia ? 'on' : ''}" data-act="toggleFlag" data-k="dyslexia">MTA</button><button class="fc ${f.speech ? 'on' : ''}" data-act="toggleFlag" data-k="speech">Speech</button><button class="fc ${f.speechDismissed ? 'on' : ''}" data-act="toggleFlag" data-k="speechDismissed">Speech dismissed</button>${isTeacher() ? '' : `<button class="fc ${f.kbit ? 'on' : ''}" data-act="toggleFlag" data-k="kbit">KBIT/KTEA</button>`}<button class="fc ${f.build ? 'on' : ''}" data-act="toggleFlag" data-k="build">BUILD</button>${isTeacher() ? '' : `<button class="fc ${f.dnq ? 'on' : ''}" data-act="toggleFlag" data-k="dnq">DNQ</button>`}${isTeacher() ? '' : `<button class="fc ${f.followUp ? 'on' : ''}" data-act="toggleFlag" data-k="followUp">Follow up</button>`}${isTeacher() ? '' : `<button class="fc ${f.evalIP ? 'on' : ''}" data-act="toggleFlag" data-k="evalIP">Eval in process</button>`}${isTeacher() ? '' : `<button class="fc ${f.inactive ? 'on' : ''}" data-act="toggleFlag" data-k="inactive">Inactive</button>`}${isTeacher() ? '' : `<button class="fc ${f.reeval ? 'on' : ''}" data-act="toggleFlag" data-k="reeval">Re-eval due</button>`}</div>
     ${isTeacher() ? '' : `<div><div class="fh">SERVICE GROUP</div><select class="field" id="groupSel" aria-label="Service group"><option value="">All groups</option>${groups.map(g => `<option value="${esc(g.id)}" ${f.group === g.id ? 'selected' : ''}>${esc(groupLabel(g))}</option>`).join('')}</select></div>`}
     <div class="fh" style="margin-bottom:0">STUDENTS (<span id="count">${filteredStudents().length}</span> of ${state.data.students.length})</div><div class="small" id="gradeCounts" style="margin:0 0 4px">${gradeCountsText()}</div>
     <div id="studentList" style="display:flex;flex-direction:column;gap:2px">${listHtml()}</div></aside>`;
@@ -452,7 +454,7 @@ function profileHtml(s) {
     <div class="row" style="align-items:center;gap:14px"><div class="av" style="width:60px;height:60px;font-size:20px;background:${p[0]};color:${p[1]}">${esc(initials(s.name))}</div>
       <div><h2 style="margin:0;font-size:24px">${esc(s.name)}</h2><div class="small" style="font-size:14px;margin:4px 0 8px">${esc(sub)}</div>
       <div>${flagChips(s)}${groups.map(g => `<span class="chip grp">${esc(groupLabel(g))}</span>`).join('')}</div></div></div>
-    ${canEditStudents() ? `<div class="row" style="gap:10px"><button class="primary" data-act="editStudent">Edit student</button></div>` : ''}</div>
+    ${canEditStudents() ? `<div class="row" style="gap:10px"><button class="primary" data-act="editStudent">Edit student</button><button class="secondary" data-act="setInactive">${(student() || {}).inactive ? 'Return to active services' : 'Mark inactive'}</button></div>${(student() || {}).inactive ? `<div class="banner" style="margin-top:8px">Inactive: no longer receiving services${(student() || {}).inactiveAt ? ' (since ' + esc(fmtDate(student().inactiveAt)) + ')' : ''}. The record is kept but this student is not counted in active services or diagnoses.${(student() || {}).inactiveNote ? ' Note: ' + esc(student().inactiveNote) : ''}</div>` : ''}` : ''}</div>
     <nav class="tabs" aria-label="Student sections">${tabs.map(t => `<button class="tab ${t === state.tab ? 'on' : ''}" data-act="tab" data-t="${t}">${t}</button>`).join('')}</nav>
     ${tabHtml(s)}`;
 }
@@ -613,15 +615,16 @@ function accTab(s) {
 /* overview dashboard */
 const cardHead = (title, btn) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">${title}</h2><div>${btn || ''}</div></div>`;
 function overviewHtml() {
-  const list = state.data.students; const count = fn => list.filter(fn).length;
+  const allStu = state.data.students; const list = allStu.filter(s => !s.inactive); const count = fn => list.filter(fn).length;
   const gl = g => /^\d+$/.test(String(g)) ? 'Gr ' + g : String(g || '');
   const nm = fn => list.filter(fn).slice().sort((a, b) => a.name.localeCompare(b.name));
   const overdue = list.filter(s => reevalStatus(s) === 'past');
   const row1 = [['Total students', list.length, ''], ['Tier 1', count(s => s.tier === 'tier1'), '#2563A8'], ['Tier 2', count(s => s.tier === 'tier2'), '#1E6B3A'], ['Re-evaluation overdue', overdue.length, '#9B2226']];
-  const row2 = [['Monitor', count(s => s.tier === 'monitor'), '#8A5A00'], ['MTA', count(s => s.dyslexia), '#5B3FA0'], ['BUILD', count(s => s.build), '#2563A8'], ['Evaluations in process', count(s => s.evalInProcess), '#9B2226']];
+  const row2 = [['Monitor', count(s => s.tier === 'monitor'), '#8A5A00'], ['MTA', count(s => s.dyslexia), '#5B3FA0'], ['BUILD', count(s => s.build), '#2563A8'], ['KBIT/KTEA tested', count(s => s.kbit), '#2E4057'], ['Evaluations in process', count(s => s.evalInProcess), '#9B2226']];
   const noAcc = nm(s => !(s.accommodations || []).length);
   const consentOnly = nm(s => (s.documents || []).length && (s.documents || []).every(d => /consent/i.test((d.label || '') + ' ' + (d.name || ''))));
-  const row3 = [['No accommodations on file', noAcc.length, '#8A5A00'], ['Consent form only', consentOnly.length, '#9B2226'], ['DNQ', count(s => s.dnq), '#5B3FA0']];
+  const inactiveN = allStu.length - list.length;
+  const row3 = [['Inactive (not counted)', inactiveN, '#5A6B7B'], ['No accommodations on file', noAcc.length, '#8A5A00'], ['Consent form only', consentOnly.length, '#9B2226'], ['DNQ', count(s => s.dnq), '#5B3FA0']];
   const bigTile = t => `<div class="tile" style="text-align:center;padding:18px 12px;background:#F4F6F9;border:0"><div class="tn" style="font-size:34px;${t[2] ? 'color:' + t[2] : ''}">${t[1]}</div><div class="tl">${t[0]}</div></div>`;
   const viewBtn = id => `<button class="secondary" style="min-height:32px;padding:4px 14px" data-act="select" data-id="${esc(id)}">View</button>`;
   const ipRows = nm(s => s.evalInProcess).map(s => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #E3E8EE"><div><b>${esc(s.name)}</b> <span class="small" style="margin-left:12px">${esc(gl(s.grade))}</span></div>${viewBtn(s.id)}</div>`).join('');
@@ -991,9 +994,9 @@ function studentModal(s) {
     <div class="banner err hidden" id="modalErr" role="alert"></div>
     <div class="cols"><label class="fl">Student name<input class="field" id="fName" value="${esc(s.name)}" maxlength="80"></label>
     <label class="fl">Grade<select class="field" id="fGrade">${GRADES.map(g => `<option ${s.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select></label></div>
-    <div><div class="fh">TEACHERS (K3 to 3rd: homeroom teacher. 4th and 5th: both teachers)</div>${teachers.length ? teachers.map(t => `<label class="chk"><input type="checkbox" name="fTeacher" value="${esc(t.id)}" ${(s.teacherIds || []).includes(t.id) ? 'checked' : ''}>${esc(t.name)}</label>`).join('') : '<p class="empty">No teachers yet. Add teachers on the Access screen first.</p>'}</div>
+    <div><div class="fh">TEACHERS (K3 to 3rd: homeroom teacher. 4th and 5th: both teachers)</div>${teachers.length ? `<div class="cols"><label class="fl">Teacher<select class="field" id="fT1"><option value="">Choose a teacher</option>${teachers.map(t => `<option value="${esc(t.id)}" ${(s.teacherIds || [])[0] === t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label><label class="fl">Second teacher (4th and 5th)<select class="field" id="fT2"><option value="">None</option>${teachers.map(t => `<option value="${esc(t.id)}" ${(s.teacherIds || [])[1] === t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select></label></div>` : '<p class="empty">No teachers yet. Add teachers on the Access screen first.</p>'}</div>
     <div class="cols"><label class="fl">Service tier<select class="field" id="fTier">${['none','tier1','tier2','monitor'].map(t => `<option value="${t}" ${s.tier === t ? 'selected' : ''}>${TIER_LABEL[t]}</option>`).join('')}</select></label>
-    <div><div class="fh">FLAGS</div><label class="chk"><input type="checkbox" id="fDys" ${s.dyslexia ? 'checked' : ''}>MTA (receives dyslexia services; diagnosis is set separately)</label><label class="chk"><input type="checkbox" id="fSp" ${s.speech ? 'checked' : ''}>Speech</label><label class="chk"><input type="checkbox" id="fSpD" ${s.speechDismissed ? 'checked' : ''}>Speech dismissed (no longer seen)</label><input id="fSpNote" placeholder="Speech note, e.g. dismissed spring 2026, met goals" maxlength="300" value="${esc(s.speechNote || '')}" style="margin:4px 0 6px;width:100%"><label class="chk"><input type="checkbox" id="fBuild" ${s.build ? 'checked' : ''}>BUILD</label><label class="chk"><input type="checkbox" id="fDnq" ${s.dnq ? 'checked' : ''}>DNQ (evaluated, did not qualify)</label></div></div>
+    <div><div class="fh">FLAGS</div><label class="chk"><input type="checkbox" id="fDys" ${s.dyslexia ? 'checked' : ''}>MTA (receives dyslexia services; diagnosis is set separately)</label><label class="chk"><input type="checkbox" id="fSp" ${s.speech ? 'checked' : ''}>Speech</label><label class="chk"><input type="checkbox" id="fSpD" ${s.speechDismissed ? 'checked' : ''}>Speech dismissed (no longer seen)</label><input id="fSpNote" placeholder="Speech note, e.g. dismissed spring 2026, met goals" maxlength="300" value="${esc(s.speechNote || '')}" style="margin:4px 0 6px;width:100%"><label class="chk"><input type="checkbox" id="fBuild" ${s.build ? 'checked' : ''}>BUILD</label><label class="chk"><input type="checkbox" id="fKbit" ${s.kbit ? 'checked' : ''}>Tested by Mrs. Barker (KBIT/KTEA)</label><label class="chk"><input type="checkbox" id="fDnq" ${s.dnq ? 'checked' : ''}>DNQ (evaluated, did not qualify)</label></div></div>
     <label class="chk" style="background:#F4F5F6;border:1px solid #E3E8EE;border-radius:10px;padding:10px 12px"><input type="checkbox" id="fEvalIP" ${s.evalInProcess ? 'checked' : ''}>Evaluation in process</label>
     <label class="fl">Follow-up note (admin only)<input class="field" id="fFollow" maxlength="200" value="${esc(s.followUp || '')}" placeholder="e.g., No documentation yet"></label>
     <label class="fl">Class schedule<select class="field" id="fSchedule"><option value="">(none)</option>${(state.data.schedules || []).map(x => `<option value="${esc(x.id)}" ${s.scheduleId === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
@@ -1026,7 +1029,7 @@ function accTilesHtml(s) {
 function collectStudent(base) {
   const checked = name => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value);
   return Object.assign({}, base || {}, {
-    name: val('fName'), grade: val('fGrade'), teacherIds: checked('fTeacher'), scheduleId: val('fSchedule'), tier: val('fTier'), dyslexia: chk('fDys'), speech: chk('fSp') && !chk('fSpD'), speechDismissed: chk('fSpD'), speechNote: val('fSpNote'), build: chk('fBuild'), dnq: chk('fDnq'), evalInProcess: chk('fEvalIP'), followUp: val('fFollow'), groupIds: checked('fGroup'),
+    name: val('fName'), grade: val('fGrade'), teacherIds: [...new Set([val('fT1'), val('fT2')].filter(Boolean))], scheduleId: val('fSchedule'), tier: val('fTier'), dyslexia: chk('fDys'), speech: chk('fSp') && !chk('fSpD'), speechDismissed: chk('fSpD'), speechNote: val('fSpNote'), build: chk('fBuild'), kbit: chk('fKbit'), dnq: chk('fDnq'), evalInProcess: chk('fEvalIP'), followUp: val('fFollow'), groupIds: checked('fGroup'),
     parents: [0, 1].map(i => ({ name: val('fPn' + i), relation: val('fPr' + i), phone: val('fPp' + i), email: val('fPe' + i) })),
     diagnoses: [...document.querySelectorAll('.dxT.on')].map(e => e.dataset.v),
     accommodations: (() => { const prev = {}; ((base && base.accommodations) || []).forEach(a => { prev[a.name] = a; }); return [...document.querySelectorAll('.acT.on')].map(e => prev[e.dataset.v] || { name: e.dataset.v, appliesTo: '', source: 'Learning plan' }); })(),
@@ -1634,6 +1637,13 @@ const actions = {
   tile: el => el.classList.toggle('on'),
   accClear: () => document.querySelectorAll('.acT.on').forEach(e => e.classList.remove('on')),
   toggleFlag: el => { state.filters[el.dataset.k] = !state.filters[el.dataset.k]; render(); },
+  setInactive: async () => {
+    const s = student(); if (!s) return;
+    if (s.inactive) { if (!confirm('Return ' + s.name + ' to active services?')) return; await afterSave(await api('setInactive', { id: s.id, inactive: false }), 'Returned to active services.'); return; }
+    if (!confirm('Mark ' + s.name + ' inactive? Their record stays in the portal, but they will not be counted in active services or diagnoses.')) return;
+    const note = prompt('Reason or note (optional, for example "Exited services 10/2026"):', '') || '';
+    await afterSave(await api('setInactive', { id: s.id, inactive: true, note }), 'Marked inactive.');
+  },
   addStudent: () => studentModal(null),
   editStudent: () => studentModal(student()),
   saveStudent: async () => {
@@ -1867,8 +1877,8 @@ document.addEventListener('change', e => {
   if (id === 'gradeSel') { state.filters.grade = e.target.value; render(); }
   if (id === 'groupSel') { state.filters.group = e.target.value; render(); }
   if (id === 'sGroup') { const g = groupById(e.target.value); if (g) { $('attBody').innerHTML = attRows(g, null); $('sStart').value = g.start || ''; $('sEnd').value = g.end || ''; $('sMin').value = (g.start && g.end) ? minsBetween(g.start, g.end) : ''; } }
-  if ((e.target.name === 'fTeacher' || id === 'fGrade') && $('fSchedule') && !$('fSchedule').value) {   // suggest a class schedule from the chosen teachers
-    const tids = [...document.querySelectorAll('input[name="fTeacher"]:checked')].map(x => x.value), gr = val('fGrade');
+  if ((id === 'fT1' || id === 'fT2' || id === 'fGrade') && $('fSchedule') && !$('fSchedule').value) {   // suggest a class schedule from the chosen teachers
+    const tids = [val('fT1'), val('fT2')].filter(Boolean), gr = val('fGrade');
     const m = (state.data.schedules || []).filter(x => (x.teacherIds || []).some(t => tids.includes(t)) && (!(x.grades || []).length || x.grades.includes(gr)));
     if (m.length === 1) $('fSchedule').value = m[0].id;
   }
@@ -3081,6 +3091,7 @@ function demoApi(action, b) {
     const i = demo.students.findIndex(s => s.id === b.student.id); const s = Object.assign({ id:'s' + Date.now(), accommodationLog:[], accommodations:[], archived:false }, i >= 0 ? demo.students[i] : {}, b.student);
     if (!s.name) return err('Student name is required'); if (i >= 0) demo.students[i] = s; else demo.students.push(s); return ok({ student:s });
   }
+  if (action === 'setInactive') { const s = demo.students.find(x => x.id === b.id); if (s) { s.inactive = !!b.inactive; s.inactiveAt = b.inactive ? today() : ''; s.inactiveNote = b.note || ''; } return ok(); }
   if (action === 'archiveStudent') { const s = demo.students.find(x => x.id === b.id); if (s) s.archived = true; return ok(); }
   if (action === 'findDocs' || action === 'linkDoc' || action === 'unlinkDoc') {
     if (!staffRole) return err('Not allowed');
