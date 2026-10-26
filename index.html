@@ -471,9 +471,36 @@ function tabHtml(s) {
 /* ---------- FIE and other documents (Drive links; admin and interventionist manage, principal views) ---------- */
 const canDocs = () => isAdmin() || role() === 'interventionist';
 const DOC_LBLS = ['Full FIE', 'Addendum', 'ARD'];
+const UP_TYPES = ['Consent', 'Evaluation', 'Private testing', 'ARD', '504 Plan', 'Report', 'Medical / physician letter', 'Accommodations plan', 'Other'];
+const UP_MAX = 5 * 1024 * 1024;
+function readFilesB64(inputId) {
+  const el = document.getElementById(inputId); const list = el && el.files ? [...el.files] : [];
+  return Promise.all(list.map(f => new Promise((res, rej) => {
+    if (f.size > UP_MAX) return rej(new Error(f.name + ' is over 5 MB. Put it in the student\'s Drive folder and use Find in Drive.'));
+    const fr = new FileReader();
+    fr.onload = () => res({ name: f.name, mime: f.type || 'application/octet-stream', data: String(fr.result).split(',')[1] || '' });
+    fr.onerror = () => rej(new Error('Could not read ' + f.name));
+    fr.readAsDataURL(f);
+  })));
+}
+function uploadModal(s) {
+  openModal(`<h2>Upload documentation for ${esc(s.name)}</h2><p class="small" style="margin-top:-4px">Saved in ${esc(s.name)}'s Learning Support Drive folder and linked here. Up to 6 files, 5 MB each.</p><div class="banner err hidden" id="modalErr" role="alert"></div>
+    <label class="fl">Files<input class="field" type="file" id="upFiles" multiple></label>
+    <label class="fl">Type<select class="field" id="upType">${UP_TYPES.map(t => `<option>${esc(t)}</option>`).join('')}<option value="Full FIE">FIE (counts as Full FIE)</option><option value="Addendum">FIE addendum</option></select></label>
+    <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="docUploadSave" id="upGo">Upload</button></div>`);
+}
+function emailModal(s) {
+  const today = new Date().toISOString().slice(0, 10);
+  openModal(`<h2>Add an email for ${esc(s.name)}</h2><p class="small" style="margin-top:-4px">Paste the email text. It is saved as a text file in ${esc(s.name)}'s Drive folder and linked here. Attachments are saved too.</p><div class="banner err hidden" id="modalErr" role="alert"></div>
+    <div class="row" style="gap:10px"><label class="fl" style="flex:1 1 200px">From<input class="field" id="emFrom" maxlength="200"></label><label class="fl" style="flex:1 1 200px">To<input class="field" id="emTo" maxlength="200"></label><label class="fl" style="flex:0 1 160px">Date<input class="field" type="date" id="emDate" value="${today}"></label></div>
+    <label class="fl">Subject<input class="field" id="emSubject" maxlength="150"></label>
+    <label class="fl">Email text<textarea class="field" id="emBody" rows="9" style="resize:vertical" placeholder="Paste the email here"></textarea></label>
+    <label class="fl">Attachments (optional)<input class="field" type="file" id="emFiles" multiple></label>
+    <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="docEmailSave" id="emGo">Save email</button></div>`);
+}
 const safeUrl = u => /^https:\/\/(drive|docs)\.google\.com\//.test(String(u || '')) ? u : '#';
 function docRow(d, s) {
-  return `<div class="docRow"><span class="docIc" aria-hidden="true">${/pdf/i.test(d.name) ? 'PDF' : 'DOC'}</span><a class="docName" href="${esc(safeUrl(d.url))}" target="_blank" rel="noopener">${esc(d.name)}</a><span style="font-size:12px;background:#FBEBD0;border:1px solid #E5C48A;border-radius:10px;padding:2px 8px">${esc(d.label || '')}</span>${canDocs() ? `<button class="docX" data-act="docUnlink" data-id="${esc(d.id)}" aria-label="Unlink ${esc(d.name)}">&times;</button>` : ''}</div>`;
+  return `<div class="docRow"><span class="docIc" aria-hidden="true">${d.label === 'Email' ? 'EML' : /pdf/i.test(d.name) ? 'PDF' : 'DOC'}</span><a class="docName" href="${esc(safeUrl(d.url))}" target="_blank" rel="noopener">${esc(d.name)}</a><span style="font-size:12px;background:#FBEBD0;border:1px solid #E5C48A;border-radius:10px;padding:2px 8px">${esc(d.label || '')}</span>${canDocs() ? `<button class="docX" data-act="docUnlink" data-id="${esc(d.id)}" aria-label="Unlink ${esc(d.name)}">&times;</button>` : ''}</div>`;
 }
 function docResults(s, mode) {
   const q = state.docs;
@@ -491,6 +518,7 @@ function docsCard(s) {
   const fieCard = `<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0;border:0;padding:0">FIE documents</h2>${canDocs() ? `<button class="secondary" data-act="docFind">${open && q.mode === 'fie' ? 'Search again' : 'Find in Drive'}</button>` : ''}</div>
     ${fie.length ? fie.map(d => docRow(d, s)).join('') : `<p class="small" style="margin-top:8px">${canDocs() ? 'No FIE linked yet. Click Find in Drive.' : 'No FIE linked.'}</p>`}${docResults(s, 'fie')}</section>`;
   const otherCard = `<section class="card"><h2>Additional documentation</h2><p class="small" style="margin:-4px 0 8px">Other documents in the student's folder (ARD, 504, private testing, consent, reports, etc.).</p>
+    ${canDocs() ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"><button class="primary" data-act="docUploadOpen">Upload file</button><button class="primary" data-act="docEmailOpen">Add email</button></div>` : ''}
     ${canDocs() ? `<div style="display:flex;gap:8px"><input class="field" id="docQ" placeholder="e.g. ARD, 504 Plan, Private Testing" value="${open && q.mode === 'other' ? esc(q.term || '') : ''}" maxlength="60" aria-label="Document type to search for"><button class="secondary" data-act="docSearch">Search</button></div>` : ''}
     ${other.length ? other.map(d => docRow(d, s)).join('') : '<p class="small" style="margin-top:8px">No additional documents linked yet.</p>'}${docResults(s, 'other')}</section>`;
   return `<div class="row">${fieCard}${otherCard}</div>`;
@@ -586,7 +614,26 @@ function accTab(s) {
 const cardHead = (title, btn) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:2px solid #E3E8EE;margin-bottom:12px"><h2 style="border:0;margin:0;padding:8px 0">${title}</h2><div>${btn || ''}</div></div>`;
 function overviewHtml() {
   const list = state.data.students; const count = fn => list.filter(fn).length;
-  const tiles = [['Students in portal', list.length], ['Tier 1', count(s => s.tier === 'tier1')], ['Tier 2', count(s => s.tier === 'tier2')], ['Monitor', count(s => s.tier === 'monitor')], ['MTA', count(s => s.dyslexia)], ['Speech flag', count(s => s.speech)], ['BUILD flag', count(s => s.build)], ['DNQ flag', count(s => s.dnq)], ['Eval in process', count(s => s.evalInProcess)]];
+  const gl = g => /^\d+$/.test(String(g)) ? 'Gr ' + g : String(g || '');
+  const nm = fn => list.filter(fn).slice().sort((a, b) => a.name.localeCompare(b.name));
+  const overdue = list.filter(s => reevalStatus(s) === 'past');
+  const row1 = [['Total students', list.length, ''], ['Tier 1', count(s => s.tier === 'tier1'), '#2563A8'], ['Tier 2', count(s => s.tier === 'tier2'), '#1E6B3A'], ['Re-evaluation overdue', overdue.length, '#9B2226']];
+  const row2 = [['Monitor', count(s => s.tier === 'monitor'), '#8A5A00'], ['MTA', count(s => s.dyslexia), '#5B3FA0'], ['BUILD', count(s => s.build), '#2563A8'], ['Evaluations in process', count(s => s.evalInProcess), '#9B2226']];
+  const bigTile = t => `<div class="tile" style="text-align:center;padding:18px 12px;background:#F4F6F9;border:0"><div class="tn" style="font-size:34px;${t[2] ? 'color:' + t[2] : ''}">${t[1]}</div><div class="tl">${t[0]}</div></div>`;
+  const viewBtn = id => `<button class="secondary" style="min-height:32px;padding:4px 14px" data-act="select" data-id="${esc(id)}">View</button>`;
+  const ipRows = nm(s => s.evalInProcess).map(s => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #E3E8EE"><div><b>${esc(s.name)}</b> <span class="small" style="margin-left:12px">${esc(gl(s.grade))}</span></div>${viewBtn(s.id)}</div>`).join('');
+  const alerts = list.filter(s => reevalStatus(s)).sort((a, b) => ((a.keyDates || {}).nextReeval || '').localeCompare((b.keyDates || {}).nextReeval || ''));
+  const alRows = alerts.map(s => { const past = reevalStatus(s) === 'past'; const d = (s.keyDates || {}).nextReeval;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 14px;margin-bottom:8px;border-radius:10px;border:1px solid ${past ? '#E8C4C6' : '#E8D9A8'};background:${past ? '#FBEDEE' : '#FBF3DC'};color:${past ? '#8F1D22' : '#7A5A00'}"><div><b>${esc(s.name)}</b> <span style="margin-left:8px">${esc(gl(s.grade))} · Re-evaluation ${past ? 'overdue' : 'due soon'}: ${esc(d)}</span></div>${viewBtn(s.id)}</div>`; }).join('');
+  const dxCount = {}; list.forEach(s => (s.diagnoses || []).forEach(d => { dxCount[d] = (dxCount[d] || 0) + 1; }));
+  const dxMax = Math.max(1, ...Object.values(dxCount));
+  const dxRows = Object.keys(dxCount).sort((a, b) => dxCount[b] - dxCount[a] || a.localeCompare(b)).map(d => `<div style="display:flex;align-items:center;gap:12px;padding:5px 0"><div style="flex:0 0 190px;font-size:14px">${esc(d)}</div><div class="bar" style="flex:1"><i style="width:${Math.round(dxCount[d] / dxMax * 100)}%;background:#2E4057"></i></div><div style="flex:0 0 32px;text-align:right;font-size:14px">${dxCount[d]}</div></div>`).join('');
+  const hdr = t => `<div class="fh" style="margin:0 0 10px;font-size:13px;letter-spacing:.06em">${t}</div>`;
+  const dash = `<div><h2 style="border:0;margin:0 0 2px;padding:0;font-size:24px;color:#2E4057">Program overview</h2><div class="small" style="margin:0 0 12px">Dallas Christian Learning Center · Elementary</div></div>
+    <div class="tiles" style="gap:12px">${row1.map(bigTile).join('')}</div><div class="tiles" style="gap:12px">${row2.map(bigTile).join('')}</div>
+    <section class="card">${hdr('EVALUATIONS IN PROCESS')}${ipRows || '<p class="empty">No evaluations in process.</p>'}</section>
+    <section class="card">${hdr('RE-EVALUATION ALERTS')}${alRows || '<p class="empty">No re-evaluations overdue or due within 60 days.</p>'}</section>
+    <section class="card">${hdr('DIAGNOSES ACROSS CASELOAD')}${dxRows || '<p class="empty">No diagnoses recorded.</p>'}</section>`;
   const showGroups = !isTeacher();
   const groups = state.data.groups || [];
   const canAddGroup = isAdmin() || role() === 'interventionist';
@@ -598,7 +645,7 @@ function overviewHtml() {
     return `<tr><td>${esc(fmtDate(x.date))}</td><td><b>${esc(groupLabel({ type: x.groupType, name: x.groupName }))}</b><div class="small">${esc(x.loggedByName)}</div></td><td>${x.minutes} min</td><td>${present} of ${(x.attendance || []).length}${x.makeupNeeded ? ' <span class="chip cf">Make-up</span>' : ''}</td><td style="white-space:nowrap">${canEditSession(x) ? `<button class="link" data-act="editSession" data-id="${esc(x.id)}">Edit</button>` : ''}${isAdmin() ? `<button class="link" data-act="voidSession" data-id="${esc(x.id)}">Remove</button>` : ''}</td></tr>`; }).join('');
   const schedules = state.data.schedules || [];
   const scRows = schedules.map(x => `<tr><td><b>${esc(x.name)}</b></td><td>${esc((x.grades || []).join(', '))}</td><td>${esc((x.teacherIds || []).map(id => (teacherById(id) || {}).name).filter(Boolean).join(', ')) || '<span class="small">Not linked</span>'}</td><td>${(x.blocks || []).length}</td><td style="white-space:nowrap"><button class="link" data-act="editSchedule" data-id="${esc(x.id)}">Edit</button><button class="link" data-act="copySchedule" data-id="${esc(x.id)}">Copy</button></td></tr>`).join('');
-  return `<div class="tiles">${tiles.map(t => `<div class="tile"><div class="tn">${t[1]}</div><div class="tl">${t[0]}</div></div>`).join('')}</div>
+  return `${dash}
     ${showGroups ? `<section class="card">${cardHead('Service groups', canAddGroup ? '<button class="secondary" data-act="addGroup">+ Add group</button>' : '')}${gTable}</section>
     <section class="card">${cardHead('Recent sessions', canLog() ? '<button class="primary" data-act="logSession">Log a session</button>' : '')}${sess.length ? `<div class="tw"><table style="min-width:560px"><thead><tr><th>Date</th><th>Group</th><th>Length</th><th>Attended</th><th></th></tr></thead><tbody>${sRows}</tbody></table></div>` : '<p class="empty">No sessions logged yet.</p>'}</section>` : ''}
     ${isAdmin() ? `<section class="card">${cardHead('Class schedules', '<button class="secondary" data-act="addSchedule">+ Add schedule</button>')}${schedules.length ? `<div class="tw"><table style="min-width:560px"><thead><tr><th>Schedule</th><th>Grades</th><th>Teachers</th><th>Blocks</th><th></th></tr></thead><tbody>${scRows}</tbody></table></div>` : '<p class="empty">No schedules yet. Run seedSchedules in Apps Script to load them, or add one here.</p>'}</section>` : ''}`;
@@ -607,7 +654,7 @@ function overviewHtml() {
 /* access screen (admin) */
 function accessHtml() {
   const users = state.data.users || [];
-  const rows = users.map(u => `<tr><td><b>${esc(u.name)}</b>${u.active ? '' : ' <span class="small">(deactivated)</span>'}<div class="small">${esc(u.email)}</div></td><td><span class="chip ${ROLE_CLASS[u.role]}">${ROLE_LABEL[u.role]}</span></td><td>${esc(u.role === 'interventionist' ? SCOPE_LABEL[u.scope] || '' : u.role === 'teacher' ? 'Their own students' : 'All students, view only')}${u.role === 'interventionist' && u.canApprove ? ' <span class="chip svc">Approves tests</span>' : ''}${u.role === 'interventionist' && u.canEdit ? ' <span class="chip svc">Edits students</span>' : ''}</td><td>${u.active ? `<button class="link" data-act="editUser" data-id="${esc(u.id)}">Edit</button><button class="link" data-act="removeUser" data-id="${esc(u.id)}">Deactivate</button>` : ''}</td></tr>`).join('');
+  const rows = users.map(u => `<tr><td><b>${esc(u.name)}</b>${u.active ? '' : ' <span class="small">(deactivated)</span>'}<div class="small">${esc(u.email)}</div></td><td><span class="chip ${ROLE_CLASS[u.role]}">${ROLE_LABEL[u.role]}</span></td><td>${esc(u.role === 'interventionist' ? SCOPE_LABEL[u.scope] || '' : u.role === 'teacher' ? 'Their own students' : 'All students, view only')}${u.role === 'interventionist' && u.canApprove ? ' <span class="chip svc">Approves tests</span>' : ''}${u.role === 'interventionist' && u.canEdit ? ' <span class="chip svc">Edits students</span>' : ''}</td><td>${u.active ? `<button class="link" data-act="editUser" data-id="${esc(u.id)}">Edit</button><button class="link" data-act="removeUser" data-id="${esc(u.id)}">Deactivate</button>` : `<button class="link" data-act="reactivateUser" data-id="${esc(u.id)}">Reactivate</button>`}</td></tr>`).join('');
   const m = [['See students','All','Own caseload','All','Own students'],['Add or edit students, tiers, flags','Edit','No access','No access','No access'],['Groups and class schedules','Edit all','Edit own groups','View','View own students\' schedule'],['Service and session log','Edit all','Log and edit own','View','No access'],['Progress monitoring','Edit','Edit own entries','View','View own students'],['Documentation and meeting notes','Edit','Edit own entries','View','View own students'],['Monthly grade reports','Upload','View','View','View own students'],['Accommodations','Edit','View','View','View'],['Log in-class accommodation use','No access','No access','No access','Log'],['Testing calendar: add a test','Add and approve','Add (waits for approval)','View only','Add for own students (waits for approval)'],['Testing calendar: approve or decline','Yes','Only if the admin turns it on (Mrs. Blasingame)','No','No'],['Testing prep summary','All tests','All tests','View','Own students'],['Reports','All','Own caseload','View','No access'],['Access and settings','Edit','No access','No access','No access']];
   return `${state.codeNotice ? `<div class="banner ok" role="status"><b>${esc(state.codeNotice.name)}</b>'s sign-in code is <b style="font-size:16px">${esc(state.codeNotice.code)}</b>. This is the only time it is shown. <button class="link" data-act="dismissCode">Dismiss</button></div>` : ''}
     <div class="banner">Only the admin code (you and Mrs. Barker) opens this screen and can assign access or change controls. The admin code is set in Apps Script, not here.</div>
@@ -952,10 +999,18 @@ function studentModal(s) {
     <label class="fl">Drive folder name (in Learning Support)<input class="field" id="fFolder" value="${esc(s.folderName || '')}" maxlength="80" placeholder="${esc(s.name || 'Same as the student name')}"></label>
     <div><div class="fh">DIAGNOSIS</div><div>${DIAGNOSES.map(d => `<button type="button" class="fc tl dxT ${(s.diagnoses || []).includes(d) ? 'on' : ''}" data-act="tile" data-v="${esc(d)}">${esc(d)}</button>`).join('')}</div>${s.eligibility ? `<div class="small" style="font-size:12px;margin-top:4px">Plan wording (from the learning plan, not a diagnosis): ${esc(s.eligibility)}</div>` : ''}</div>
     <div><div style="display:flex;justify-content:space-between;align-items:center"><div class="fh">ACCOMMODATIONS</div><button type="button" class="secondary" data-act="accClear" style="min-height:32px;padding:4px 12px">Clear all</button></div>
-    <div id="accTiles" style="border:1px solid #E3E8EE;border-radius:10px;padding:8px 10px;background:#FAFBFC">${accTilesHtml(s)}</div></div>
+    ${planBar(s)}<div id="accTiles" style="border:1px solid #E3E8EE;border-radius:10px;padding:8px 10px;background:#FAFBFC">${accTilesHtml(s)}</div></div>
     <div class="fh" style="margin-bottom:-6px">KEY DATES</div>
     <div class="cols"><label class="fl">FIE date<input class="field" type="date" id="fKfie" value="${esc(kd.fie)}"></label><label class="fl">Last diagnostic<input class="field" type="date" id="fKld" value="${esc(kd.lastDiagnostic)}"></label><label class="fl">Next re-evaluation<input class="field" type="date" id="fKnr" value="${esc(kd.nextReeval)}"></label><label class="fl">Last parent meeting<input class="field" type="date" id="fKpm" value="${esc(kd.lastParentMeeting)}"></label></div>
     <div class="btns">${isNew ? '' : '<button class="danger" data-act="archiveStudent" style="margin-right:auto' + (isAdmin() ? '' : ';display:none') + '">Remove from portal</button>'}<button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveStudent">Save</button></div>`);
+}
+const isPlanDoc = d => /accommodation|instructional support|academic service plan/i.test((d.name || '') + ' ' + (d.label || ''));
+function planBar(s) {
+  const plans = (s && s.documents || []).filter(isPlanDoc);
+  if (!plans.length) return '';
+  return `<div id="planBar" style="background:#EEF5FB;border:1px solid #BCD4EA;border-radius:10px;padding:8px 10px;margin-bottom:8px"><div class="small" style="margin:0 0 6px"><b>Linked plan.</b> Open it, then tick the tiles that are marked. Or let Claude read it and pre-check them for you to review.</div>
+    ${plans.map(d => `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px"><span class="docName">${esc(d.name)}</span><a class="secondary" style="padding:4px 10px;border-radius:8px;text-decoration:none" href="${esc(safeUrl(d.url))}" target="_blank" rel="noopener">Open plan</a><button type="button" class="secondary" data-act="planRead" data-id="${esc(d.id)}">Read plan</button></div>`).join('')}
+    <div class="small hidden" id="planMsg" style="margin-top:4px"></div></div>`;
 }
 function accTilesHtml(s) {
   const have = new Set((s.accommodations || []).map(a => a.name));
@@ -1523,6 +1578,42 @@ const actions = {
     if (q) q.files = (q.files || []).map(f => f.id === id ? { ...f, linked: true } : f);
     state.docs = q; await loadAll();
   },
+  docUploadOpen: () => uploadModal(student()),
+  docEmailOpen: () => emailModal(student()),
+  docUploadSave: async () => {
+    const btn = $('upGo'); const upLbl = val('upType'); let files;
+    try { files = await readFilesB64('upFiles'); } catch (e) { return modalErr(e.message); }
+    if (!files.length) return modalErr('Choose a file to upload.');
+    if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
+    const r = await api('uploadDocs', { studentId: state.selectedId, files, label: val('upType') });
+    if (handleAuthError(r)) return;
+    if (r.error) { if (btn) { btn.disabled = false; btn.textContent = 'Upload'; } return modalErr(r.error); }
+    closeModal(); state.notice = { type: r.errors && r.errors.length ? 'err' : 'ok', text: (r.added || []).length + ' file(s) added.' + (r.errors && r.errors.length ? ' ' + r.errors.join(' ') : '') + ((r.added || []).some(n => isPlanDoc({ name: n })) || upLbl === 'Accommodations plan' ? ' To fill the accommodation tiles from the plan, open Edit student.' : '') };
+    await loadAll();
+  },
+  docEmailSave: async () => {
+    const btn = $('emGo'); let files;
+    if (!val('emBody')) return modalErr('Paste the email text.');
+    try { files = await readFilesB64('emFiles'); } catch (e) { return modalErr(e.message); }
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+    const r = await api('saveEmail', { studentId: state.selectedId, from: val('emFrom'), to: val('emTo'), date: val('emDate'), subject: val('emSubject'), body: $('emBody').value, files });
+    if (handleAuthError(r)) return;
+    if (r.error) { if (btn) { btn.disabled = false; btn.textContent = 'Save email'; } return modalErr(r.error); }
+    closeModal(); state.notice = { type: r.errors && r.errors.length ? 'err' : 'ok', text: 'Email saved.' + (r.errors && r.errors.length ? ' ' + r.errors.join(' ') : '') };
+    await loadAll();
+  },
+  planRead: async el => {
+    const msg = $('planMsg'); const say = t => { if (msg) { msg.textContent = t; msg.classList.remove('hidden'); } };
+    el.disabled = true; say('Reading the plan...');
+    const r = await api('readAccPlan', { studentId: state.selectedId, docId: el.dataset.id, tiles: ELEM_ACCS });
+    el.disabled = false;
+    if (handleAuthError(r)) return;
+    if (r.error) return say(r.error);
+    if (r.noKey) return say('Automatic reading is not switched on. Open the plan and tick the tiles by hand.');
+    const want = new Set(r.checked || []); const unsure = new Set(r.unsure || []);
+    document.querySelectorAll('.acT').forEach(t => { if (want.has(t.dataset.v)) t.classList.add('on'); if (unsure.has(t.dataset.v)) t.style.outline = '2px dashed #C77700'; });
+    say((r.checked || []).length + ' tile(s) pre-checked' + ((r.unsure || []).length ? ', ' + r.unsure.length + ' outlined in orange where the plan was unclear' : '') + '. Compare with the plan, adjust, then Save.');
+  },
   docUnlink: async el => {
     const r = await api('unlinkDoc', { studentId: state.selectedId, docId: el.dataset.id });
     if (handleAuthError(r)) return;
@@ -1624,6 +1715,10 @@ const actions = {
   removeUser: async el => {
     if (!confirm('Deactivate this person? They will be signed out and can no longer sign in.')) return;
     await afterSave(await api('removeUser', { id: el.dataset.id }), 'Person deactivated.');
+  },
+  reactivateUser: async el => {
+    if (!confirm('Reactivate this person? They can sign in again with their same code.')) return;
+    await afterSave(await api('reactivateUser', { id: el.dataset.id }), 'Person reactivated.');
   },
   dismissCode: () => { state.codeNotice = null; render(); },
   closeModal: closeModal,
