@@ -935,16 +935,28 @@ function ntFields(p, e) {
   return `<label class="fl">Type<select class="field" id="${p}Type">${optList(NOTE_TYPES, e.type)}</select></label>
     <label class="fl">Date<input class="field" type="date" id="${p}Date" value="${esc(e.date || today())}"></label>
     <label class="fl">Who was involved (optional)<input class="field" id="${p}Who" maxlength="120" value="${esc(e.who)}"></label>
-    <label class="fl">Notes<textarea class="field" id="${p}Text" maxlength="4000" style="min-height:110px">${esc(e.text)}</textarea></label>`;
+    <label class="fl">Notes<textarea class="field" id="${p}Text" maxlength="4000" style="min-height:110px">${esc(e.text)}</textarea></label>
+    <div><div class="fh">ATTACH FILES FROM DRIVE</div><div id="${p}Att">${attHtml(p)}</div></div>`;
 }
+/** Files attached to a documentation entry. They must be in the student's own Drive folder. Teachers never see them. */
+function attState(p) { state.att = state.att || {}; if (!state.att[p]) state.att[p] = { list: [], results: null, busy: false, err: '', q: '' }; return state.att[p]; }
+function attHtml(p) {
+  const a = attState(p);
+  const have = new Set(a.list.map(f => f.id));
+  const avail = (a.results || []).filter(f => !have.has(f.id));
+  const chips = a.list.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${a.list.map(f => `<span class="docRow" style="margin:0"><span class="docIc" aria-hidden="true">${/pdf/i.test(f.name) ? 'PDF' : 'DOC'}</span><span class="docName">${esc(f.name)}</span><button type="button" class="link" data-act="attRemove" data-p="${p}" data-id="${esc(f.id)}" aria-label="Remove ${esc(f.name)}">&times;</button></span>`).join('')}</div>` : '';
+  const res = a.busy ? '<p class="small">Searching the Drive folder...</p>' : a.err ? `<p class="small" style="color:#7A1A1F">${esc(a.err)}</p>` : a.results ? (avail.length ? avail.map(f => `<div class="docRow" style="margin:0 0 4px"><span class="docIc" aria-hidden="true">${/pdf/i.test(f.name) ? 'PDF' : 'DOC'}</span><span class="docName">${esc(f.name)}</span><button type="button" class="secondary" style="padding:2px 10px" data-act="attAdd" data-p="${p}" data-id="${esc(f.id)}">Attach</button></div>`).join('') : '<p class="small">No more files to attach in that folder.</p>') : '';
+  return `${chips}<div style="display:flex;gap:6px;flex-wrap:wrap"><input class="field" id="${p}AttQ" placeholder="File name (blank shows everything)" value="${esc(a.q)}" style="flex:1 1 140px;min-width:0" aria-label="Search the student's Drive folder"><button type="button" class="secondary" data-act="attFind" data-p="${p}">Find in Drive</button></div><div style="margin-top:8px">${res}</div>`;
+}
+function attRender(p) { const el = $(p + 'Att'); if (el) el.innerHTML = attHtml(p); }
 function docTab(s) {
   const all = stuNotes(s); const f = state.noteType || '';
   const list = f ? all.filter(x => x.type === f) : all;
   const chips = ['', ...NOTE_TYPES].map(t => `<button class="fc ${f === t ? 'on' : ''}" data-act="noteType" data-t="${esc(t)}">${t ? esc(t) : 'All'}</button>`).join('');
-  const items = list.map(x => `<div style="border-left:3px solid #CBD5DF;padding:2px 0 14px 14px;margin-left:6px"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><b>${esc(fmtDate(x.date))}</b><span class="chip none" style="margin:0">${esc(x.type)}</span><span class="small" style="margin:0">${esc([x.who, x.byName].filter(Boolean).join(' · '))}</span>${canWrite() && canEditRec(x) ? `<button class="link" data-act="editNote" data-id="${esc(x.id)}">Edit</button><button class="link" data-act="voidNote" data-id="${esc(x.id)}">Remove</button>` : ''}</div><div style="margin-top:6px;line-height:1.45;white-space:pre-wrap">${esc(x.text)}</div></div>`).join('');
+  const items = list.map(x => `<div style="border-left:3px solid #CBD5DF;padding:2px 0 14px 14px;margin-left:6px"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><b>${esc(fmtDate(x.date))}</b><span class="chip none" style="margin:0">${esc(x.type)}</span><span class="small" style="margin:0">${esc([x.who, x.byName].filter(Boolean).join(' · '))}</span>${canWrite() && canEditRec(x) ? `<button class="link" data-act="editNote" data-id="${esc(x.id)}">Edit</button><button class="link" data-act="voidNote" data-id="${esc(x.id)}">Remove</button>` : ''}</div><div style="margin-top:6px;line-height:1.45;white-space:pre-wrap">${esc(x.text)}</div>${(x.attachments || []).length && !isTeacher() ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${x.attachments.map(a => `<a class="docRow" style="margin:0;text-decoration:none" href="${esc(safeUrl(a.url))}" target="_blank" rel="noopener"><span class="docIc" aria-hidden="true">${/pdf/i.test(a.name) ? 'PDF' : 'DOC'}</span><span class="docName">${esc(a.name)}</span></a>`).join('')}</div>` : ''}</div>`).join('');
   const form = canWrite() ? `<section class="card" style="flex:1 1 280px;display:flex;flex-direction:column;gap:12px"><h2 style="margin-bottom:0">Add an entry</h2>
       <div class="banner err hidden" id="inlineErr" role="alert"></div>${ntFields('na')}<button class="primary" data-act="saveNote" data-p="na">Save entry</button>
-      <div class="small">Teachers, the principal and the learning support team all see every entry for this student.</div></section>`
+      <div class="small">Teachers, the principal and the learning support team all see every entry for this student. Attached files are hidden from teachers.</div></section>`
     : `<section class="card" style="flex:1 1 280px"><div class="banner">You can see documentation for your own students. Learning support adds the entries.</div></section>`;
   return `<div class="row" style="align-items:flex-start"><section class="card" style="flex:2 1 460px;min-width:0"><h2>Documentation</h2><div style="margin-bottom:12px">${chips}</div>${items || '<p class="empty">No entries' + (f ? ' of this type' : '') + ' yet.</p>'}</section>${form}</div>`;
 }
@@ -987,6 +999,7 @@ function progressModal(e) {
 }
 function noteModal(e) {
   state.editingRec = e.id;
+  state.att = state.att || {}; state.att.ne = { list: (e.attachments || []).map(a => ({ id: a.id, name: a.name, url: a.url })), results: null, busy: false, err: '', q: '' };
   openModal(`<h2>Edit documentation entry</h2><div class="banner err hidden" id="modalErr" role="alert"></div>${ntFields('ne', e)}
     <div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="saveNote" data-p="ne" data-id="${esc(e.id)}">Save</button></div>`);
 }
@@ -1180,9 +1193,8 @@ const isPlanDoc = d => /accommodation|instructional support|academic service pla
 function planBar(s) {
   const plans = (s && s.documents || []).filter(isPlanDoc);
   if (!plans.length) return '';
-  return `<div id="planBar" style="background:#EEF5FB;border:1px solid #BCD4EA;border-radius:10px;padding:8px 10px;margin-bottom:8px"><div class="small" style="margin:0 0 6px"><b>Linked plan.</b> Open it, then tick the tiles that are marked. Or let Claude read it and pre-check them for you to review.</div>
-    ${plans.map(d => `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px"><span class="docName">${esc(d.name)}</span><a class="secondary" style="padding:4px 10px;border-radius:8px;text-decoration:none" href="${esc(safeUrl(d.url))}" target="_blank" rel="noopener">Open plan</a><button type="button" class="secondary" data-act="planRead" data-id="${esc(d.id)}">Read plan</button></div>`).join('')}
-    <div class="small hidden" id="planMsg" style="margin-top:4px"></div></div>`;
+  return `<div id="planBar" style="background:#EEF5FB;border:1px solid #BCD4EA;border-radius:10px;padding:8px 10px;margin-bottom:8px"><div class="small" style="margin:0 0 6px"><b>Linked plan.</b> Open it, then tick the tiles that are marked.</div>
+    ${plans.map(d => `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px"><span class="docName">${esc(d.name)}</span><a class="secondary" style="padding:4px 10px;border-radius:8px;text-decoration:none" href="${esc(safeUrl(d.url))}" target="_blank" rel="noopener">Open plan</a></div>`).join('')}</div>`;
 }
 function accTilesHtml(s) {
   const have = new Set((s.accommodations || []).map(a => a.name));
@@ -1699,13 +1711,13 @@ function impRender() {
     const rows = im.rows, nNew = rows.filter(r => !r.existing).length, nEx = rows.length - nNew;
     const missing = [...new Set(rows.filter(r => r.on).flatMap(r => [(!r.teacher && r.homeroomTeacher) || '', (!r.teacher2 && r.secondTeacher) || '']).filter(Boolean))];
     const sel = rows.filter(r => r.on).length;
-    body = `<div class="small" style="font-size:14px;margin-bottom:6px">${rows.length} in the file: <b>${nNew}</b> new, <b>${nEx}</b> already in the portal (only blank teacher, diagnosis, FIE date, re-eval date and last diagnostic date get filled in; accommodations load only for students who have none; nothing you entered is overwritten).</div>
+    body = `<div class="small" style="font-size:14px;margin-bottom:6px">${rows.length} in the file: <b>${nNew}</b> new, <b>${nEx}</b> already in the portal (only blank teacher, diagnosis, FIE date, re-eval date and last diagnostic date get filled in; accommodations load only for students who have none; nothing you entered is overwritten, except a class schedule named in the file).</div>
       ${missing.length ? `<div class="banner err">No teacher account yet for: ${missing.map(esc).join(', ')}. Those students are imported without a teacher. Add the teachers on the Access screen, then run this import again and it will fill the teachers in.</div>` : ''}
       <div class="impBox"><table class="impTbl"><thead><tr><th></th><th>Student</th><th>Grade</th><th>Teacher</th><th>Accom.</th><th>Diagnosis</th><th>FIE</th><th>Docs</th><th>Re-eval</th><th>Notes</th></tr></thead><tbody>
       ${rows.map((r, i) => `<tr><td><input type="checkbox" data-imp="${i}" ${r.on ? 'checked' : ''} aria-label="Include ${esc(r.name)}"></td><td>${esc(r.name)}${r.folderName && r.folderName !== r.name ? `<div class="small" style="font-size:12px">folder: ${esc(r.folderName)}</div>` : ''}</td><td>${esc(r.grade)}</td>
         <td>${r.teacher ? esc(r.teacher.name) + (r.teacher2 ? ' / ' + esc(r.teacher2.name) : '') : `<span style="color:#7A1A1F;font-weight:700">${esc(r.homeroomTeacher || 'none')}${r.homeroomTeacher ? ' (no account)' : ''}</span>`}</td><td>${(r.accommodations || []).length || ''}${(r.addAccommodations || []).length ? `<div class="small" style="font-size:12px">+${r.addAccommodations.length} to add</div>` : ''}</td><td>${esc((r.diagnoses || []).join(', '))}${(r.addDiagnoses || []).length ? `<div class="small" style="font-size:12px">add: ${esc(r.addDiagnoses.join(', '))}</div>` : ''}</td><td>${r.fie ? esc(fmtDate(r.fie)) : ''}${r.fixDates ? '<div class="small" style="font-size:12px;color:#7A1A1F;font-weight:700">replaces dates</div>' : ''}${r.clearEvalDates ? '<div class="small" style="font-size:12px;color:#7A1A1F;font-weight:700">clears FIE + re-eval</div>' : ''}</td><td>${(r.documents || []).length || ''}</td>
         <td>${r.nextReeval ? esc(fmtDate(r.nextReeval)) : ''}${r.nextReeval && r.nextReeval < today() ? ' <span class="chip duePast" style="margin:0">past due</span>' : ''}</td>
-        <td>${r.existing ? '<span class="chip none" style="margin:0">already in portal</span> ' : ''}${(r.flags || []).map(f => `<div class="small" style="font-size:12px">${esc(f)}</div>`).join('')}</td></tr>`).join('')}
+        <td>${r.existing ? '<span class="chip none" style="margin:0">already in portal</span> ' : ''}${r.scheduleName ? `<div class="small" style="font-size:12px"><b>Schedule:</b> ${esc(r.scheduleName)}${(() => { const h = (state.data.schedules || []).find(x => (x.name || '').toLowerCase().trim() === String(r.scheduleName).toLowerCase().trim()); return !h ? ' (<span style="color:#7A1A1F">no schedule with that name</span>)' : r.existing && r.existing.scheduleId === h.id ? ' (already set)' : r.existing && r.existing.scheduleId ? ' (replaces current)' : ''; })()}</div>` : ''}${(r.flags || []).map(f => `<div class="small" style="font-size:12px">${esc(f)}</div>`).join('')}</td></tr>`).join('')}
       </tbody></table></div>`;
     body += `<div class="btns"><button class="secondary" data-act="closeModal">Cancel</button><button class="primary" data-act="impGo" ${sel ? '' : 'disabled'}>Import ${sel} student${sel === 1 ? '' : 's'}</button></div>`;
   }
@@ -1774,18 +1786,6 @@ const actions = {
     if (r.error) { if (btn) { btn.disabled = false; btn.textContent = 'Save email'; } return modalErr(r.error); }
     closeModal(); state.notice = { type: r.errors && r.errors.length ? 'err' : 'ok', text: 'Email saved.' + (r.errors && r.errors.length ? ' ' + r.errors.join(' ') : '') };
     await loadAll();
-  },
-  planRead: async el => {
-    const msg = $('planMsg'); const say = t => { if (msg) { msg.textContent = t; msg.classList.remove('hidden'); } };
-    el.disabled = true; say('Reading the plan...');
-    const r = await api('readAccPlan', { studentId: state.selectedId, docId: el.dataset.id, tiles: ELEM_ACCS });
-    el.disabled = false;
-    if (handleAuthError(r)) return;
-    if (r.error) return say(r.error);
-    if (r.noKey) return say('Automatic reading is not switched on. Open the plan and tick the tiles by hand.');
-    const want = new Set(r.checked || []); const unsure = new Set(r.unsure || []);
-    document.querySelectorAll('.acT').forEach(t => { if (want.has(t.dataset.v)) t.classList.add('on'); if (unsure.has(t.dataset.v)) t.style.outline = '2px dashed #C77700'; });
-    say((r.checked || []).length + ' tile(s) pre-checked' + ((r.unsure || []).length ? ', ' + r.unsure.length + ' outlined in orange where the plan was unclear' : '') + '. Compare with the plan, adjust, then Save.');
   },
   docUnlink: async el => {
     const r = await api('unlinkDoc', { studentId: state.selectedId, docId: el.dataset.id });
@@ -1930,8 +1930,24 @@ const actions = {
   },
   saveNote: async el => {
     const p = el.dataset.p, id = el.dataset.id;
-    await afterSave(await api('saveNote', { note: { id: id || undefined, studentId: state.selectedId, type: val(p + 'Type'), date: val(p + 'Date'), who: val(p + 'Who'), text: val(p + 'Text') } }), 'Entry saved.');
+    const att = attState(p).list.map(f => ({ id: f.id }));
+    const ok = await afterSave(await api('saveNote', { note: { id: id || undefined, studentId: state.selectedId, type: val(p + 'Type'), date: val(p + 'Date'), who: val(p + 'Who'), text: val(p + 'Text'), attachments: att } }), 'Entry saved.');
+    if (ok !== false && state.att) { delete state.att[p]; render(); }
   },
+  attFind: async el => {
+    const p = el.dataset.p, a = attState(p); a.q = val(p + 'AttQ'); a.busy = true; a.err = ''; attRender(p);
+    const r = await api('findDocs', { studentId: state.selectedId, mode: 'other', query: a.q });
+    a.busy = false;
+    if (handleAuthError(r)) return;
+    if (r.error) { a.err = r.error; a.results = null; } else a.results = r.files || [];
+    attRender(p);
+  },
+  attAdd: el => {
+    const p = el.dataset.p, a = attState(p); const f = (a.results || []).find(x => x.id === el.dataset.id);
+    if (f && a.list.length < 10 && !a.list.some(x => x.id === f.id)) a.list.push({ id: f.id, name: f.name, url: f.url });
+    attRender(p);
+  },
+  attRemove: el => { const p = el.dataset.p, a = attState(p); a.list = a.list.filter(x => x.id !== el.dataset.id); attRender(p); },
   editNote: el => { const e = recs().notes.find(x => x.id === el.dataset.id); if (e) noteModal(e); },
   voidNote: async el => {
     if (!confirm('Remove this documentation entry?')) return;
