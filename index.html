@@ -408,6 +408,7 @@ function bodyHtml() {
   else if (v === 'access') inner = accessHtml();
   else if (v === 'logins') inner = loginsHtml();
   else { const c = VIEW_COMING[v]; inner = `<div class="card muted"><h2>${esc(c[0])}</h2><p class="empty">${esc(c[1])}</p></div>`; }
+  if (v === 'overview') return `<div class="body">${sideHtml()}<section class="main">${notice}${inner}</section></div>`;
   return `<div class="body"><section class="main" style="flex-basis:100%">${notice}${inner}</section></div>`;
 }
 
@@ -622,12 +623,12 @@ function overviewHtml() {
   const gl = g => /^\d+$/.test(String(g)) ? 'Gr ' + g : String(g || '');
   const nm = fn => list.filter(fn).slice().sort((a, b) => a.name.localeCompare(b.name));
   const overdue = list.filter(s => reevalStatus(s) === 'past');
-  const row1 = [['Total students', list.length, ''], ['Tier 1', count(s => s.tier === 'tier1'), '#2563A8'], ['Tier 2', count(s => s.tier === 'tier2'), '#1E6B3A'], ['Re-evaluation overdue', overdue.length, '#9B2226']];
-  const row2 = [['Monitor', count(s => s.tier === 'monitor'), '#8A5A00'], ['MTA', count(s => s.dyslexia), '#5B3FA0'], ['BUILD', count(s => s.build), '#2563A8'], ['KBIT/KTEA tested', count(s => s.kbit), '#2E4057'], ['Evaluations in process', count(s => s.evalInProcess), '#9B2226']];
+  const row1 = [['Total students', list.length, ''], ['MTA', count(s => s.dyslexia), '#5B3FA0'], ['BUILD', count(s => s.build), '#2563A8'], ['Re-evaluation overdue', overdue.length, '#9B2226']];
+  const row2 = [['Evaluations in process', count(s => s.evalInProcess), '#9B2226'], ['KBIT/KTEA tested', count(s => s.kbit), '#2E4057'], ['DNQ', count(s => s.dnq), '#5B3FA0']];
   const noAcc = nm(s => !(s.accommodations || []).length);
   const consentOnly = nm(s => (s.documents || []).length && (s.documents || []).every(d => /consent/i.test((d.label || '') + ' ' + (d.name || ''))));
   const inactiveN = allStu.length - list.length;
-  const row3 = [['Inactive (not counted)', inactiveN, '#5A6B7B'], ['No accommodations on file', noAcc.length, '#8A5A00'], ['Consent form only', consentOnly.length, '#9B2226'], ['DNQ', count(s => s.dnq), '#5B3FA0']];
+  const row3 = [['No accommodations on file', noAcc.length, '#8A5A00'], ['Consent form only', consentOnly.length, '#9B2226'], ['Inactive (not counted)', inactiveN, '#5A6B7B']];
   const bigTile = t => `<div class="tile" style="text-align:center;padding:18px 12px;background:#F4F6F9;border:0"><div class="tn" style="font-size:34px;${t[2] ? 'color:' + t[2] : ''}">${t[1]}</div><div class="tl">${t[0]}</div></div>`;
   const viewBtn = id => `<button class="secondary" style="min-height:32px;padding:4px 14px" data-act="select" data-id="${esc(id)}">View</button>`;
   const ipRows = nm(s => s.evalInProcess).map(s => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #E3E8EE"><div><b>${esc(s.name)}</b> <span class="small" style="margin-left:12px">${esc(gl(s.grade))}</span></div>${viewBtn(s.id)}</div>`).join('');
@@ -638,12 +639,12 @@ function overviewHtml() {
   const dxMax = Math.max(1, ...Object.values(dxCount));
   const dxRows = Object.keys(dxCount).sort((a, b) => dxCount[b] - dxCount[a] || a.localeCompare(b)).map(d => `<div style="display:flex;align-items:center;gap:12px;padding:5px 0"><div style="flex:0 0 190px;font-size:14px">${esc(d)}</div><div class="bar" style="flex:1"><i style="width:${Math.round(dxCount[d] / dxMax * 100)}%;background:#2E4057"></i></div><div style="flex:0 0 32px;text-align:right;font-size:14px">${dxCount[d]}</div></div>`).join('');
   const hdr = t => `<div class="fh" style="margin:0 0 10px;font-size:13px;letter-spacing:.06em">${t}</div>`;
-  const dash = `<div><h2 style="border:0;margin:0 0 2px;padding:0;font-size:24px;color:#2E4057">Program overview</h2><div class="small" style="margin:0 0 12px">Dallas Christian Learning Center · Elementary</div></div>
+  const dash = `<div><h2 style="border:0;margin:0 0 2px;padding:0;font-size:24px;color:#2E4057">Program overview</h2><div class="small" style="margin:0 0 12px">Dallas Christian Learning Center · Elementary · ${new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' })}</div></div>
     <div class="tiles" style="gap:12px">${row1.map(bigTile).join('')}</div><div class="tiles" style="gap:12px">${row2.map(bigTile).join('')}</div><div class="tiles" style="gap:12px">${row3.map(bigTile).join('')}</div>
     <section class="card">${hdr('EVALUATIONS IN PROCESS')}${ipRows || '<p class="empty">No evaluations in process.</p>'}</section>
-    ${!isTeacher() ? `<section class="card">${hdr('NEEDS DOCUMENTATION')}<div class="small" style="margin:0 0 6px"><b>Consent form only (${consentOnly.length})</b></div>${consentOnly.map(s => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #E3E8EE"><div><b>${esc(s.name)}</b> <span class="small" style="margin-left:12px">${esc(gl(s.grade))}</span></div>${viewBtn(s.id)}</div>`).join('') || '<p class="empty">None.</p>'}<div class="small" style="margin:14px 0 6px"><b>No accommodations on file (${noAcc.length})</b></div>${noAcc.map(s => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #E3E8EE"><div><b>${esc(s.name)}</b> <span class="small" style="margin-left:12px">${esc(gl(s.grade))}</span></div>${viewBtn(s.id)}</div>`).join('') || '<p class="empty">None.</p>'}</section>` : ''}
     <section class="card">${hdr('RE-EVALUATION ALERTS')}${alRows || '<p class="empty">No re-evaluations overdue or due within 60 days.</p>'}</section>
-    <section class="card">${hdr('DIAGNOSES ACROSS CASELOAD')}${dxRows || '<p class="empty">No diagnoses recorded.</p>'}</section>`;
+    <section class="card">${hdr('DIAGNOSES ACROSS CASELOAD')}${dxRows || '<p class="empty">No diagnoses recorded.</p>'}</section>
+    ${!isTeacher() ? `<section class="card"><details><summary style="cursor:pointer;list-style:none">${hdr('NEEDS DOCUMENTATION · ' + consentOnly.length + ' consent only · ' + noAcc.length + ' no accommodations (click to show names)')}</summary><div class="small" style="margin:0 0 6px"><b>Consent form only (${consentOnly.length})</b></div>${consentOnly.map(s => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #E3E8EE"><div><b>${esc(s.name)}</b> <span class="small" style="margin-left:12px">${esc(gl(s.grade))}</span></div>${viewBtn(s.id)}</div>`).join('') || '<p class="empty">None.</p>'}<div class="small" style="margin:14px 0 6px"><b>No accommodations on file (${noAcc.length})</b></div>${noAcc.map(s => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #E3E8EE"><div><b>${esc(s.name)}</b> <span class="small" style="margin-left:12px">${esc(gl(s.grade))}</span></div>${viewBtn(s.id)}</div>`).join('') || '<p class="empty">None.</p>'}</details></section>` : ''}`;
   const showGroups = !isTeacher();
   const groups = state.data.groups || [];
   const canAddGroup = isAdmin() || role() === 'interventionist';
@@ -658,7 +659,7 @@ function overviewHtml() {
   return `${dash}
     ${showGroups ? `<section class="card">${cardHead('Service groups', canAddGroup ? '<button class="secondary" data-act="addGroup">+ Add group</button>' : '')}${gTable}</section>
     <section class="card">${cardHead('Recent sessions', canLog() ? '<button class="primary" data-act="logSession">Log a session</button>' : '')}${sess.length ? `<div class="tw"><table style="min-width:560px"><thead><tr><th>Date</th><th>Group</th><th>Length</th><th>Attended</th><th></th></tr></thead><tbody>${sRows}</tbody></table></div>` : '<p class="empty">No sessions logged yet.</p>'}</section>` : ''}
-    ${isAdmin() ? `<section class="card">${cardHead('Class schedules', '<button class="secondary" data-act="addSchedule">+ Add schedule</button>')}${schedules.length ? `<div class="tw"><table style="min-width:560px"><thead><tr><th>Schedule</th><th>Grades</th><th>Teachers</th><th>Blocks</th><th></th></tr></thead><tbody>${scRows}</tbody></table></div>` : '<p class="empty">No schedules yet. Run seedSchedules in Apps Script to load them, or add one here.</p>'}</section>` : ''}`;
+`;
 }
 
 /* access screen (admin) */
